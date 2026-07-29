@@ -1,7 +1,6 @@
 (async function () {
   const status = document.getElementById('status');
   const loginForm = document.getElementById('login-form');
-  const codeForm = document.getElementById('code-form');
   const api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
   const clientStorageKey = 'turnio_external_client_id';
   const sessionStorageKey = 'turnio_external_session_token';
@@ -16,16 +15,18 @@
     }
     return clientId;
   }
+
   if (!api) {
     status.textContent = 'Puente seguro pendiente de activar.';
     return;
   }
+
   try {
     const response = await fetch(api + '/api/health', { cache: 'no-store' });
     const data = await response.json();
     if (!response.ok || !data.ok || !data.configured) throw new Error('not-ready');
     status.className = 'status ready';
-    status.textContent = 'Conexión segura preparada. Solicita tu código de acceso.';
+    status.textContent = 'Conexión de pruebas preparada. Introduce tu correo autorizado y el PIN temporal.';
     loginForm.hidden = false;
   } catch (error) {
     status.className = 'status error';
@@ -50,25 +51,17 @@
   loginForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     const email = document.getElementById('email').value.trim();
+    const pin = document.getElementById('pin').value;
     try {
-      await call('solicitar_codigo', { email: email });
-      loginForm.hidden = true;
-      codeForm.hidden = false;
-      status.textContent = 'Código enviado. Revisa tu correo.';
-    } catch (error) { status.className = 'status error'; status.textContent = error.message; }
-  });
-  codeForm.addEventListener('submit', async function (event) {
-    event.preventDefault();
-    try {
-      const data = await call('verificar_codigo', {
-        email: document.getElementById('email').value.trim(),
-        codigo: document.getElementById('code').value.trim()
-      });
+      const data = await call('iniciar_pruebas', { email: email, pin: pin });
       if (!data.token) throw new Error('No se ha podido conservar la sesión de acceso.');
       localStorage.setItem(sessionStorageKey, data.token);
+      loginForm.hidden = true;
       status.className = 'status ready';
-      status.textContent = 'Sesión iniciada para ' + data.persona.nombre + '. Radar externo se activará en la siguiente entrega.';
-      codeForm.hidden = true;
-    } catch (error) { status.className = 'status error'; status.textContent = error.message; }
+      status.textContent = 'Sesión de pruebas iniciada para ' + data.persona.nombre + '.';
+    } catch (error) {
+      status.className = 'status error';
+      status.textContent = error.message;
+    }
   });
 }());
