@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1877f2">
+    <title>TURNIO RAIL · Pruebas externas</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="panel">
+      <p class="eyebrow">ENTORNO DE PRUEBAS</p>
+      <h1>TURNIO RAIL</h1>
+      <p class="lead">Acceso externo en preparación.</p>
+      <section id="status" class="status pending" aria-live="polite">
+        Comprobando la conexión segura con TURNIO…
+      </section>
+      <form id="login-form" hidden>
+        <label for="email">Correo autorizado</label>
+        <input id="email" name="email" type="email" autocomplete="email" required>
+        <button id="request-code" type="submit">Recibir código</button>
+      </form>
+      <form id="code-form" hidden>
+        <label for="code">Código de seis cifras</label>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required>
+        <button type="submit">Entrar en TURNIO</button>
+      </form>
+      <p class="note">
+        Esta página no sustituye todavía a la aplicación actual. El acceso, Radar,
+        Vigilante, datos y avisos siguen funcionando en Google Apps Script.
+      </p>
+    </main>
+    <script src="./turnio-config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
