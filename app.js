@@ -79,14 +79,34 @@
     loginShell.hidden = true;
     appShell.hidden = false;
     nav.hidden = false;
-    var nombre = (persona && persona.nombre) || 'usuario';
+    var nombre = (persona && persona.nombre) || 'Usuario';
     var email = (persona && persona.email) || document.getElementById('email').value || '';
     document.getElementById('welcome-name').textContent = 'Hola, ' + nombre + '.';
+    document.getElementById('user-name').textContent = nombre;
     var emailEl = document.getElementById('user-email');
-    emailEl.textContent = email.indexOf('@') > 0 ? email.split('@')[0] : email;
+    emailEl.textContent = email;
     emailEl.title = email;
+    var userBox = emailEl.parentElement;
+    if (userBox) userBox.title = email ? (nombre + ' · ' + email) : nombre;
     document.getElementById('profile-email').textContent = email;
     loadRadar();
+  }
+
+  var vigilanteActivo = false;
+  function setVigilanteUI(on) {
+    vigilanteActivo = !!on;
+    var btn = document.getElementById('btn-vigilante');
+    var txt = document.getElementById('txt-vigilante');
+    if (!btn || !txt) return;
+    btn.classList.toggle('on', vigilanteActivo);
+    btn.setAttribute('aria-pressed', vigilanteActivo ? 'true' : 'false');
+    txt.textContent = vigilanteActivo ? 'VIGILANTE: ON' : 'VIGILANTE: OFF';
+  }
+  function toggleVigilante() {
+    setVigilanteUI(!vigilanteActivo);
+    toast(vigilanteActivo
+      ? 'Vigilante activado (estado local de pruebas)'
+      : 'Vigilante desactivado');
   }
   function typeOf(a) {
     var x = String(a.tipo || '');
@@ -617,6 +637,7 @@
     toggleMonitorMode(false);
   });
   document.getElementById('btn-mapa').addEventListener('click', function () { go('mapa'); });
+  document.getElementById('btn-vigilante').addEventListener('click', toggleVigilante);
   document.getElementById('btn-toggle-vias').addEventListener('click', toggleOrmDropdown);
   document.querySelectorAll('.orm-option').forEach(function (el) {
     el.addEventListener('click', function (e) {

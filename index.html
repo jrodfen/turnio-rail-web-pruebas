@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=header1">
+    <link rel="stylesheet" href="./styles.css?v=header2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -16,9 +16,14 @@
     <main id="app-shell" class="app" hidden>
       <header class="top">
         <div class="top-bar">
-          <div id="user-email" class="top-email" title=""></div>
-          <h1>TURNIO RAIL</h1>
-          <div class="vigilante" title="Estado del Vigilante"><i></i><span>OFF</span></div>
+          <div class="top-brand">
+            <h1>TURNIO RAIL</h1>
+            <span class="top-env">Entorno de pruebas</span>
+          </div>
+          <div class="top-user" title="">
+            <span id="user-name" class="top-user-name">Usuario</span>
+            <span id="user-email" class="top-user-email"></span>
+          </div>
         </div>
       </header>
       <section id="screen-home" class="screen active">
@@ -33,7 +38,13 @@
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
-        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <div class="radar-top-row">
+          <button class="back" type="button" data-go="home">&#11013; Volver</button>
+          <button type="button" id="btn-vigilante" class="vigilante-btn" aria-pressed="false" title="Activar o desactivar el Vigilante">
+            <i id="led-vigilante" aria-hidden="true"></i>
+            <span id="txt-vigilante">VIGILANTE: OFF</span>
+          </button>
+        </div>
         <div class="radar-card">
           <div class="radar-head">
             <h3>&#128225; Radar</h3>
@@ -112,6 +123,6 @@
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=header1"></script>
+    <script src="./app.js?v=header2"></script>
   </body>
 </html>
