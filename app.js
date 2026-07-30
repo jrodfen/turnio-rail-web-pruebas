@@ -14,6 +14,8 @@
   var mapReady = false;
   var mapMarkers = [];
   var mapIndex = {};
+  var trenSeleccionadoMapa = '';
+  var evitarFitBounds = false;
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -305,9 +307,42 @@
     mapReady = true;
     pintarMarcadores();
   }
+  function alertaPorNumero(num) {
+    var n = String(num || '').replace(/\D/g, '').replace(/^0+/, '');
+    return radar.filter(function (a) {
+      return String(a.codTren || '').replace(/^0+/, '') === n;
+    })[0] || null;
+  }
+  function mostrarTarjetaTren(num) {
+    var n = String(num || '').replace(/\D/g, '').replace(/^0+/, '');
+    var a = alertaPorNumero(n);
+    var card = document.getElementById('mapa-tren-card');
+    if (!card) return;
+    if (!a) {
+      card.hidden = true;
+      trenSeleccionadoMapa = '';
+      return;
+    }
+    trenSeleccionadoMapa = n;
+    document.getElementById('mapa-tren-titulo').textContent = plainText(a.linea || ('Circ. ' + n));
+    document.getElementById('mapa-tren-tipo').textContent =
+      plainText(a.tipo || 'AVISO') +
+      (Number(a.retrasoNum) > 0 ? ' · +' + a.retrasoNum + ' min' : ' · Puntual');
+    document.getElementById('mapa-tren-msg').textContent = plainText(a.mensaje || '');
+    var btnMarcha = document.getElementById('mapa-tren-marcha');
+    btnMarcha.setAttribute('data-marcha-tren', String(a.codTren || n));
+    btnMarcha.setAttribute('data-marcha-trip', String(a.tripId || ''));
+    card.hidden = false;
+  }
+  function ocultarTarjetaTren() {
+    trenSeleccionadoMapa = '';
+    var card = document.getElementById('mapa-tren-card');
+    if (card) card.hidden = true;
+  }
   function pintarMarcadores() {
     var map = window._mapaLeaflet;
     if (!map) return;
+    var seleccionado = trenSeleccionadoMapa;
     mapMarkers.forEach(function (m) { map.removeLayer(m); });
     mapMarkers = [];
     mapIndex = {};
@@ -361,27 +396,15 @@
         iconAnchor: [15, 15],
         popupAnchor: [0, -18]
       });
-      var linea = plainText(a.linea || a.codTren || '–');
-      var msg = plainText(a.mensaje || '');
-      var retrasoHtml = Number(a.retrasoNum) > 0
-        ? '<span style="color:#ef4444;font-weight:900;">+' + a.retrasoNum + ' min</span>'
-        : '<span style="color:#22c55e;font-weight:900;">Puntual</span>';
-      var popup =
-        '<div style="min-width:200px;">' +
-        '<div class="mapa-popup-linea">' + esc(linea) + '</div>' +
-        '<div class="mapa-popup-msg">' + esc(msg) + '</div>' +
-        '<div style="font-size:11px;margin-bottom:8px;">⏱ ' + retrasoHtml + '</div>' +
-        (a.codTren
-          ? '<button class="mapa-popup-btn" type="button" data-marcha-tren="' + esc(String(a.codTren)) +
-            '" data-marcha-trip="' + esc(String(a.tripId || '')) + '">📡 Ver marcha en tiempo real</button>'
-          : '') +
-        '</div>';
+      var key = String(a.codTren || '').replace(/^0+/, '');
       var marker = L.marker([lat, lon], {
         icon: icon,
         _alertaColor: color,
         _codTren: String(a.codTren || '')
-      }).bindPopup(popup, { maxWidth: 280 });
-      var key = String(a.codTren || '').replace(/^0+/, '');
+      });
+      marker.on('click', function () {
+        if (key) mostrarTarjetaTren(key);
+      });
       if (key) mapIndex[key] = marker;
       if (cluster) cluster.addLayer(marker);
       else { marker.addTo(map); mapMarkers.push(marker); }
@@ -391,8 +414,18 @@
       map.addLayer(cluster);
       mapMarkers.push(cluster);
     }
-    if (bounds.length > 1) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
-    else if (bounds.length === 1) map.setView(bounds[0], 9);
+    if (!evitarFitBounds && !seleccionado) {
+      if (bounds.length > 1) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+      else if (bounds.length === 1) map.setView(bounds[0], 9);
+    }
+    if (seleccionado && mapIndex[seleccionado]) {
+      mostrarTarjetaTren(seleccionado);
+      setTimeout(function () {
+        var m = mapIndex[seleccionado];
+        if (!m || !window._mapaLeaflet) return;
+        window._mapaLeaflet.setView(m.getLatLng(), Math.max(window._mapaLeaflet.getZoom(), 12));
+      }, 80);
+    }
   }
   function openMapa() {
     if (!radar.length) {
@@ -420,8 +453,9 @@
       return false;
     }
     var map = window._mapaLeaflet;
+    evitarFitBounds = true;
+    mostrarTarjetaTren(num);
     map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12));
-    marker.openPopup();
     msg.textContent = 'Tren ' + num + ' ubicado.';
     msg.className = '';
     return true;
@@ -429,13 +463,13 @@
   function abrirMapaTren(tren) {
     var num = String(tren || '').replace(/\D/g, '').replace(/^0+/, '');
     if (!num) { toast('No hay número de tren.'); return; }
-    var alerta = radar.filter(function (a) {
-      return String(a.codTren || '').replace(/^0+/, '') === num;
-    })[0];
+    var alerta = alertaPorNumero(num);
     if (!alerta || !(alerta.lat && alerta.lon && Math.abs(alerta.lat) > 0.1)) {
       toast('Este tren no tiene posición GPS ahora mismo.');
       return;
     }
+    trenSeleccionadoMapa = num;
+    evitarFitBounds = true;
     go('mapa');
     var intentos = 0;
     (function esperarMapa() {
@@ -444,7 +478,7 @@
         buscarTrenEnMapa(num);
         return;
       }
-      if (intentos < 25) setTimeout(esperarMapa, 120);
+      if (intentos < 30) setTimeout(esperarMapa, 120);
       else toast('No se pudo ubicar el tren en el mapa.');
     })();
   }
@@ -563,6 +597,12 @@
     }
     var card = e.target.closest('.alert');
     if (card) abrirMarcha(card);
+  });
+  document.getElementById('mapa-tren-cerrar').addEventListener('click', ocultarTarjetaTren);
+  document.getElementById('mapa-tren-marcha').addEventListener('click', function () {
+    var tren = this.getAttribute('data-marcha-tren') || '';
+    var trip = this.getAttribute('data-marcha-trip') || '';
+    marchaDesdePopup(tren, trip);
   });
   document.getElementById('mapa-container').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-marcha-tren]');

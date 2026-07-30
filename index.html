@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=mapa3">
+    <link rel="stylesheet" href="./styles.css?v=mapa4">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -76,6 +76,17 @@
             </div>
             <div id="mapa-busqueda-msg" role="status" aria-live="polite"></div>
           </div>
+          <aside id="mapa-tren-card" class="mapa-tren-card" hidden>
+            <div class="mapa-tren-card-head">
+              <strong id="mapa-tren-titulo">Tren</strong>
+              <button type="button" id="mapa-tren-cerrar" class="mapa-tren-cerrar" title="Cerrar">&#10005;</button>
+            </div>
+            <div id="mapa-tren-tipo" class="mapa-tren-tipo"></div>
+            <p id="mapa-tren-msg" class="mapa-tren-msg"></p>
+            <div class="mapa-tren-actions">
+              <button type="button" id="mapa-tren-marcha" class="mapa-popup-btn">&#128225; Ver marcha</button>
+            </div>
+          </aside>
           <div id="mapa-container"></div>
           <div id="mapa-no-datos" class="mapa-empty" hidden>
             <div class="mapa-empty-ico">&#128506;</div>
@@ -97,6 +108,6 @@
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=mapa3"></script>
+    <script src="./app.js?v=mapa4"></script>
   </body>
 </html>
