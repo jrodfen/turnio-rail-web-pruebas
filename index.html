@@ -3,31 +3,51 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#1877f2">
-    <title>TURNIO RAIL · Pruebas externas</title>
+    <meta name="theme-color" content="#1769e0">
+    <title>TURNIO RAIL Â· Pruebas externas</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <main class="panel">
-      <p class="eyebrow">ENTORNO DE PRUEBAS</p>
-      <h1>TURNIO RAIL</h1>
-      <p class="lead">Acceso externo en preparación.</p>
-      <section id="status" class="status pending" aria-live="polite">
-        Comprobando la conexión segura con TURNIO…
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">ENTORNO DE PRUEBAS</p>
+        <h1>TURNIO RAIL</h1>
+        <p id="user-name" class="lead">Acceso externo seguro.</p>
+      </header>
+
+      <section id="status" class="status pending" aria-live="polite">Comprobando conexiÃ³n seguraâ€¦</section>
+
+      <section id="login-view" class="card" hidden>
+        <h2>Acceder a TURNIO</h2>
+        <form id="login-form">
+          <label for="email">Correo autorizado</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+          <label for="pin">PIN temporal de pruebas</label>
+          <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
+          <button type="submit">Entrar en TURNIO</button>
+        </form>
       </section>
-      <form id="login-form" hidden>
-        <label for="email">Correo autorizado</label>
-        <input id="email" name="email" type="email" autocomplete="email" required>
-        <label for="pin">PIN temporal de pruebas</label>
-        <input id="pin" name="pin" type="password" autocomplete="off" required>
-        <button type="submit">Entrar en TURNIO</button>
-      </form>
-      <p class="note">
-        Esta página no sustituye todavía a la aplicación actual. El acceso, Radar,
-        Vigilante, datos y avisos siguen funcionando en Google Apps Script.
-      </p>
+
+      <section id="radar-view" hidden>
+        <div class="toolbar card">
+          <div>
+            <h2>Radar</h2>
+            <p id="radar-meta" class="muted">Alertas de la red en tiempo real.</p>
+          </div>
+          <button id="refresh" class="secondary" type="button">Actualizar</button>
+        </div>
+        <div class="filters" role="group" aria-label="Filtro de trenes">
+          <button class="filter active" data-mode="TODOS" type="button">Todos</button>
+          <button class="filter" data-mode="LD" type="button">MD / LD</button>
+          <button class="filter" data-mode="CERCANIAS" type="button">CercanÃ­as</button>
+        </div>
+        <div id="radar-list" class="radar-list" aria-live="polite"></div>
+      </section>
+
+      <p class="note">Pruebas externas: Radar se consulta en GAS mediante Cloudflare. La aplicaciÃ³n de producciÃ³n sigue independiente.</p>
     </main>
     <script src="./turnio-config.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
+
