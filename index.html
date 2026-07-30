@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=aviso2">
+    <link rel="stylesheet" href="./styles.css?v=act1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -112,7 +112,25 @@
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
-      <section id="screen-ajustes" class="screen coming-screen"><h2>Ajustes</h2><p>La configuraci&oacute;n, sincronizaci&oacute;n y cuenta llegar&aacute;n en el siguiente bloque.</p><button class="btn secondary" type="button" id="logout">Cerrar sesi&oacute;n de pruebas</button></section>
+      <section id="screen-ajustes" class="screen">
+        <h2 class="ajustes-title">Ajustes</h2>
+        <p class="ajustes-lead">Herramientas del entorno externo de pruebas. La sesi&oacute;n se mantiene al actualizar el c&oacute;digo.</p>
+        <button type="button" class="ajustes-card ajustes-card--update" id="btn-obtener-actualizacion">
+          <span class="ajustes-card-ico" aria-hidden="true">&#128640;</span>
+          <span class="ajustes-card-body">
+            <b>Obtener nueva actualizaci&oacute;n</b>
+            <span>Descarga el c&oacute;digo m&aacute;s reciente y recarga la app. Ideal en m&oacute;vil cuando TURNIO est&aacute; anclado al inicio y la cach&eacute; no se limpia sola.</span>
+            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas</span>
+          </span>
+        </button>
+        <button type="button" class="ajustes-card" id="logout">
+          <span class="ajustes-card-ico" aria-hidden="true">&#128682;</span>
+          <span class="ajustes-card-body">
+            <b class="ajustes-danger">Cerrar sesi&oacute;n</b>
+            <span>Salir en este dispositivo</span>
+          </span>
+        </button>
+      </section>
       <section id="screen-perfil" class="screen coming-screen"><h2>Cuenta</h2><p id="profile-email"></p><p>Tu sesi&oacute;n externa est&aacute; protegida y es independiente de la aplicaci&oacute;n en GAS.</p></section>
     </main>
     <nav id="bottom-nav" class="fixed-nav" hidden>
@@ -194,6 +212,6 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=aviso2"></script>
+    <script src="./app.js?v=act1"></script>
   </body>
 </html>

@@ -1166,6 +1166,22 @@
     loginForm.hidden = false;
     toast('Sesión de pruebas cerrada.');
   });
+  document.getElementById('btn-obtener-actualizacion').addEventListener('click', function () {
+    if (!confirm('¿Descargar la última versión y reiniciar la app?\n\nTu sesión se mantiene; no hace falta volver a entrar.')) return;
+    toast('Obteniendo nueva versión…', 'success');
+    document.body.style.opacity = '0.55';
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.set('_v', String(Date.now()));
+      // Evita que un ?t= viejo confunda la caché del acceso directo.
+      url.searchParams.delete('t');
+      setTimeout(function () {
+        window.location.replace(url.toString());
+      }, 350);
+    } catch (err) {
+      window.location.reload(true);
+    }
+  });
   document.getElementById('btn-monitor').addEventListener('click', function () {
     toggleMonitorMode(true);
   });
