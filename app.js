@@ -1,67 +1,19 @@
-(async function () {
-  const status = document.getElementById('status');
-  const loginForm = document.getElementById('login-form');
+(function () {
+  const status = document.getElementById('status'), loginView = document.getElementById('login-view');
+  const radarView = document.getElementById('radar-view'), list = document.getElementById('radar-list');
+  const meta = document.getElementById('radar-meta'), name = document.getElementById('user-name');
   const api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  const clientStorageKey = 'turnio_external_client_id';
-  const sessionStorageKey = 'turnio_external_session_token';
-
-  function obtenerClientId() {
-    let clientId = localStorage.getItem(clientStorageKey) || '';
-    if (!/^[A-Za-z0-9_-]{24,128}$/.test(clientId)) {
-      const bytes = new Uint8Array(32);
-      crypto.getRandomValues(bytes);
-      clientId = Array.from(bytes, function (byte) { return byte.toString(16).padStart(2, '0'); }).join('');
-      localStorage.setItem(clientStorageKey, clientId);
-    }
-    return clientId;
-  }
-
-  if (!api) {
-    status.textContent = 'Puente seguro pendiente de activar.';
-    return;
-  }
-
-  try {
-    const response = await fetch(api + '/api/health', { cache: 'no-store' });
-    const data = await response.json();
-    if (!response.ok || !data.ok || !data.configured) throw new Error('not-ready');
-    status.className = 'status ready';
-    status.textContent = 'Conexión de pruebas preparada. Introduce tu correo autorizado y el PIN temporal.';
-    loginForm.hidden = false;
-  } catch (error) {
-    status.className = 'status error';
-    status.textContent = 'No se ha podido conectar con el entorno externo de pruebas.';
-  }
-
-  async function call(action, extra) {
-    const response = await fetch(api + '/api/turnio', {
-      method: 'POST', credentials: 'omit', cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({
-        accion: action,
-        clientId: obtenerClientId(),
-        sessionToken: localStorage.getItem(sessionStorageKey) || ''
-      }, extra || {}))
-    });
-    const data = await response.json();
-    if (!response.ok || data.ok === false || data.exito === false) throw new Error(data.error || 'No se pudo completar la operación.');
-    return data;
-  }
-
-  loginForm.addEventListener('submit', async function (event) {
-    event.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const pin = document.getElementById('pin').value;
-    try {
-      const data = await call('iniciar_pruebas', { email: email, pin: pin });
-      if (!data.token) throw new Error('No se ha podido conservar la sesión de acceso.');
-      localStorage.setItem(sessionStorageKey, data.token);
-      loginForm.hidden = true;
-      status.className = 'status ready';
-      status.textContent = 'Sesión de pruebas iniciada para ' + data.persona.nombre + '.';
-    } catch (error) {
-      status.className = 'status error';
-      status.textContent = error.message;
-    }
-  });
+  const clientKey = 'turnio_external_client_id', sessionKey = 'turnio_external_session_token';
+  let mode = 'TODOS';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  function clientId() { let id = localStorage.getItem(clientKey) || ''; if (!/^[A-Za-z0-9_-]{24,128}$/.test(id)) { id = Array.from(crypto.getRandomValues(new Uint8Array(24)), b => b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(clientKey,id); } return id; }
+  async function call(accion, extra) { const r = await fetch(api + '/api/turnio', {method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(Object.assign({accion,clientId:clientId(),sessionToken:localStorage.getItem(sessionKey)||''},extra||{}))}); let data; try { data=await r.json(); } catch (_) { throw new Error('Respuesta no vÃ¡lida del servicio.'); } if(!r.ok||data.ok===false||data.exito===false) throw new Error(data.error||'No se pudo completar la operaciÃ³n.'); return data; }
+  function setStatus(kind, text) { status.className='status '+kind; status.textContent=text; }
+  function showRadar(persona) { loginView.hidden=true; radarView.hidden=false; name.textContent='Hola, '+esc((persona&&persona.nombre)||'usuario')+'.'; loadRadar(); }
+  function render(alertas) { const a=Array.isArray(alertas)?alertas:[]; meta.textContent=a.length+' alertas Â· actualizado '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}); if(!a.length){list.innerHTML='<div class="empty">No hay alertas con el filtro actual.</div>';return;} list.innerHTML=a.map(x=>{const delay=Number(x.retrasoNum||0), severe=delay>=25; return '<article class="alert '+(severe?'grave':'')+'"><div class="alert-head"><span>'+esc(x.tipo|| (severe?'ALERTA GRAVE':'AVISO'))+'</span><span>'+esc(x.hora||'')+'</span></div><div class="train">'+esc(x.linea||('Circ. '+(x.codTren||'')))+'</div><p class="message">'+esc(x.mensaje||('Demora '+(delay>=0?'+':'')+delay+' min.'))+'</p></article>';}).join(''); }
+  async function loadRadar(){ list.innerHTML='<div class="empty">Actualizando Radarâ€¦</div>'; try { const data=await call('radar',{modo:mode,region:'andalucia'}); render(data.alertas); } catch(e){ list.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; if(/sesiÃ³n|caducada/i.test(e.message)){localStorage.removeItem(sessionKey);radarView.hidden=true;loginView.hidden=false;} } }
+  async function init(){ if(!api){setStatus('error','Puente externo pendiente de configurar.');return;} try { const r=await fetch(api+'/api/health',{cache:'no-store'}), d=await r.json(); if(!r.ok||!d.ok||!d.configured) throw 0; setStatus('ready','ConexiÃ³n externa preparada.'); const session=localStorage.getItem(sessionKey); if(session){try{const d=await call('sesion');showRadar(d.persona);return;}catch(_){localStorage.removeItem(sessionKey);}} loginView.hidden=false; }catch(_){setStatus('error','No se ha podido conectar con el entorno externo.');} }
+  document.getElementById('login-form').addEventListener('submit',async e=>{e.preventDefault();setStatus('pending','Validando accesoâ€¦');try{const d=await call('iniciar_pruebas',{email:document.getElementById('email').value.trim(),pin:document.getElementById('pin').value});if(!d.token)throw new Error('No se ha creado la sesiÃ³n.');localStorage.setItem(sessionKey,d.token);setStatus('ready','SesiÃ³n iniciada.');showRadar(d.persona);}catch(err){setStatus('error',err.message);}});
+  document.getElementById('refresh').addEventListener('click',loadRadar); document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));loadRadar();})); init();
 }());
+
