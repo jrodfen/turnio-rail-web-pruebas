@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
     <link rel="stylesheet" href="./styles.css?v=turnio-shell-2">
+    <link rel="stylesheet" href="./turnio-base.css?v=turnio-base-1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -19,10 +20,10 @@
         <div class="welcome-hero"><h2 id="welcome-name">Hola</h2><p>Resumen vivo para empezar el d&iacute;a. Los datos se refrescan desde TURNIO.</p></div>
         <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
         <div class="cards-grid">
-          <button class="home-card purple" data-go="radar"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
-          <button class="home-card green" data-coming="Mallas y horarios"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
-          <button class="home-card orange" data-coming="Mapa en tiempo real"><b>&#128506; Mapa en tiempo real</b><span>Posici&oacute;n y marcha de los trenes</span></button>
-          <button class="home-card blue" data-coming="Pantallas en estaci&oacute;n"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
+          <button class="home-card home-card--purple" data-go="radar"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
+          <button class="home-card home-card--green" data-coming="Mallas y horarios"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
+          <button class="home-card home-card--orange" data-coming="Mapa en tiempo real"><b>&#128506; Mapa en tiempo real</b><span>Posici&oacute;n y marcha de los trenes</span></button>
+          <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
       </section>
       <section id="screen-radar" class="screen">
