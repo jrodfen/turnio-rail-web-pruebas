@@ -123,12 +123,18 @@
       var tren = String(x.codTren || '').replace(/[^0-9]/g, '');
       var trip = String(x.tripId || x.trip_id || '');
       var linea = plainText(x.linea || ('Circ. ' + tren));
+      var tieneGps = x.lat && x.lon && Math.abs(x.lat) > 0.1 && Math.abs(x.lon) > 0.1;
       return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '">' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
         '<div class="train">&#9642; ' + esc(linea) + '</div>' +
         '<p class="message">' + esc(x.mensaje || ('Demora ' + (delay >= 0 ? '+' : '') + delay + ' min.')) + '</p>' +
         '<div class="alert-bottom"><span>&#8618; Pulsa para ver la marcha</span>' +
-        '<button class="generate" type="button">&#128172; Generar Aviso</button></div>' +
+        '<div class="alert-actions">' +
+        (tieneGps
+          ? '<button class="map-btn" type="button" data-map-tren="' + esc(tren) + '">&#128506; Mapa</button>'
+          : '<button class="map-btn disabled" type="button" disabled title="Sin coordenadas GPS">&#128506; Mapa</button>') +
+        '<button class="generate" type="button">&#128172; Generar Aviso</button>' +
+        '</div></div>' +
         '<div class="marcha-panel" hidden></div></article>';
     }).join('');
   }
@@ -397,26 +403,50 @@
     }
     cargarLeaflet(crearMapa);
   }
-  function buscarTrenEnMapa() {
+  function buscarTrenEnMapa(numForzado) {
     var input = document.getElementById('mapa-buscar-input');
     var msg = document.getElementById('mapa-busqueda-msg');
-    var num = String(input.value || '').replace(/\D/g, '').replace(/^0+/, '');
+    var num = String(numForzado || input.value || '').replace(/\D/g, '').replace(/^0+/, '');
+    if (numForzado && input) input.value = num;
     if (!num) {
       msg.textContent = 'Introduce un número de tren.';
       msg.className = 'err';
-      return;
+      return false;
     }
     var marker = mapIndex[num];
     if (!marker) {
       msg.textContent = 'Tren ' + num + ' no está en el mapa con este filtro.';
       msg.className = 'err';
-      return;
+      return false;
     }
     var map = window._mapaLeaflet;
-    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 11));
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12));
     marker.openPopup();
     msg.textContent = 'Tren ' + num + ' ubicado.';
     msg.className = '';
+    return true;
+  }
+  function abrirMapaTren(tren) {
+    var num = String(tren || '').replace(/\D/g, '').replace(/^0+/, '');
+    if (!num) { toast('No hay número de tren.'); return; }
+    var alerta = radar.filter(function (a) {
+      return String(a.codTren || '').replace(/^0+/, '') === num;
+    })[0];
+    if (!alerta || !(alerta.lat && alerta.lon && Math.abs(alerta.lat) > 0.1)) {
+      toast('Este tren no tiene posición GPS ahora mismo.');
+      return;
+    }
+    go('mapa');
+    var intentos = 0;
+    (function esperarMapa() {
+      intentos++;
+      if (window._mapaLeaflet && mapIndex[num]) {
+        buscarTrenEnMapa(num);
+        return;
+      }
+      if (intentos < 25) setTimeout(esperarMapa, 120);
+      else toast('No se pudo ubicar el tren en el mapa.');
+    })();
   }
   async function marchaDesdePopup(tren, trip) {
     go('radar');
@@ -515,6 +545,16 @@
     }
   });
   list.addEventListener('click', function (e) {
+    var mapBtn = e.target.closest('.map-btn');
+    if (mapBtn) {
+      e.stopPropagation();
+      if (mapBtn.disabled) {
+        toast('Este tren no tiene posición GPS ahora mismo.');
+        return;
+      }
+      abrirMapaTren(mapBtn.getAttribute('data-map-tren'));
+      return;
+    }
     var generate = e.target.closest('.generate');
     if (generate) {
       e.stopPropagation();
