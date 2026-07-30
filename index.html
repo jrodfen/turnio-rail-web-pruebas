@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=act1">
+    <link rel="stylesheet" href="./styles.css?v=mallas1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -31,7 +31,7 @@
         <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
         <div class="cards-grid">
           <button class="home-card home-card--purple" data-go="radar" type="button"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
-          <button class="home-card home-card--green" data-coming="Mallas y horarios" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
+          <button class="home-card home-card--green" data-go="mallas" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
           <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Posici&oacute;n y marcha de los trenes</span></button>
           <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
@@ -109,6 +109,20 @@
             <p>Ve primero al Radar, escanea la red y vuelve aqu&iacute;.</p>
             <button type="button" class="btn primary" data-go="radar">Ir al Radar</button>
           </div>
+        </div>
+      </section>
+      <section id="screen-mallas" class="screen">
+        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <div class="mallas-card">
+          <h3>&#128646; Mallas y horarios</h3>
+          <p class="mallas-lead">Localiza un tren por n&uacute;mero: ruta, horarios, d&iacute;as de circulaci&oacute;n y marcha en vivo si est&aacute; circulando.</p>
+          <div class="mallas-search">
+            <input id="mallas-input" type="search" inputmode="numeric" enterkeyhint="search" placeholder="N&uacute;mero de tren (ej. 13041)" autocomplete="off" aria-label="N&uacute;mero de tren">
+            <button type="button" class="btn primary" id="btn-mallas-buscar">Buscar</button>
+          </div>
+          <div id="mallas-status" class="mallas-status" role="status" aria-live="polite">Introduce un n&uacute;mero de tren para empezar.</div>
+          <div id="mallas-dias" class="mallas-dias" hidden></div>
+          <div id="mallas-resultados" class="mallas-resultados"></div>
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
@@ -212,6 +226,6 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=act1"></script>
+    <script src="./app.js?v=mallas1"></script>
   </body>
 </html>

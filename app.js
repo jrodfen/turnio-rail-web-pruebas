@@ -108,6 +108,11 @@
     });
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'mapa') openMapa();
+    if (screen === 'mallas') {
+      asegurarRutasMallas().catch(function (err) {
+        setMallasStatus(String(err.message || err), true);
+      });
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function showApp(persona) {
@@ -127,6 +132,232 @@
     document.getElementById('profile-email').textContent = email;
     loadRadar();
     arrancarVigilanteDesdeCuadrante();
+  }
+
+  // ========== MALLAS Y HORARIOS ==========
+  var URL_RUTAS_OPERATIVA =
+    'https://raw.githubusercontent.com/jrodfen/turnio-mallas-motor/phase2-mallas-pruebas/rutas_operativa.json';
+  var MALLAS_CACHE = 'turnio-mallas-rutas-v1';
+  var rutasOperativa = null;
+  var rutasCargando = null;
+
+  function setMallasStatus(text, isError) {
+    var el = document.getElementById('mallas-status');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--red)' : 'var(--muted)';
+  }
+
+  function hoyYyyymmddMadrid() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date()).replace(/-/g, '');
+    } catch (e) {
+      var d = new Date();
+      return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+    }
+  }
+
+  function formatHoraMalla(h) {
+    var m = String(h || '').match(/(\d{1,2}):(\d{2})/);
+    if (!m) return h || '--:--';
+    return String(parseInt(m[1], 10)).padStart(2, '0') + ':' + m[2];
+  }
+
+  function limpiarNumTrenMalla(v) {
+    return String(v || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  }
+
+  async function asegurarRutasMallas() {
+    if (rutasOperativa) {
+      setMallasStatus('Mallas listas · ' + (rutasOperativa.fecha || 'operativa cargada'));
+      return rutasOperativa;
+    }
+    if (rutasCargando) return rutasCargando;
+    rutasCargando = (async function () {
+      setMallasStatus('Preparando mallas…');
+      var data = null;
+      try {
+        if (window.caches) {
+          var cache = await caches.open(MALLAS_CACHE);
+          var cached = await cache.match(URL_RUTAS_OPERATIVA);
+          if (cached) {
+            setMallasStatus('Cargando mallas desde caché del dispositivo…');
+            data = await cached.json();
+          }
+        }
+      } catch (eCache) {}
+      if (!data) {
+        setMallasStatus('Descargando índice de mallas (primera vez puede tardar)…');
+        var res = await fetch(URL_RUTAS_OPERATIVA + '?_=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('No se pudo descargar el índice de mallas.');
+        data = await res.json();
+        try {
+          if (window.caches) {
+            var c2 = await caches.open(MALLAS_CACHE);
+            await c2.put(URL_RUTAS_OPERATIVA, new Response(JSON.stringify(data), {
+              headers: { 'Content-Type': 'application/json' }
+            }));
+          }
+        } catch (ePut) {}
+      }
+      if (!data || !data.r) throw new Error('Índice de mallas inválido.');
+      rutasOperativa = data;
+      var n = Object.keys(data.r).length;
+      setMallasStatus('Mallas listas · ' + n.toLocaleString('es-ES') + ' trenes · ref. ' + (data.fecha || '—'));
+      return data;
+    })();
+    try {
+      return await rutasCargando;
+    } finally {
+      rutasCargando = null;
+    }
+  }
+
+  function obtenerServiciosTren(num) {
+    var key = limpiarNumTrenMalla(num);
+    if (!key || !rutasOperativa || !rutasOperativa.r) return [];
+    var list = rutasOperativa.r[key] || rutasOperativa.r[String(num)] || [];
+    return Array.isArray(list) ? list.slice() : [];
+  }
+
+  function serviciosParaHoy(servicios) {
+    var hoy = hoyYyyymmddMadrid();
+    var deHoy = servicios.filter(function (s) {
+      return Array.isArray(s.f) && s.f.indexOf(hoy) >= 0;
+    });
+    return deHoy.length ? deHoy : servicios.slice(0, 12);
+  }
+
+  function pintarDiasCirculacion(num, servicios) {
+    var panel = document.getElementById('mallas-dias');
+    if (!panel) return;
+    if (!servicios.length) { panel.hidden = true; return; }
+    var fechas = {};
+    servicios.forEach(function (s) {
+      (s.f || []).forEach(function (f) { fechas[f] = true; });
+    });
+    var nombres = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    var base = new Date();
+    base.setHours(12, 0, 0, 0);
+    var filas = [];
+    for (var i = 0; i < 7; i++) {
+      var fecha = new Date(base.getTime());
+      fecha.setDate(base.getDate() + i);
+      var y = fecha.getFullYear();
+      var m = String(fecha.getMonth() + 1).padStart(2, '0');
+      var d = String(fecha.getDate()).padStart(2, '0');
+      var ymd = '' + y + m + d;
+      var circula = !!fechas[ymd];
+      filas.push(
+        '<div class="mallas-dia ' + (circula ? 'si' : 'no') + '">' +
+        '<span>' + (circula ? '✅' : '❌') + ' ' + nombres[fecha.getDay()] + ' ' + d + '/' + m + '</span>' +
+        '<strong>' + (circula ? 'Circula' : 'No circula') + '</strong></div>'
+      );
+    }
+    panel.innerHTML = '<strong>🚆 Tren ' + esc(limpiarNumTrenMalla(num)) + ' · próximos 7 días</strong>' + filas.join('');
+    panel.hidden = false;
+  }
+
+  function renderResultadosMalla(num, servicios) {
+    var box = document.getElementById('mallas-resultados');
+    var lista = serviciosParaHoy(servicios).sort(function (a, b) {
+      return String(a.so || '').localeCompare(String(b.so || ''));
+    });
+    pintarDiasCirculacion(num, servicios);
+    if (!lista.length) {
+      box.innerHTML = '<div class="empty">No hay servicios para este tren en la malla actual.</div>';
+      return;
+    }
+    var hoy = hoyYyyymmddMadrid();
+    var soloHoy = lista.filter(function (s) { return (s.f || []).indexOf(hoy) >= 0; });
+    setMallasStatus(
+      (soloHoy.length ? soloHoy.length + ' servicio' + (soloHoy.length === 1 ? '' : 's') + ' hoy' : lista.length + ' servicio(s) en malla') +
+      ' · tren ' + limpiarNumTrenMalla(num)
+    );
+    box.innerHTML = lista.map(function (s, idx) {
+      var esHoy = (s.f || []).indexOf(hoy) >= 0;
+      return '<article class="malla-item" data-malla-idx="' + idx + '" data-trip="' + esc(s.t || '') + '" data-tren="' + esc(limpiarNumTrenMalla(num)) + '">' +
+        '<div class="malla-item-head">' +
+        '<div class="malla-hora">' + esc(formatHoraMalla(s.so)) + '</div>' +
+        '<div class="malla-meta">' +
+        '<div class="malla-prod">' + esc(s.p || s.a || 'Tren') +
+        '<span class="malla-badge">Nº ' + esc(limpiarNumTrenMalla(num)) + '</span>' +
+        (esHoy ? '' : '<span class="malla-badge">otros días</span>') +
+        '</div>' +
+        '<div class="malla-ruta">📍 ' + esc(s.o || 'Origen') + '<br>➔ ' + esc(s.d || 'Destino') +
+        ' · llegada ' + esc(formatHoraMalla(s.sd)) +
+        (s.l ? ' · ' + esc(s.l) : '') + '</div>' +
+        '<div class="malla-hint">Toca para ver itinerario / marcha en vivo</div>' +
+        '</div></div>' +
+        '<div class="malla-item-body">' +
+        '<div class="malla-detail"><span>Origen <b>' + esc(s.o || '—') + '</b></span><span>' + esc(formatHoraMalla(s.so)) + 'h</span></div>' +
+        '<div class="malla-detail"><span>Destino <b>' + esc(s.d || '—') + '</b></span><span>' + esc(formatHoraMalla(s.sd)) + 'h</span></div>' +
+        '<div class="marcha-panel">Consultando itinerario…</div>' +
+        '</div></article>';
+    }).join('');
+  }
+
+  async function buscarMallaTren() {
+    var input = document.getElementById('mallas-input');
+    var num = limpiarNumTrenMalla(input && input.value);
+    var box = document.getElementById('mallas-resultados');
+    if (!num) {
+      toast('Introduce un número de tren', 'error');
+      return;
+    }
+    box.innerHTML = '<div class="empty">Buscando…</div>';
+    document.getElementById('mallas-dias').hidden = true;
+    try {
+      await asegurarRutasMallas();
+      var servicios = obtenerServiciosTren(num);
+      if (!servicios.length) {
+        setMallasStatus('Tren ' + num + ' no encontrado en la malla.', true);
+        box.innerHTML = '<div class="empty">❌ Tren no encontrado en la malla operativa.</div>';
+        return;
+      }
+      renderResultadosMalla(num, servicios);
+    } catch (err) {
+      setMallasStatus(String(err.message || err), true);
+      box.innerHTML = '<div class="empty error-text">' + esc(err.message || err) + '</div>';
+    }
+  }
+
+  async function abrirDetalleMalla(item) {
+    var abierto = item.classList.contains('open');
+    document.querySelectorAll('.malla-item.open').forEach(function (el) {
+      el.classList.remove('open');
+    });
+    if (abierto) return;
+    item.classList.add('open');
+    var panel = item.querySelector('.marcha-panel');
+    if (!panel) return;
+    var tren = item.getAttribute('data-tren') || '';
+    var trip = item.getAttribute('data-trip') || '';
+    panel.innerHTML = '<div class="marcha-empty">Consultando marcha / itinerario en vivo…</div>';
+    try {
+      var data = await call('marcha', { codTren: tren, tripId: trip });
+      var m = data.marcha;
+      if (m && m.ok) {
+        item.classList.add('live');
+        if (!item.querySelector('.malla-chip')) {
+          var meta = item.querySelector('.malla-meta');
+          if (meta) {
+            var chip = document.createElement('div');
+            chip.className = 'malla-chip';
+            chip.textContent = '🟢 CIRCULANDO';
+            meta.appendChild(chip);
+          }
+        }
+        renderMarcha(panel, m);
+      } else {
+        panel.innerHTML =
+          '<div class="marcha-empty">Sin posición en vivo ahora. Se muestra la ficha de malla (origen/destino/horas). El itinerario completo con paradas aparece cuando el tren circula en GTFS-RT.</div>';
+      }
+    } catch (err) {
+      panel.innerHTML = '<div class="marcha-empty error-text">' + esc(err.message || err) + '</div>';
+    }
   }
 
   var vigilanteActivo = false;
@@ -1181,6 +1412,16 @@
     } catch (err) {
       window.location.reload(true);
     }
+  });
+  document.getElementById('btn-mallas-buscar').addEventListener('click', buscarMallaTren);
+  document.getElementById('mallas-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); buscarMallaTren(); }
+  });
+  document.getElementById('mallas-resultados').addEventListener('click', function (e) {
+    var head = e.target.closest('.malla-item-head');
+    if (!head) return;
+    var item = head.closest('.malla-item');
+    if (item) abrirDetalleMalla(item);
   });
   document.getElementById('btn-monitor').addEventListener('click', function () {
     toggleMonitorMode(true);
