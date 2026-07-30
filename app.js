@@ -108,6 +108,18 @@
     });
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'mapa') openMapa();
+    if (screen === 'mallas') {
+      if (window.TurnioMallasGtfs) {
+        window.TurnioMallasGtfs.asegurarOperativaGtfs().catch(function (err) {
+          var st = document.getElementById('gtfs-status');
+          if (st) {
+            st.textContent = String(err.message || err);
+            st.style.color = 'var(--red)';
+          }
+          toast(String(err.message || err), 'error');
+        });
+      }
+    }
     if (screen === 'mallas-localizador') {
       asegurarRutasMallas().catch(function (err) {
         setMallasStatus(String(err.message || err), true);
@@ -1423,6 +1435,39 @@
     var item = head.closest('.malla-item');
     if (item) abrirDetalleMalla(item);
   });
+
+  // Buscador GTFS (cuadro oficial)
+  var gtfs = window.TurnioMallasGtfs;
+  if (gtfs) {
+    var inpEst = document.getElementById('inputEstacionBuscar');
+    if (inpEst) {
+      inpEst.addEventListener('focus', gtfs.mostrarListaEstaciones);
+      inpEst.addEventListener('input', gtfs.filtrarListaEstaciones);
+    }
+    document.getElementById('listaEstacionesCustom').addEventListener('click', function (e) {
+      var opt = e.target.closest('[data-estacion]');
+      if (!opt) return;
+      gtfs.seleccionarEstacion(opt.getAttribute('data-estacion'));
+    });
+    document.getElementById('btn-generar-cuadro').addEventListener('click', function () {
+      gtfs.mostrarHorarios();
+    });
+    document.getElementById('filtroFechaServicio').addEventListener('change', function () {
+      if ((document.getElementById('inputEstacionBuscar') || {}).value) gtfs.mostrarHorarios();
+    });
+    document.getElementById('btn-dias-circulacion').addEventListener('click', gtfs.mostrarDiasCirculacionCuadro);
+    document.getElementById('resultadosGTFS').addEventListener('click', function (e) {
+      var card = e.target.closest('.flip-card');
+      if (!card) return;
+      gtfs.flipCard(card);
+    });
+    document.addEventListener('click', function (e) {
+      var lista = document.getElementById('listaEstacionesCustom');
+      var wrap = document.querySelector('.searchable-select-container');
+      if (!lista || !wrap) return;
+      if (!wrap.contains(e.target)) lista.hidden = true;
+    });
+  }
   document.getElementById('btn-monitor').addEventListener('click', function () {
     toggleMonitorMode(true);
   });
