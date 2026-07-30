@@ -6,6 +6,9 @@
 [hidden] { display: none !important; }
 
 .mini-btn{background:transparent;border:1px solid var(--line);border-radius:8px;padding:4px 6px;cursor:pointer;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,.05);margin-left:4px}
+.radar-actions{display:flex;gap:6px;flex-shrink:0}
+.action-btn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:800;color:var(--primary-dark);box-shadow:0 2px 4px rgba(0,0,0,.06);white-space:nowrap}
+.action-btn:active{transform:scale(.97)}
 .marcha-route{font-size:12px;font-weight:700;margin:6px 0 4px;color:var(--text);line-height:1.35}
 
 /* Modo monitor de pared */
@@ -19,7 +22,7 @@ body.monitor-mode #radar-filters,
 body.monitor-mode #radar-manual,
 body.monitor-mode #radar-search-box,
 body.monitor-mode .red-chip,
-body.monitor-mode .radar-head .mini-btn{display:none!important}
+body.monitor-mode .radar-actions{display:none!important}
 body.monitor-mode{background:#050505!important}
 body.monitor-mode .app{padding-bottom:0!important;max-width:100%!important}
 body.monitor-mode #screen-radar{padding:15px;max-width:100%;height:100vh;overflow-y:auto}

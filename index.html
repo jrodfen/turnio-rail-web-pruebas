@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=turnio-mapa-1">
+    <link rel="stylesheet" href="./styles.css?v=mapa2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -30,10 +30,11 @@
         <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
         <div class="radar-card">
           <div class="radar-head">
-            <h3>&#128225; Radar
-              <button type="button" id="btn-monitor" class="mini-btn" title="Modo Monitor de Pared">&#128250;</button>
-              <button type="button" id="btn-mapa" class="mini-btn" title="Ver en mapa">&#128506;</button>
-            </h3>
+            <h3>&#128225; Radar</h3>
+            <div class="radar-actions">
+              <button type="button" id="btn-monitor" class="action-btn" title="Modo Monitor de Pared">&#128250; Monitor</button>
+              <button type="button" id="btn-mapa" class="action-btn" title="Ver en mapa">&#128506; Mapa</button>
+            </div>
             <select id="region" aria-label="Regi&oacute;n del Radar">
               <option value="andalucia">&#128205; Andaluc&iacute;a</option>
               <option value="madrid">&#128205; Madrid</option>
@@ -96,6 +97,6 @@
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=turnio-mapa-1"></script>
+    <script src="./app.js?v=mapa2"></script>
   </body>
 </html>
