@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=vig1">
+    <link rel="stylesheet" href="./styles.css?v=aviso1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -67,7 +67,7 @@
             <button class="filter" data-mode="LD" type="button">&#128644; MD/LD</button>
             <button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button>
           </div>
-          <button type="button" class="manual" id="radar-manual" data-coming="Redactar aviso manual">&#128221; Redactar Aviso Manual (Tren no detectado)</button>
+          <button type="button" class="manual" id="radar-manual">&#128221; Redactar Aviso Manual (Tren no detectado)</button>
           <label class="search" id="radar-search-box"><span>&#128269;</span><input id="search" type="search" placeholder="Buscar tren, estaci&oacute;n, retraso..." autocomplete="off"></label>
           <div id="radar-meta" class="last-update">&Uacute;ltima carga: --:--:--</div>
           <div id="radar-list" class="radar-list" aria-live="polite"></div>
@@ -146,7 +146,45 @@
         </div>
       </div>
     </div>
+    <div id="modal-aviso-cg" class="vig-modal" hidden>
+      <div class="vig-modal-card aviso-modal-card">
+        <div class="aviso-modal-head">
+          <h2>&#128172; Generar aviso</h2>
+          <button type="button" class="aviso-close" id="btn-cerrar-aviso-cg" aria-label="Cerrar">&times;</button>
+        </div>
+        <details class="aviso-firma-box">
+          <summary>Firma del aviso (tu unidad)</summary>
+          <p>Esta frase encabeza cada mensaje. Debe dejar claro qui&eacute;n emite el parte.</p>
+          <input id="cg-prefijo" type="text" maxlength="160" placeholder="Ej: CG SP Andaluc&iacute;a">
+          <button type="button" class="btn secondary" id="btn-guardar-firma">Guardar firma</button>
+        </details>
+        <label class="aviso-label" for="cg-buscador">Buscar en COP&Eacute;RNICO</label>
+        <input id="cg-buscador" type="search" placeholder="Ej: ASFA, material, clima…" autocomplete="off">
+        <div id="cg-resultados" class="aviso-resultados" hidden></div>
+        <label class="aviso-label" for="cg-mensaje">Mensaje</label>
+        <textarea id="cg-mensaje" rows="7" placeholder="El aviso aparecer&aacute; aqu&iacute;…"></textarea>
+        <div class="vig-modal-actions">
+          <button type="button" class="btn secondary" id="btn-cancelar-aviso">Cancelar</button>
+          <button type="button" class="btn primary" id="btn-copiar-aviso">&#128203; Copiar y cerrar</button>
+        </div>
+      </div>
+    </div>
+    <div id="modal-aviso-manual" class="vig-modal" hidden>
+      <div class="vig-modal-card aviso-modal-card">
+        <div class="aviso-modal-head">
+          <h2>&#128221; Aviso manual</h2>
+          <button type="button" class="aviso-close" id="btn-cerrar-aviso-manual" aria-label="Cerrar">&times;</button>
+        </div>
+        <p class="aviso-help">Introduce el n&uacute;mero de un tren que no aparece en el radar.</p>
+        <label class="aviso-label" for="input-tren-manual">N&uacute;mero de tren</label>
+        <input id="input-tren-manual" type="search" inputmode="numeric" placeholder="Ej: 13041" autocomplete="off">
+        <div class="vig-modal-actions">
+          <button type="button" class="btn secondary" id="btn-cancelar-manual">Cancelar</button>
+          <button type="button" class="btn primary" id="btn-buscar-tren-manual">Buscar</button>
+        </div>
+      </div>
+    </div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=vig2"></script>
+    <script src="./app.js?v=aviso1"></script>
   </body>
 </html>

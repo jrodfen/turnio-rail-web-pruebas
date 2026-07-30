@@ -11,6 +11,10 @@
   var sessionKey = 'turnio_external_session_token';
   var mode = 'TODOS';
   var radar = [];
+  var sessionEmail = '';
+  var cacheClavero = [];
+  var cargandoClavero = false;
+  var PREFIJO_AVISO_DEFAULT = 'CG SP Andalucía';
   var mapReady = false;
   var mapMarkers = [];
   var mapIndex = {};
@@ -81,6 +85,7 @@
     nav.hidden = false;
     var nombre = (persona && persona.nombre) || 'Usuario';
     var email = (persona && persona.email) || document.getElementById('email').value || '';
+    sessionEmail = String(email || '').trim().toLowerCase();
     document.getElementById('welcome-name').textContent = 'Hola, ' + nombre + '.';
     document.getElementById('user-name').textContent = nombre;
     var emailEl = document.getElementById('user-email');
@@ -289,6 +294,324 @@
     trenesPendientesDetencion = [];
     document.getElementById('modal-detencion-grave').hidden = true;
   }
+
+  // ========== GENERAR AVISO ==========
+  function claveFirmaAviso() {
+    return sessionEmail ? ('TURNIO_PREFIJO_AVISO_' + sessionEmail) : 'TURNIO_PREFIJO_AVISO_sin_email';
+  }
+  function obtenerFirmaAviso() {
+    try {
+      var v = localStorage.getItem(claveFirmaAviso());
+      if (v && String(v).trim()) return String(v).trim();
+    } catch (e) {}
+    return PREFIJO_AVISO_DEFAULT;
+  }
+  function guardarFirmaAviso(texto) {
+    var t = String(texto || '').trim();
+    if (!t) return false;
+    try { localStorage.setItem(claveFirmaAviso(), t); return true; } catch (e) { return false; }
+  }
+  function sincronizarFirmaModal() {
+    var inp = document.getElementById('cg-prefijo');
+    if (inp) inp.value = obtenerFirmaAviso();
+  }
+  function normalizarHHMMAviso(s) {
+    var m = String(s || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return String(s || '');
+    var hh = parseInt(m[1], 10);
+    return (hh < 10 ? '0' : '') + hh + ':' + m[2];
+  }
+  function extraerHorasRuta(texto) {
+    var parts = String(texto || '').split('➞');
+    if (parts.length < 2) return { hO: '', hD: '' };
+    var m0 = parts[0].match(/\((\d{1,2}:\d{2})\)/);
+    var m1 = parts[1].match(/\((\d{1,2}:\d{2})\)/);
+    return { hO: m0 ? m0[1] : '', hD: m1 ? m1[1] : '' };
+  }
+  function tipoPorNumeroTren(trenNum) {
+    var n = parseInt(trenNum, 10);
+    if (isNaN(n)) return 'TREN';
+    if (n >= 2000 && n <= 3999) return 'AVE';
+    if (n >= 4000 && n <= 5999) return 'AVE';
+    if (n >= 6000 && n <= 7999) return 'ALVIA';
+    if (n >= 8000 && n <= 9999) return 'AVANT';
+    if (n >= 100 && n <= 999) return 'IR';
+    if (n >= 1000 && n <= 1999) return 'AC';
+    if (n >= 12000 && n <= 18999) return 'MD';
+    if (n >= 19500 && n <= 29999) return 'CC';
+    if (n >= 30500 && n <= 30999) return 'MD';
+    if (n >= 31000 && n <= 32999) return 'CC';
+    if (n < 100 || (n >= 10000 && n < 12000) || (n >= 30000 && n < 30500)) return 'LD';
+    return 'TREN';
+  }
+  function titularTexto(s) {
+    return String(s || '').toLowerCase().replace(/(^|\s|\/|·|-|_)([a-záéíóúñü])/g, function (_, a, b) {
+      return a + b.toUpperCase();
+    });
+  }
+  function abrirModalAviso() {
+    sincronizarFirmaModal();
+    document.getElementById('modal-aviso-cg').hidden = false;
+    setTimeout(function () {
+      var b = document.getElementById('cg-buscador');
+      if (b) b.focus();
+    }, 250);
+  }
+  function cerrarModalAviso() {
+    document.getElementById('modal-aviso-cg').hidden = true;
+    document.getElementById('cg-resultados').hidden = true;
+  }
+  function construirMensajeAviso(opts) {
+    var tipo = opts.tipo || 'TREN';
+    var tren = opts.tren || 'S/N';
+    var origen = opts.origen || 'ORIGEN';
+    var destino = opts.destino || 'DESTINO';
+    var hO = opts.hO || '[HH:MM]';
+    var hD = opts.hD || '[HH:MM]';
+    var matPart = opts.matPart || '';
+    var situacion = opts.situacion || 'Circula con demora. [INCIDENCIA_AQUI].';
+    var firma = obtenerFirmaAviso();
+    var cuerpo = tipo + ' ' + tren + ' ' + origen + ' ' + hO + 'h - ' + destino + ' ' + hD + 'h' + matPart +
+      ' (   v.) ' + situacion;
+    if (cuerpo.indexOf('[INCIDENCIA_AQUI]') < 0) cuerpo += ' [INCIDENCIA_AQUI].';
+    return firma + ': ' + cuerpo;
+  }
+  function situacionDesdeAlerta(alerta) {
+    var demora = Number(alerta.retrasoNum || 0);
+    var mensajeRadar = String(alerta.mensaje || '');
+    var matchTramo = mensajeRadar.match(/Circulando entre\s+(.+?)\s+y\s+(.+?)\.\s*Próxima parada prevista:\s+(.+?)(?:\s+a las\s+([^\.]+))?\./i);
+    var matchEnRuta = mensajeRadar.match(/En ruta hacia\s+(.+?)\.\s*Próxima parada prevista:\s+(.+?)\s+a las\s+([^\.]+)h\./i);
+    if (matchTramo) {
+      return 'Circula con ' + demora + ' minutos de demora entre ' + matchTramo[1].trim() + ' y ' + matchTramo[2].trim() +
+        '. Próxima parada prevista: ' + matchTramo[3].trim() +
+        (matchTramo[4] ? ' a las ' + matchTramo[4].trim() : '') + '. [INCIDENCIA_AQUI].';
+    }
+    if (matchEnRuta) {
+      return 'Circula con ' + demora + ' minutos de demora. En ruta hacia ' + matchEnRuta[1].trim() +
+        '. Llegada prevista a ' + matchEnRuta[2].trim() + ': ' + matchEnRuta[3].trim() + 'h. [INCIDENCIA_AQUI].';
+    }
+    return 'Circula con ' + demora + ' minutos de demora. Ubicación operativa pendiente de confirmar. [INCIDENCIA_AQUI].';
+  }
+  function parseIdentidadAlerta(alerta) {
+    var textoLinea = plainText(alerta.linea || '');
+    var hO = alerta.hOrig ? String(alerta.hOrig) : '';
+    var hD = alerta.hDest ? String(alerta.hDest) : '';
+    if (!hO || !hD) {
+      var rx = extraerHorasRuta(textoLinea);
+      if (!hO && rx.hO) hO = normalizarHHMMAviso(rx.hO);
+      if (!hD && rx.hD) hD = normalizarHHMMAviso(rx.hD);
+    }
+    var trenNum = String(alerta.codTren || '').replace(/[^0-9]/g, '') || 'S/N';
+    var matchTren = textoLinea.match(/Circ\.?\s*([a-zA-Z0-9]+)/i);
+    if (matchTren) trenNum = matchTren[1];
+    var origen = String(alerta.nombreOrig || '').trim() || 'ORIGEN';
+    var destino = 'DESTINO';
+    var partesRuta = textoLinea.split('|');
+    if (partesRuta.length > 1) {
+      var ruta = partesRuta[1].split('➞');
+      if (ruta.length === 2) {
+        origen = ruta[0].replace(/\(.*?\)/g, '').trim() || origen;
+        destino = ruta[1].replace(/\(.*?\)/g, '').trim() || destino;
+      }
+    }
+    var matTexto = (alerta.matLabel && alerta.matLabel !== '')
+      ? alerta.matLabel
+      : (alerta.mat && alerta.mat !== '' ? alerta.mat : '');
+    return {
+      tipo: tipoPorNumeroTren(trenNum),
+      tren: trenNum,
+      origen: origen,
+      destino: destino,
+      hO: hO || '[HH:MM]',
+      hD: hD || '[HH:MM]',
+      matPart: matTexto ? (' (' + matTexto + ')') : '',
+      demora: Number(alerta.retrasoNum || 0),
+      tripId: String(alerta.tripId || alerta.trip_id || ''),
+      mensajeRadar: String(alerta.mensaje || '')
+    };
+  }
+  function enriquecerAvisoConContexto(id) {
+    call('contexto_aviso', {
+      numTren: id.tren,
+      origen: id.origen,
+      destino: id.destino,
+      horaOrigen: id.hO,
+      horaDestino: id.hD,
+      retrasoMin: id.demora,
+      mensajeRadar: id.mensajeRadar,
+      tripId: id.tripId
+    }).then(function (contexto) {
+      if (!contexto || contexto.ok === false) return;
+      var demora = Number.isFinite(Number(contexto.demoraMin)) ? Number(contexto.demoraMin) : id.demora;
+      var situacion = 'Circula con ' + demora + ' minutos de demora.';
+      var ubicacion = String(contexto.ubicacion || '').trim();
+      if (ubicacion) situacion += ' ' + ubicacion + '.';
+      var proxima = contexto.proxima || null;
+      if (proxima && proxima.nombre) {
+        situacion += ' Próxima parada: ' + proxima.nombre +
+          (proxima.hora ? ' (' + proxima.hora + 'h).' : '.');
+      }
+      if (contexto.llegadaDestino) {
+        situacion += ' Llegada prevista a ' + id.destino + ': ' + contexto.llegadaDestino + 'h.';
+      }
+      situacion += ' [INCIDENCIA_AQUI].';
+      document.getElementById('cg-mensaje').value = construirMensajeAviso({
+        tipo: id.tipo, tren: id.tren, origen: id.origen, destino: id.destino,
+        hO: id.hO, hD: id.hD, matPart: id.matPart, situacion: situacion
+      });
+    }).catch(function () {});
+  }
+  function abrirAvisoDesdeAlerta(alerta) {
+    if (!alerta) { toast('No hay datos de la alerta.'); return; }
+    if (!cacheClavero.length) cargarClavero();
+    var id = parseIdentidadAlerta(alerta);
+    document.getElementById('cg-mensaje').value = construirMensajeAviso({
+      tipo: id.tipo, tren: id.tren, origen: id.origen, destino: id.destino,
+      hO: id.hO, hD: id.hD, matPart: id.matPart, situacion: situacionDesdeAlerta(alerta)
+    });
+    document.getElementById('cg-buscador').value = '';
+    document.getElementById('cg-resultados').hidden = true;
+    abrirModalAviso();
+    enriquecerAvisoConContexto(id);
+  }
+  function encontrarAlertaAviso(tren, trip) {
+    var t = String(tren || '').replace(/[^0-9]/g, '');
+    var tp = String(trip || '');
+    var lista = filtered();
+    for (var i = 0; i < lista.length; i++) {
+      var a = lista[i];
+      var cod = String(a.codTren || '').replace(/[^0-9]/g, '');
+      var tripA = String(a.tripId || a.trip_id || '');
+      if (cod === t && (!tp || !tripA || tripA === tp)) return a;
+    }
+    for (var j = 0; j < radar.length; j++) {
+      if (String(radar[j].codTren || '').replace(/[^0-9]/g, '') === t) return radar[j];
+    }
+    return null;
+  }
+  async function cargarClavero() {
+    if (cargandoClavero) return;
+    cargandoClavero = true;
+    try {
+      var data = await call('clavero');
+      cacheClavero = Array.isArray(data.items) ? data.items : [];
+    } catch (err) {
+      console.warn('[Clavero]', err);
+      cacheClavero = [];
+    } finally {
+      cargandoClavero = false;
+    }
+  }
+  function buscarIncidenciaRapida() {
+    var input = document.getElementById('cg-buscador');
+    var caja = document.getElementById('cg-resultados');
+    if (!input || !caja) return;
+    var q = input.value.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (q.length < 2) { caja.hidden = true; return; }
+    if (!cacheClavero.length) {
+      caja.innerHTML = '<div class="empty" style="padding:12px;font-size:13px;font-weight:700;">Sincronizando diccionario…</div>';
+      caja.hidden = false;
+      cargarClavero().then(buscarIncidenciaRapida);
+      return;
+    }
+    var encontrados = cacheClavero.filter(function (item) {
+      var texto = [item.n1, item.n2, item.n3, item.def].join(' ').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return texto.indexOf(q) >= 0;
+    }).slice(0, 15);
+    if (!encontrados.length) {
+      caja.innerHTML = '<div class="empty" style="padding:12px;font-size:13px;font-weight:700;color:var(--red);">Ninguna coincidencia.</div>';
+      caja.hidden = false;
+      return;
+    }
+    caja.innerHTML = encontrados.map(function (item) {
+      var titulo = [item.n1, item.n2, item.n3].filter(Boolean).map(titularTexto).join(' · ');
+      var def = item.def ? titularTexto(item.def) : '';
+      return '<button type="button" class="aviso-hit" data-incidencia="' + esc(titulo) + '">' +
+        '<b>' + esc(titulo) + '</b><span>' + esc(def) + '</span></button>';
+    }).join('');
+    caja.hidden = false;
+  }
+  function insertarIncidencia(titulo) {
+    var ta = document.getElementById('cg-mensaje');
+    if (!ta || !titulo) return;
+    if (ta.value.indexOf('[INCIDENCIA_AQUI]') >= 0) {
+      ta.value = ta.value.replace('[INCIDENCIA_AQUI]', titulo);
+    } else {
+      ta.value = ta.value.replace(/\.?\s*$/, '') + ' / ' + titulo + '.';
+    }
+    document.getElementById('cg-resultados').hidden = true;
+    document.getElementById('cg-buscador').value = '';
+    document.getElementById('cg-buscador').focus();
+  }
+  function copiarAviso() {
+    var texto = document.getElementById('cg-mensaje').value;
+    if (!texto.trim()) { toast('No hay aviso que copiar.'); return; }
+    function ok() {
+      toast('Aviso copiado');
+      cerrarModalAviso();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(ok).catch(function () {
+        fallbackCopiar(texto); ok();
+      });
+    } else {
+      fallbackCopiar(texto); ok();
+    }
+  }
+  function fallbackCopiar(texto) {
+    var ta = document.createElement('textarea');
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  function abrirAvisoManual() {
+    document.getElementById('input-tren-manual').value = '';
+    document.getElementById('modal-aviso-manual').hidden = false;
+    setTimeout(function () {
+      document.getElementById('input-tren-manual').focus();
+    }, 200);
+  }
+  function cerrarAvisoManual() {
+    document.getElementById('modal-aviso-manual').hidden = true;
+  }
+  async function ejecutarBusquedaManual() {
+    var input = document.getElementById('input-tren-manual');
+    var btn = document.getElementById('btn-buscar-tren-manual');
+    var num = String(input.value || '').trim().replace(/^0+/, '');
+    if (!/^\d{1,12}$/.test(num)) { toast('Introduce un número de tren válido'); return; }
+    btn.disabled = true;
+    btn.textContent = 'Buscando…';
+    if (!cacheClavero.length) cargarClavero();
+    try {
+      var data = await call('tren_manual', { codTren: num });
+      cerrarAvisoManual();
+      if (!data.encontrado || !data.datos) {
+        toast('El tren no existe en tus Excel');
+        return;
+      }
+      var d = data.datos;
+      document.getElementById('cg-mensaje').value = construirMensajeAviso({
+        tipo: d.tipo || tipoPorNumeroTren(d.tren || num),
+        tren: d.tren || num,
+        origen: d.origen || 'ORIGEN',
+        destino: d.destino || 'DESTINO',
+        hO: d.hOrig || '[HH:MM]',
+        hD: d.hDest || '[HH:MM]',
+        situacion: 'Circula con XX minutos de demora a su paso por XX por [INCIDENCIA_AQUI].'
+      });
+      document.getElementById('cg-buscador').value = '';
+      document.getElementById('cg-resultados').hidden = true;
+      abrirModalAviso();
+    } catch (err) {
+      toast(String(err.message || err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Buscar';
+    }
+  }
   function typeOf(a) {
     var x = String(a.tipo || '');
     return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 ? 'warning' : '';
@@ -336,7 +659,7 @@
         (tieneGps
           ? '<button class="map-btn" type="button" data-map-tren="' + esc(tren) + '">&#128506; Mapa</button>'
           : '<button class="map-btn disabled" type="button" disabled title="Sin coordenadas GPS">&#128506; Mapa</button>') +
-        '<button class="generate" type="button">&#128172; Generar Aviso</button>' +
+        '<button class="generate" type="button" data-aviso-tren="' + esc(tren) + '" data-aviso-trip="' + esc(trip) + '">&#128172; Generar Aviso</button>' +
         '</div></div>' +
         '<div class="marcha-panel" hidden></div></article>';
     }).join('');
@@ -824,6 +1147,36 @@
   document.getElementById('btn-posponer-retrasos').addEventListener('click', posponerRetrasos);
   document.getElementById('btn-confirmar-detenciones').addEventListener('click', confirmarDetenciones);
   document.getElementById('btn-posponer-detenciones').addEventListener('click', posponerDetenciones);
+  document.getElementById('radar-manual').addEventListener('click', abrirAvisoManual);
+  document.getElementById('btn-cerrar-aviso-cg').addEventListener('click', cerrarModalAviso);
+  document.getElementById('btn-cancelar-aviso').addEventListener('click', cerrarModalAviso);
+  document.getElementById('btn-copiar-aviso').addEventListener('click', copiarAviso);
+  document.getElementById('btn-guardar-firma').addEventListener('click', function () {
+    var inp = document.getElementById('cg-prefijo');
+    var t = inp ? inp.value.trim() : '';
+    if (!t) { toast('Escribe una firma o unidad emisora'); return; }
+    if (guardarFirmaAviso(t)) {
+      toast('Firma guardada');
+      var ta = document.getElementById('cg-mensaje');
+      if (ta && ta.value) {
+        var m = ta.value.match(/^([^:\n]+:)([\s\S]*)$/);
+        if (m) ta.value = t + ':' + m[2];
+        else ta.value = t + ': ' + ta.value;
+      }
+    }
+  });
+  document.getElementById('cg-buscador').addEventListener('input', buscarIncidenciaRapida);
+  document.getElementById('cg-resultados').addEventListener('click', function (e) {
+    var hit = e.target.closest('[data-incidencia]');
+    if (!hit) return;
+    insertarIncidencia(hit.getAttribute('data-incidencia'));
+  });
+  document.getElementById('btn-cerrar-aviso-manual').addEventListener('click', cerrarAvisoManual);
+  document.getElementById('btn-cancelar-manual').addEventListener('click', cerrarAvisoManual);
+  document.getElementById('btn-buscar-tren-manual').addEventListener('click', ejecutarBusquedaManual);
+  document.getElementById('input-tren-manual').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); ejecutarBusquedaManual(); }
+  });
   document.getElementById('btn-toggle-vias').addEventListener('click', toggleOrmDropdown);
   document.querySelectorAll('.orm-option').forEach(function (el) {
     el.addEventListener('click', function (e) {
@@ -864,7 +1217,10 @@
     var generate = e.target.closest('.generate');
     if (generate) {
       e.stopPropagation();
-      toast('La generación de avisos se incorporará tras migrar su API.');
+      abrirAvisoDesdeAlerta(encontrarAlertaAviso(
+        generate.getAttribute('data-aviso-tren'),
+        generate.getAttribute('data-aviso-trip')
+      ));
       return;
     }
     var card = e.target.closest('.alert');

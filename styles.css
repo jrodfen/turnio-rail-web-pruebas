@@ -105,3 +105,24 @@ body.monitor-mode #screen-mapa{display:none!important}
 .vig-item-lugar{font-size:12px;color:#92400e;margin-top:3px;font-weight:600}
 .vig-item-msg{font-size:12px;font-style:italic;margin-top:4px;color:var(--muted);line-height:1.35}
 .vigilante-btn.scanning i{background:#fff!important;box-shadow:0 0 16px #fff!important}
+
+/* Generar aviso */
+.aviso-modal-card{max-width:420px;text-align:left}
+.aviso-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.aviso-modal-head h2{margin:0;font-size:18px;color:var(--primary-dark)}
+.aviso-close{border:0;background:transparent;font-size:26px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
+.aviso-firma-box{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(45,127,249,.06)}
+.aviso-firma-box summary{cursor:pointer;font-weight:800;color:var(--primary-dark);font-size:13px}
+.aviso-firma-box p{margin:8px 0;font-size:12px;color:var(--muted);line-height:1.4}
+.aviso-firma-box input,.aviso-modal-card input[type="search"],.aviso-modal-card input[type="text"]{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:14px;background:var(--card);color:var(--text);margin:0 0 8px}
+.aviso-firma-box .btn{margin:0;width:100%;padding:10px}
+.aviso-label{display:block;font-size:12px;font-weight:800;color:var(--text);margin:0 0 6px}
+.aviso-help{margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.4}
+.aviso-resultados{display:block;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);margin:0 0 10px;box-shadow:var(--shadow)}
+.aviso-resultados[hidden]{display:none!important}
+.aviso-hit{padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer;text-align:left}
+.aviso-hit:last-child{border-bottom:0}
+.aviso-hit:hover,.aviso-hit:active{background:var(--bg)}
+.aviso-hit b{display:block;font-size:13px;color:var(--primary-dark);margin-bottom:3px}
+.aviso-hit span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cg-mensaje{width:100%;box-sizing:border-box;border:1px solid var(--primary);border-radius:12px;padding:12px;font-size:13px;line-height:1.4;font-family:ui-monospace,Consolas,monospace;resize:vertical;min-height:120px;background:var(--card);color:var(--text);margin:0 0 14px}
