@@ -348,6 +348,7 @@
         });
       }
     }) : null;
+    window._mapaClusterGroup = cluster;
     var bounds = [];
     alertas.forEach(function (a) {
       var lat = parseFloat(a.lat);
@@ -420,10 +421,25 @@
       return false;
     }
     var map = window._mapaLeaflet;
+    if (!map) return false;
+
+    function abrirPopup() {
+      try { marker.openPopup(); } catch (_) {}
+      msg.textContent = 'Tren ' + num + ' ubicado.';
+      msg.className = '';
+    }
+
+    // Si está en un cluster, zoomToShowLayer saca el marcador sin cambiar el
+    // aspecto general del mapa (los clusters siguen igual para el resto).
+    var clusterGroup = window._mapaClusterGroup;
+    if (clusterGroup && typeof clusterGroup.zoomToShowLayer === 'function' &&
+        clusterGroup.hasLayer && clusterGroup.hasLayer(marker)) {
+      clusterGroup.zoomToShowLayer(marker, abrirPopup);
+      return true;
+    }
+
     map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12));
-    marker.openPopup();
-    msg.textContent = 'Tren ' + num + ' ubicado.';
-    msg.className = '';
+    setTimeout(abrirPopup, 80);
     return true;
   }
   function abrirMapaTren(tren) {
