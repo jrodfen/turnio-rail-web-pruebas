@@ -34,3 +34,18 @@
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
       <section id="screen-ajustes" class="screen coming-screen"><h2>Ajustes</h2><p>La configuraci&oacute;n, sincronizaci&oacute;n y cuenta llegar&aacute;n en el siguiente bloque.</p><button class="btn secondary" type="button" id="logout">Cerrar sesi&oacute;n de pruebas</button></section>
+
+
+      <section id="screen-perfil" class="screen coming-screen"><h2>Cuenta</h2><p id="profile-email"></p><p>Tu sesión externa está protegida y es independiente de la aplicación en GAS.</p></section>
+    </main>
+    <nav id="bottom-nav" class="fixed-nav" hidden>
+      <button class="nav-item active" data-go="home"><span>&#127968;</span>Inicio</button>
+      <button class="nav-item" data-go="trafico"><span>&#128642;</span>Circulación</button>
+      <button class="nav-item" data-go="ajustes"><span>&#9881;</span>Ajustes</button>
+      <button class="nav-item" data-go="perfil"><span>&#128100;</span>Cuenta</button>
+    </nav>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="./turnio-config.js"></script>
+    <script src="./app.js?v=turnio-radar-1"></script>
+  </body>
+</html>
