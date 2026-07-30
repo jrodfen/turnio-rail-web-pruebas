@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=turnio-auth-2">
+    <link rel="stylesheet" href="./styles.css?v=turnio-mapa-1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -19,33 +19,83 @@
         <div class="welcome-hero"><h2 id="welcome-name">Hola</h2><p>Resumen vivo para empezar el d&iacute;a. Los datos se refrescan desde TURNIO.</p></div>
         <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
         <div class="cards-grid">
-          <button class="home-card home-card--purple" data-go="radar"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
-          <button class="home-card home-card--green" data-coming="Mallas y horarios"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
-          <button class="home-card home-card--orange" data-coming="Mapa en tiempo real"><b>&#128506; Mapa en tiempo real</b><span>Posici&oacute;n y marcha de los trenes</span></button>
-          <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
+          <button class="home-card home-card--purple" data-go="radar" type="button"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
+          <button class="home-card home-card--green" data-coming="Mallas y horarios" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
+          <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Posici&oacute;n y marcha de los trenes</span></button>
+          <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
       </section>
       <section id="screen-radar" class="screen">
+        <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
         <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
-        <div class="radar-card"><div class="radar-head"><h3>&#128225; Radar <span class="mini-icon">&#128250;</span><span class="mini-icon">&#128506;</span></h3><select id="region" aria-label="Regi&oacute;n del Radar"><option value="andalucia">&#128205; Andaluc&iacute;a</option><option value="madrid">&#128205; Madrid</option><option value="cataluna">&#128205; Catalu&ntilde;a</option><option value="levante">&#128205; C. Valenciana</option><option value="norte">&#128205; Norte</option><option value="espana">&#127758; Espa&ntilde;a</option></select><button type="button" class="red-chip">&#127758; Red <span>0</span></button></div>
-          <div class="filters" role="group" aria-label="Filtro de trenes"><button class="filter" data-mode="CERCANIAS" type="button">&#128642; CERC.</button><button class="filter" data-mode="LD" type="button">&#128644; MD/LD</button><button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button></div>
-          <button type="button" class="manual" data-coming="Redactar aviso manual">&#128221; Redactar Aviso Manual (Tren no detectado)</button><label class="search"><span>&#128269;</span><input id="search" type="search" placeholder="Buscar tren, estaci&oacute;n, retraso..." autocomplete="off"></label><div id="radar-meta" class="last-update">&Uacute;ltima carga: --:--:--</div><div id="radar-list" class="radar-list" aria-live="polite"></div>
+        <div class="radar-card">
+          <div class="radar-head">
+            <h3>&#128225; Radar
+              <button type="button" id="btn-monitor" class="mini-btn" title="Modo Monitor de Pared">&#128250;</button>
+              <button type="button" id="btn-mapa" class="mini-btn" title="Ver en mapa">&#128506;</button>
+            </h3>
+            <select id="region" aria-label="Regi&oacute;n del Radar">
+              <option value="andalucia">&#128205; Andaluc&iacute;a</option>
+              <option value="madrid">&#128205; Madrid</option>
+              <option value="cataluna">&#128205; Catalu&ntilde;a</option>
+              <option value="levante">&#128205; C. Valenciana</option>
+              <option value="norte">&#128205; Norte</option>
+              <option value="espana">&#127758; Espa&ntilde;a</option>
+            </select>
+            <button type="button" class="red-chip" data-coming="Avisos de red">&#127758; Red <span>0</span></button>
+          </div>
+          <div class="filters" id="radar-filters" role="group" aria-label="Filtro de trenes">
+            <button class="filter" data-mode="CERCANIAS" type="button">&#128642; CERC.</button>
+            <button class="filter" data-mode="LD" type="button">&#128644; MD/LD</button>
+            <button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button>
+          </div>
+          <button type="button" class="manual" id="radar-manual" data-coming="Redactar aviso manual">&#128221; Redactar Aviso Manual (Tren no detectado)</button>
+          <label class="search" id="radar-search-box"><span>&#128269;</span><input id="search" type="search" placeholder="Buscar tren, estaci&oacute;n, retraso..." autocomplete="off"></label>
+          <div id="radar-meta" class="last-update">&Uacute;ltima carga: --:--:--</div>
+          <div id="radar-list" class="radar-list" aria-live="polite"></div>
+        </div>
+      </section>
+      <section id="screen-mapa" class="screen">
+        <div class="mapa-toolbar">
+          <button type="button" class="mapa-tool" data-go="radar">&#11013; Radar</button>
+          <h3>&#128506; Mapa en vivo</h3>
+          <span id="mapa-region-label" class="mapa-region"></span>
+          <button type="button" class="mapa-tool primary" id="btn-refrescar-mapa" title="Actualizar">&#8635;</button>
+        </div>
+        <div class="mapa-info-bar">
+          <span id="mapa-contador-trenes">— trenes en el mapa</span>
+          <span id="mapa-last-update"></span>
+        </div>
+        <div class="mapa-canvas-wrap">
+          <div class="mapa-buscador">
+            <div class="mapa-buscador-card">
+              <span aria-hidden="true">&#128269;</span>
+              <input id="mapa-buscar-input" type="search" inputmode="numeric" enterkeyhint="search" placeholder="Buscar tren por n&uacute;mero…" autocomplete="off" aria-label="Buscar tren por n&uacute;mero">
+              <button type="button" id="btn-ubicar-mapa">Ubicar</button>
+            </div>
+            <div id="mapa-busqueda-msg" role="status" aria-live="polite"></div>
+          </div>
+          <div id="mapa-container"></div>
+          <div id="mapa-no-datos" class="mapa-empty" hidden>
+            <div class="mapa-empty-ico">&#128506;</div>
+            <p><b>Sin datos de radar cargados</b></p>
+            <p>Ve primero al Radar, escanea la red y vuelve aqu&iacute;.</p>
+            <button type="button" class="btn primary" data-go="radar">Ir al Radar</button>
+          </div>
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
       <section id="screen-ajustes" class="screen coming-screen"><h2>Ajustes</h2><p>La configuraci&oacute;n, sincronizaci&oacute;n y cuenta llegar&aacute;n en el siguiente bloque.</p><button class="btn secondary" type="button" id="logout">Cerrar sesi&oacute;n de pruebas</button></section>
-
-
-      <section id="screen-perfil" class="screen coming-screen"><h2>Cuenta</h2><p id="profile-email"></p><p>Tu sesión externa está protegida y es independiente de la aplicación en GAS.</p></section>
+      <section id="screen-perfil" class="screen coming-screen"><h2>Cuenta</h2><p id="profile-email"></p><p>Tu sesi&oacute;n externa est&aacute; protegida y es independiente de la aplicaci&oacute;n en GAS.</p></section>
     </main>
     <nav id="bottom-nav" class="fixed-nav" hidden>
-      <button class="nav-item active" data-go="home"><span>&#127968;</span>Inicio</button>
-      <button class="nav-item" data-go="trafico"><span>&#128642;</span>Circulación</button>
-      <button class="nav-item" data-go="ajustes"><span>&#9881;</span>Ajustes</button>
-      <button class="nav-item" data-go="perfil"><span>&#128100;</span>Cuenta</button>
+      <button class="nav-item active" data-go="home" type="button"><span>&#127968;</span>Inicio</button>
+      <button class="nav-item" data-go="trafico" type="button"><span>&#128642;</span>Circulación</button>
+      <button class="nav-item" data-go="ajustes" type="button"><span>&#9881;</span>Ajustes</button>
+      <button class="nav-item" data-go="perfil" type="button"><span>&#128100;</span>Cuenta</button>
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=turnio-radar-2"></script>
+    <script src="./app.js?v=turnio-mapa-1"></script>
   </body>
 </html>
