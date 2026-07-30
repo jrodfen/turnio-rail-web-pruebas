@@ -90,23 +90,171 @@
     if (userBox) userBox.title = email ? (nombre + ' · ' + email) : nombre;
     document.getElementById('profile-email').textContent = email;
     loadRadar();
+    arrancarVigilanteDesdeCuadrante();
   }
 
   var vigilanteActivo = false;
+  var intervaloVigilante = null;
+  var trenesYaAlertados = {};
+  var trenesPendientesConfirmacion = [];
+  var trenesPendientesDetencion = [];
+  var chequeoEnCurso = false;
+
   function setVigilanteUI(on) {
     vigilanteActivo = !!on;
     var btn = document.getElementById('btn-vigilante');
     var txt = document.getElementById('txt-vigilante');
+    var led = document.getElementById('led-vigilante');
     if (!btn || !txt) return;
     btn.classList.toggle('on', vigilanteActivo);
     btn.setAttribute('aria-pressed', vigilanteActivo ? 'true' : 'false');
     txt.textContent = vigilanteActivo ? 'VIGILANTE: ON' : 'VIGILANTE: OFF';
+    if (led) {
+      led.style.background = vigilanteActivo ? '#00ffcc' : '#ff3b30';
+      led.style.boxShadow = vigilanteActivo ? '0 0 10px #00ffcc' : '0 0 10px #ff3b30';
+    }
   }
+
+  function setVigilanteState(activar, silentOff) {
+    setVigilanteUI(activar);
+    if (activar) {
+      if (!intervaloVigilante) {
+        intervaloVigilante = setInterval(ejecutarChequeoTrenes, 120000);
+      }
+      ejecutarChequeoTrenes();
+    } else {
+      if (intervaloVigilante) {
+        clearInterval(intervaloVigilante);
+        intervaloVigilante = null;
+      }
+      if (!silentOff) toast('Vigilante desactivado');
+    }
+  }
+
   function toggleVigilante() {
-    setVigilanteUI(!vigilanteActivo);
-    toast(vigilanteActivo
-      ? 'Vigilante activado (estado local de pruebas)'
-      : 'Vigilante desactivado');
+    setVigilanteState(!vigilanteActivo);
+  }
+
+  function parpadearLedVigilante() {
+    var led = document.getElementById('led-vigilante');
+    if (!led) return;
+    var original = led.style.background || '#00ffcc';
+    led.style.background = '#ffffff';
+    led.style.boxShadow = '0 0 20px #ffffff';
+    setTimeout(function () {
+      if (!vigilanteActivo) return;
+      led.style.background = original;
+      led.style.boxShadow = '0 0 10px ' + original;
+    }, 1000);
+  }
+
+  function claveCritico(c) {
+    return String((c && (c.linea || c.codTren || c.mensaje)) || '');
+  }
+
+  function mostrarModalRetrasos(items) {
+    var lista = document.getElementById('lista-retrasos-graves');
+    var modal = document.getElementById('modal-retraso-grave');
+    if (!lista || !modal) return;
+    trenesPendientesConfirmacion = [];
+    lista.innerHTML = items.map(function (c) {
+      trenesPendientesConfirmacion.push(claveCritico(c));
+      var etiqueta = c.etiquetaModal != null && c.etiquetaModal !== ''
+        ? plainText(c.etiquetaModal)
+        : ('+' + Number(c.retrasoNum || 0) + ' min');
+      return '<div class="vig-item vig-item--red">' +
+        '<div class="vig-item-linea">' + String(c.linea || '') + '</div>' +
+        '<div class="vig-item-tag">' + esc(etiqueta) + '</div>' +
+        '<div class="vig-item-msg">' + esc(plainText(c.mensaje)) + '</div>' +
+        '</div>';
+    }).join('');
+    modal.hidden = false;
+  }
+
+  function mostrarModalDetenciones(items) {
+    var lista = document.getElementById('lista-detenciones');
+    var modal = document.getElementById('modal-detencion-grave');
+    if (!lista || !modal) return;
+    trenesPendientesDetencion = [];
+    lista.innerHTML = items.map(function (c) {
+      trenesPendientesDetencion.push(claveCritico(c));
+      var etiqueta = c.etiquetaModal != null && c.etiquetaModal !== ''
+        ? plainText(c.etiquetaModal)
+        : 'Parado';
+      var lugar = c.lugar
+        ? ('<div class="vig-item-lugar">📍 ' + esc(plainText(c.lugar)) +
+          (c.horaDesde ? (' · desde las <b>' + esc(plainText(c.horaDesde)) + '</b>h') : '') +
+          '</div>')
+        : '';
+      return '<div class="vig-item vig-item--amber">' +
+        '<div class="vig-item-linea">' + String(c.linea || '') + '</div>' +
+        '<div class="vig-item-tag">' + esc(etiqueta) + '</div>' +
+        lugar +
+        '<div class="vig-item-msg">' + esc(plainText(c.mensaje)) + '</div>' +
+        '</div>';
+    }).join('');
+    modal.hidden = false;
+  }
+
+  function procesarCriticos(criticos) {
+    if (!Array.isArray(criticos) || !criticos.length) return;
+    var nuevos = criticos.filter(function (c) {
+      return !trenesYaAlertados[claveCritico(c)];
+    });
+    if (!nuevos.length) return;
+    var graves = nuevos.filter(function (c) { return Number(c.retrasoNum || 0) >= 25; });
+    var detenidos = nuevos.filter(function (c) { return Number(c.retrasoNum || 0) < 25; });
+    if (graves.length) mostrarModalRetrasos(graves);
+    if (detenidos.length) mostrarModalDetenciones(detenidos);
+  }
+
+  async function ejecutarChequeoTrenes() {
+    if (!vigilanteActivo || chequeoEnCurso) return;
+    chequeoEnCurso = true;
+    parpadearLedVigilante();
+    toast('Vigilante CGO escaneando red…');
+    try {
+      var regionEl = document.getElementById('region');
+      var region = regionEl ? regionEl.value : 'andalucia';
+      var data = await call('vigilante_chequeo', { region: region });
+      if (!vigilanteActivo) return;
+      procesarCriticos(data && data.criticos);
+    } catch (err) {
+      if (vigilanteActivo) toast(String(err.message || err));
+    } finally {
+      chequeoEnCurso = false;
+    }
+  }
+
+  async function arrancarVigilanteDesdeCuadrante() {
+    try {
+      var res = await call('vigilante_cuadrante');
+      if (res && res.activar) setVigilanteState(true, true);
+      else if (res && res.motivo) {
+        console.warn('[Vigilante cuadrante] no auto-ON:', res.motivo, res.turno || '');
+      }
+    } catch (err) {
+      console.warn('[Vigilante cuadrante]', err);
+    }
+  }
+
+  function confirmarRetrasos() {
+    trenesPendientesConfirmacion.forEach(function (k) { trenesYaAlertados[k] = true; });
+    trenesPendientesConfirmacion = [];
+    document.getElementById('modal-retraso-grave').hidden = true;
+  }
+  function posponerRetrasos() {
+    trenesPendientesConfirmacion = [];
+    document.getElementById('modal-retraso-grave').hidden = true;
+  }
+  function confirmarDetenciones() {
+    trenesPendientesDetencion.forEach(function (k) { trenesYaAlertados[k] = true; });
+    trenesPendientesDetencion = [];
+    document.getElementById('modal-detencion-grave').hidden = true;
+  }
+  function posponerDetenciones() {
+    trenesPendientesDetencion = [];
+    document.getElementById('modal-detencion-grave').hidden = true;
   }
   function typeOf(a) {
     var x = String(a.tipo || '');
@@ -623,6 +771,7 @@
   document.getElementById('region').addEventListener('change', loadRadar);
   document.getElementById('search').addEventListener('input', render);
   document.getElementById('logout').addEventListener('click', function () {
+    setVigilanteState(false, true);
     localStorage.removeItem(sessionKey);
     appShell.hidden = true;
     nav.hidden = true;
@@ -638,6 +787,10 @@
   });
   document.getElementById('btn-mapa').addEventListener('click', function () { go('mapa'); });
   document.getElementById('btn-vigilante').addEventListener('click', toggleVigilante);
+  document.getElementById('btn-confirmar-retrasos').addEventListener('click', confirmarRetrasos);
+  document.getElementById('btn-posponer-retrasos').addEventListener('click', posponerRetrasos);
+  document.getElementById('btn-confirmar-detenciones').addEventListener('click', confirmarDetenciones);
+  document.getElementById('btn-posponer-detenciones').addEventListener('click', posponerDetenciones);
   document.getElementById('btn-toggle-vias').addEventListener('click', toggleOrmDropdown);
   document.querySelectorAll('.orm-option').forEach(function (el) {
     el.addEventListener('click', function (e) {

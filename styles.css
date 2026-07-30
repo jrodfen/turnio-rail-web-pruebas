@@ -77,3 +77,31 @@ body.monitor-mode .last-update{color:#9ca3af}
 .mapa-popup-linea{font-weight:900;font-size:13px;margin-bottom:4px}
 .mapa-popup-msg{font-size:12px;color:#475569;line-height:1.4;margin-bottom:8px}
 body.monitor-mode #screen-mapa{display:none!important}
+
+/* Vigilante modals */
+.vig-modal{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(3px)}
+.vig-modal[hidden]{display:none!important}
+.vig-modal-card{width:100%;max-width:360px;background:var(--card);border-radius:16px;padding:18px 16px;box-shadow:0 16px 40px rgba(0,0,0,.35);text-align:center}
+.vig-modal-card--red{border-top:6px solid var(--red)}
+.vig-modal-card--amber{border-top:6px solid #f59e0b}
+.vig-modal-ico{font-size:42px;line-height:1;margin-bottom:8px}
+.vig-modal-card h2{margin:0 0 6px;font-size:20px}
+.vig-modal-card--red h2{color:var(--red)}
+.vig-modal-card--amber h2{color:#b45309}
+.vig-modal-card>p{margin:0 0 12px;color:var(--muted);font-size:13px}
+.vig-modal-list{text-align:left;max-height:220px;overflow:auto;border-radius:10px;padding:10px;margin-bottom:14px}
+.vig-modal-card--red .vig-modal-list{background:rgba(217,48,37,.06);border:1px solid rgba(217,48,37,.25)}
+.vig-modal-card--amber .vig-modal-list{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.35)}
+.vig-modal-actions{display:flex;gap:10px}
+.vig-modal-actions .btn{margin:0;flex:1;padding:12px}
+.vig-btn-red{background:var(--red)!important}
+.vig-btn-amber{background:#f59e0b!important;color:#111!important}
+.vig-item{margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(0,0,0,.12)}
+.vig-item:last-child{margin-bottom:0;border-bottom:0;padding-bottom:0}
+.vig-item-linea{font-weight:800;font-size:13px;color:var(--text)}
+.vig-item-tag{font-weight:900;font-size:15px;margin-top:2px}
+.vig-item--red .vig-item-tag{color:var(--red)}
+.vig-item--amber .vig-item-tag{color:#b45309}
+.vig-item-lugar{font-size:12px;color:#92400e;margin-top:3px;font-weight:600}
+.vig-item-msg{font-size:12px;font-style:italic;margin-top:4px;color:var(--muted);line-height:1.35}
+.vigilante-btn.scanning i{background:#fff!important;box-shadow:0 0 16px #fff!important}
