@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=mallas1">
+    <link rel="stylesheet" href="./styles.css?v=mallas2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -113,9 +113,30 @@
       </section>
       <section id="screen-mallas" class="screen">
         <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <div class="mallas-hub">
+          <h2>&#128646; Mallas y horarios</h2>
+          <p>Elige c&oacute;mo consultar la operativa. La estructura replica GAS: cuadro oficial por estaci&oacute;n y localizador por n&uacute;mero (d&iacute;as de circulaci&oacute;n).</p>
+          <button type="button" class="mallas-hub-card mallas-hub-card--soon" data-go="mallas-cuadro">
+            <span class="mallas-hub-ico" aria-hidden="true">&#128269;</span>
+            <span>
+              <b>Cuadro de horarios oficial</b>
+              <span>Por estaci&oacute;n, producto, fecha y hora. Genera el cuadro completo con tarjetas e itinerario (como en GAS). Pr&oacute;ximo bloque.</span>
+            </span>
+          </button>
+          <button type="button" class="mallas-hub-card mallas-hub-card--ready" data-go="mallas-localizador">
+            <span class="mallas-hub-ico" aria-hidden="true">&#128197;</span>
+            <span>
+              <b>Localizador / D&iacute;as de circulaci&oacute;n</b>
+              <span>Busca por n&uacute;mero de tren: servicios, pr&oacute;ximos 7 d&iacute;as y marcha en vivo si circula.</span>
+            </span>
+          </button>
+        </div>
+      </section>
+      <section id="screen-mallas-localizador" class="screen">
+        <button class="back" type="button" data-go="mallas">&#11013; Volver a Mallas</button>
         <div class="mallas-card">
-          <h3>&#128646; Mallas y horarios</h3>
-          <p class="mallas-lead">Localiza un tren por n&uacute;mero: ruta, horarios, d&iacute;as de circulaci&oacute;n y marcha en vivo si est&aacute; circulando.</p>
+          <h3>&#128197; Localizador / D&iacute;as de circulaci&oacute;n</h3>
+          <p class="mallas-lead">Introduce el n&uacute;mero comercial del tren para ver ruta, horarios, d&iacute;as de circulaci&oacute;n y marcha en vivo si est&aacute; circulando.</p>
           <div class="mallas-search">
             <input id="mallas-input" type="search" inputmode="numeric" enterkeyhint="search" placeholder="N&uacute;mero de tren (ej. 13041)" autocomplete="off" aria-label="N&uacute;mero de tren">
             <button type="button" class="btn primary" id="btn-mallas-buscar">Buscar</button>
@@ -123,6 +144,15 @@
           <div id="mallas-status" class="mallas-status" role="status" aria-live="polite">Introduce un n&uacute;mero de tren para empezar.</div>
           <div id="mallas-dias" class="mallas-dias" hidden></div>
           <div id="mallas-resultados" class="mallas-resultados"></div>
+        </div>
+      </section>
+      <section id="screen-mallas-cuadro" class="screen">
+        <button class="back" type="button" data-go="mallas">&#11013; Volver a Mallas</button>
+        <div class="mallas-card mallas-card--cuadro">
+          <h3>&#128269; Cuadro de horarios oficial</h3>
+          <p class="mallas-lead">Aqu&iacute; ir&aacute; el buscador completo de GAS: estaci&oacute;n, tipo de parada, producto, fecha, hora y generaci&oacute;n del cuadro con tarjetas e itinerario.</p>
+          <div class="mallas-status">En preparaci&oacute;n en pruebas externas. Mientras tanto usa el localizador por n&uacute;mero.</div>
+          <button type="button" class="btn primary" data-go="mallas-localizador" style="margin-top:12px;width:auto;">Abrir localizador / d&iacute;as</button>
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
@@ -226,6 +256,6 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=mallas1"></script>
+    <script src="./app.js?v=mallas2"></script>
   </body>
 </html>

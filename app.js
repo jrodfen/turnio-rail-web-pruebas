@@ -108,7 +108,7 @@
     });
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'mapa') openMapa();
-    if (screen === 'mallas') {
+    if (screen === 'mallas-localizador') {
       asegurarRutasMallas().catch(function (err) {
         setMallasStatus(String(err.message || err), true);
       });

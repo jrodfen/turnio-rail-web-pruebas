@@ -159,7 +159,18 @@ body.monitor-mode #screen-mapa{display:none!important}
 .ajustes-chip{display:inline-flex;align-self:flex-start;margin-top:4px;background:rgba(29,78,216,.1);color:#1d4ed8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid rgba(29,78,216,.2)}
 
 /* Mallas y horarios */
+.mallas-hub{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:4px solid #059669}
+.mallas-hub h2{margin:0 0 6px;font-size:20px;color:#047857}
+.mallas-hub>p{margin:0 0 14px;font-size:13px;color:var(--muted);line-height:1.4}
+.mallas-hub-card{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:14px;margin:0 0 10px;cursor:pointer}
+.mallas-hub-card--ready{border-color:rgba(5,150,105,.35);background:linear-gradient(135deg,rgba(16,185,129,.08),var(--card))}
+.mallas-hub-card--soon{border-style:dashed;opacity:.95}
+.mallas-hub-card:active{transform:scale(.99)}
+.mallas-hub-ico{font-size:26px;line-height:1;flex-shrink:0}
+.mallas-hub-card b{display:block;font-size:15px;margin-bottom:4px;color:var(--text)}
+.mallas-hub-card span span{display:block;font-size:12px;color:var(--muted);line-height:1.4;font-weight:500}
 .mallas-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:4px solid #059669}
+.mallas-card--cuadro{border-top-color:#2d7ff9}
 .mallas-card h3{margin:0 0 6px;font-size:17px;color:#047857}
 .mallas-lead{margin:0 0 14px;font-size:13px;color:var(--muted);line-height:1.4}
 .mallas-search{display:flex;gap:8px;margin-bottom:12px}
