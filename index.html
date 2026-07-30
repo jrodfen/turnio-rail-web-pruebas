@@ -61,6 +61,15 @@
           <button type="button" class="mapa-tool" data-go="radar">&#11013; Radar</button>
           <h3>&#128506; Mapa en vivo</h3>
           <span id="mapa-region-label" class="mapa-region"></span>
+          <div id="orm-wrapper" class="orm-wrapper">
+            <button type="button" id="btn-toggle-vias" class="mapa-tool" title="Capa ferroviaria">&#128739; V&iacute;as</button>
+            <div id="orm-dropdown" class="orm-dropdown">
+              <button type="button" class="orm-option selected" data-orm="standard">&#128739; V&iacute;as (infraestructura)<span class="orm-check">&#10003;</span></button>
+              <button type="button" class="orm-option" data-orm="maxspeed">&#9889; Velocidades m&aacute;ximas<span class="orm-check">&#10003;</span></button>
+              <button type="button" class="orm-option" data-orm="signals">&#128678; Se&ntilde;alizaci&oacute;n<span class="orm-check">&#10003;</span></button>
+              <button type="button" class="orm-option orm-off" data-orm="off">&#10005; Desactivar<span class="orm-check">&#10003;</span></button>
+            </div>
+          </div>
           <button type="button" class="mapa-tool primary" id="btn-refrescar-mapa" title="Actualizar">&#8635;</button>
         </div>
         <div class="mapa-info-bar">
@@ -97,6 +106,6 @@
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=mapa6"></script>
+    <script src="./app.js?v=mapa7"></script>
   </body>
 </html>

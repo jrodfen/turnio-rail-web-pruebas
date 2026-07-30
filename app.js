@@ -289,6 +289,22 @@
       L.DomEvent.disableClickPropagation(buscador);
       L.DomEvent.disableScrollPropagation(buscador);
     }
+    var ormWrap = document.getElementById('orm-wrapper');
+    if (ormWrap && L.DomEvent) {
+      L.DomEvent.disableClickPropagation(ormWrap);
+      L.DomEvent.disableScrollPropagation(ormWrap);
+    }
+
+    // Capas OpenRailwayMap (como en TURNIO GAS)
+    window._capasORM = {
+      standard: L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', { attribution: '', opacity: 0.75, maxZoom: 19 }),
+      maxspeed: L.tileLayer('https://{s}.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png', { attribution: '', opacity: 0.80, maxZoom: 19 }),
+      signals: L.tileLayer('https://{s}.tiles.openrailwaymap.org/signals/{z}/{x}/{y}.png', { attribution: '', opacity: 0.80, maxZoom: 19 })
+    };
+    window._ormEstado = 'standard';
+    aplicarCapaORM(map, 'standard');
+    map.on('zoomend', actualizarBtnORM);
+
     var leyenda = L.control({ position: 'bottomleft' });
     leyenda.onAdd = function () {
       var div = L.DomUtil.create('div', 'mapa-leyenda');
@@ -304,6 +320,60 @@
     window._mapaLeaflet = map;
     mapReady = true;
     pintarMarcadores();
+  }
+
+  var ORM_ZOOM_MIN = 9;
+  var ORM_LABELS = {
+    off: '🛤️ Vías',
+    standard: '🛤️ Vías',
+    maxspeed: '⚡ Velocidades',
+    signals: '🚦 Señalización'
+  };
+  function aplicarCapaORM(map, estado) {
+    var capas = window._capasORM;
+    var btn = document.getElementById('btn-toggle-vias');
+    if (!capas || !map) return;
+    Object.keys(capas).forEach(function (k) {
+      if (map.hasLayer(capas[k])) map.removeLayer(capas[k]);
+    });
+    document.querySelectorAll('.orm-option').forEach(function (el) {
+      el.classList.toggle('selected', el.getAttribute('data-orm') === estado);
+    });
+    window._ormEstado = estado;
+    if (estado !== 'off' && capas[estado]) {
+      capas[estado].addTo(map);
+      if (btn) {
+        btn.textContent = ORM_LABELS[estado];
+        btn.classList.add('activo');
+      }
+      if (map.getZoom() < ORM_ZOOM_MIN) {
+        toast('Haz zoom (≥' + ORM_ZOOM_MIN + ') para ver las vías ferroviarias');
+      }
+    } else if (btn) {
+      btn.textContent = ORM_LABELS.off;
+      btn.classList.remove('activo');
+    }
+  }
+  function actualizarBtnORM() {
+    var btn = document.getElementById('btn-toggle-vias');
+    var map = window._mapaLeaflet;
+    if (!btn || !map || !window._ormEstado || window._ormEstado === 'off') return;
+    var zoom = map.getZoom();
+    btn.textContent = zoom < ORM_ZOOM_MIN
+      ? ORM_LABELS[window._ormEstado] + ' (' + zoom + ')'
+      : ORM_LABELS[window._ormEstado];
+  }
+  function toggleOrmDropdown(e) {
+    if (e) e.stopPropagation();
+    var dd = document.getElementById('orm-dropdown');
+    if (dd) dd.classList.toggle('open');
+  }
+  function seleccionarORM(estado) {
+    var dd = document.getElementById('orm-dropdown');
+    if (dd) dd.classList.remove('open');
+    var map = window._mapaLeaflet;
+    if (!map) return;
+    aplicarCapaORM(map, estado);
   }
   function pintarMarcadores() {
     var map = window._mapaLeaflet;
@@ -545,6 +615,17 @@
     toggleMonitorMode(false);
   });
   document.getElementById('btn-mapa').addEventListener('click', function () { go('mapa'); });
+  document.getElementById('btn-toggle-vias').addEventListener('click', toggleOrmDropdown);
+  document.querySelectorAll('.orm-option').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      seleccionarORM(el.getAttribute('data-orm'));
+    });
+  });
+  document.addEventListener('click', function () {
+    var dd = document.getElementById('orm-dropdown');
+    if (dd) dd.classList.remove('open');
+  });
   document.getElementById('btn-refrescar-mapa').addEventListener('click', function () {
     loadRadar().then(function () {
       if (window._mapaLeaflet) {
