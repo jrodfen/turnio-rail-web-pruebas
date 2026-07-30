@@ -197,15 +197,31 @@
   }
 
   function procesarCriticos(criticos) {
-    if (!Array.isArray(criticos) || !criticos.length) return;
+    if (!Array.isArray(criticos) || !criticos.length) return 0;
     var nuevos = criticos.filter(function (c) {
       return !trenesYaAlertados[claveCritico(c)];
     });
-    if (!nuevos.length) return;
+    if (!nuevos.length) return criticos.length;
+    // Misma regla que GAS: ≥25 → modal rojo; <25 (detención/sin salida/AVE 15-24) → naranja.
     var graves = nuevos.filter(function (c) { return Number(c.retrasoNum || 0) >= 25; });
     var detenidos = nuevos.filter(function (c) { return Number(c.retrasoNum || 0) < 25; });
     if (graves.length) mostrarModalRetrasos(graves);
     if (detenidos.length) mostrarModalDetenciones(detenidos);
+    return criticos.length;
+  }
+
+  function resumenUmbralRadar() {
+    var altas = 0;
+    var avisos = 0;
+    radar.forEach(function (a) {
+      if (!a || /LIMPIA|ERROR/i.test(String(a.tipo || ''))) return;
+      var r = Number(a.retrasoNum || 0);
+      var productoAlta = /^(AVE|AVE Int\.|Avlo|Alvia|Avant|Avant Exp\.|Intercity)$/i.test(String(a.producto || ''));
+      var umbral = productoAlta ? 15 : 25;
+      if (r >= umbral) altas++;
+      else if (r > 0) avisos++;
+    });
+    return { altas: altas, avisos: avisos };
   }
 
   async function ejecutarChequeoTrenes() {
@@ -218,9 +234,26 @@
       var region = regionEl ? regionEl.value : 'andalucia';
       var data = await call('vigilante_chequeo', { region: region });
       if (!vigilanteActivo) return;
-      procesarCriticos(data && data.criticos);
+      var criticos = (data && data.criticos) || [];
+      var n = procesarCriticos(criticos);
+      var umbral = resumenUmbralRadar();
+      if (n > 0) {
+        toast('Vigilante: ' + n + ' crítico' + (n === 1 ? '' : 's') + ' en ' + region);
+      } else if (umbral.altas > 0) {
+        toast('Conectado: 0 críticos nuevos (Radar ve ' + umbral.altas + ' ≥ umbral; pueden estar ya avisados o sin ruta GPS)');
+      } else {
+        toast('Conectado: sin críticos ahora (umbral AVE/Alvia ≥15 min, resto ≥25)');
+      }
+      console.info('[Vigilante]', {
+        region: region,
+        criticos: criticos.length,
+        muestra: criticos.slice(0, 3),
+        radarAltas: umbral.altas,
+        radarAvisos: umbral.avisos
+      });
     } catch (err) {
-      if (vigilanteActivo) toast(String(err.message || err));
+      if (vigilanteActivo) toast('Vigilante error: ' + String(err.message || err));
+      console.warn('[Vigilante] fallo', err);
     } finally {
       chequeoEnCurso = false;
     }
