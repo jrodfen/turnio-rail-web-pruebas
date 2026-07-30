@@ -62,11 +62,42 @@
     status.className = 'status ' + kind;
     status.textContent = text;
   }
-  function toast(text) {
+  function toast(text, type) {
     var t = document.getElementById('toast');
     t.textContent = text;
-    t.classList.add('show');
-    setTimeout(function () { t.classList.remove('show'); }, 2800);
+    t.className = 'toast show' + (type ? (' ' + type) : '');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function () {
+      t.classList.remove('show');
+      t.className = 'toast';
+    }, 2800);
+  }
+
+  function lanzarExitoAnimado(mensaje) {
+    var modal = document.getElementById('modal-exito-animado');
+    var txt = document.getElementById('texto-exito-animado');
+    if (!modal || !txt) {
+      toast(mensaje || '¡Hecho!', 'success');
+      return;
+    }
+    txt.textContent = mensaje || '¡Hecho!';
+    // Reinicia la animación del check
+    var svg = modal.querySelector('.check-svg');
+    if (svg) {
+      var clone = svg.cloneNode(true);
+      svg.parentNode.replaceChild(clone, svg);
+    }
+    modal.hidden = false;
+    modal.style.opacity = '1';
+    clearTimeout(window._exitoTimer);
+    clearTimeout(window._exitoHideTimer);
+    window._exitoTimer = setTimeout(function () {
+      modal.style.opacity = '0';
+      window._exitoHideTimer = setTimeout(function () {
+        modal.hidden = true;
+        modal.style.opacity = '1';
+      }, 300);
+    }, 2500);
   }
   function go(screen) {
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
@@ -546,10 +577,10 @@
   }
   function copiarAviso() {
     var texto = document.getElementById('cg-mensaje').value;
-    if (!texto.trim()) { toast('No hay aviso que copiar.'); return; }
+    if (!texto.trim()) { toast('No hay aviso que copiar.', 'error'); return; }
     function ok() {
-      toast('Aviso copiado');
       cerrarModalAviso();
+      lanzarExitoAnimado('¡Aviso copiado!');
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(texto).then(ok).catch(function () {
