@@ -82,7 +82,9 @@
     var nombre = (persona && persona.nombre) || 'usuario';
     var email = (persona && persona.email) || document.getElementById('email').value || '';
     document.getElementById('welcome-name').textContent = 'Hola, ' + nombre + '.';
-    document.getElementById('user-email').textContent = email;
+    var emailEl = document.getElementById('user-email');
+    emailEl.textContent = email.indexOf('@') > 0 ? email.split('@')[0] : email;
+    emailEl.title = email;
     document.getElementById('profile-email').textContent = email;
     loadRadar();
   }

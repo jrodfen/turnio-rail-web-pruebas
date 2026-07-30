@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=mapa7">
+    <link rel="stylesheet" href="./styles.css?v=header1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -14,7 +14,13 @@
       <form id="login-form" class="login-card" hidden><h2>Acceder a TURNIO</h2><label for="email">Correo autorizado</label><input id="email" name="email" type="email" autocomplete="email" required><label for="pin">PIN temporal de pruebas</label><input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" required><button type="submit" class="btn primary">Entrar en TURNIO</button></form>
     </section>
     <main id="app-shell" class="app" hidden>
-      <header class="top"><h1>TURNIO RAIL</h1><div class="top-session"><div id="user-email" class="sub"></div><div class="vigilante"><i></i> VIGILANTE: OFF</div></div></header>
+      <header class="top">
+        <div class="top-bar">
+          <div id="user-email" class="top-email" title=""></div>
+          <h1>TURNIO RAIL</h1>
+          <div class="vigilante" title="Estado del Vigilante"><i></i><span>OFF</span></div>
+        </div>
+      </header>
       <section id="screen-home" class="screen active">
         <div class="welcome-hero"><h2 id="welcome-name">Hola</h2><p>Resumen vivo para empezar el d&iacute;a. Los datos se refrescan desde TURNIO.</p></div>
         <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
@@ -106,6 +112,6 @@
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="./turnio-config.js"></script>
-    <script src="./app.js?v=mapa7"></script>
+    <script src="./app.js?v=header1"></script>
   </body>
 </html>
