@@ -1561,17 +1561,29 @@
   function buscarTrenEnMapa(numForzado) {
     var input = document.getElementById('mapa-buscar-input');
     var msg = document.getElementById('mapa-busqueda-msg');
-    var num = String(numForzado || input.value || '').replace(/\D/g, '').replace(/^0+/, '');
+    // El listener de click pasa un Event; no es un número de tren.
+    if (numForzado && typeof numForzado === 'object') numForzado = '';
+    var num = String(numForzado || (input && input.value) || '').replace(/\D/g, '').replace(/^0+/, '');
     if (numForzado && input) input.value = num;
     if (!num) {
-      msg.textContent = 'Introduce un número de tren.';
-      msg.className = 'err';
+      if (msg) {
+        msg.textContent = 'Introduce un número de tren.';
+        msg.className = 'err';
+      }
       return false;
     }
     var marker = mapIndex[num];
     if (!marker) {
-      msg.textContent = 'Tren ' + num + ' no está en la flota con este filtro.';
-      msg.className = 'err';
+      // Si el tren está en flota pero fuera del filtro actual, avisar con claridad.
+      var enFlota = flotaMapa.some(function (t) {
+        return String(t.codTren || '').replace(/^0+/, '') === num;
+      });
+      if (msg) {
+        msg.textContent = enFlota
+          ? ('Tren ' + num + ' está en flota pero oculto por el filtro actual.')
+          : ('Tren ' + num + ' no está en la flota ahora mismo.');
+        msg.className = 'err';
+      }
       return false;
     }
     var map = window._mapaLeaflet;
@@ -1579,15 +1591,20 @@
 
     function abrirPopup() {
       try { marker.openPopup(); } catch (_) {}
-      msg.textContent = 'Tren ' + num + ' ubicado.';
-      msg.className = '';
+      if (msg) {
+        msg.textContent = 'Tren ' + num + ' ubicado.';
+        msg.className = '';
+      }
     }
 
     var clusterGroup = window._mapaClusterGroup;
-    if (clusterGroup && typeof clusterGroup.zoomToShowLayer === 'function' &&
-        clusterGroup.hasLayer && clusterGroup.hasLayer(marker)) {
-      clusterGroup.zoomToShowLayer(marker, abrirPopup);
-      return true;
+    // Con MarkerCluster hasLayer a veces falla si el punto está agrupado:
+    // zoomToShowLayer es la vía fiable.
+    if (clusterGroup && typeof clusterGroup.zoomToShowLayer === 'function') {
+      try {
+        clusterGroup.zoomToShowLayer(marker, abrirPopup);
+        return true;
+      } catch (_) {}
     }
 
     map.setView(marker.getLatLng(), Math.max(map.getZoom(), 12));
@@ -1982,7 +1999,10 @@
     }
     if (window._mapaLeaflet) pintarMarcadores(false);
   });
-  document.getElementById('btn-ubicar-mapa').addEventListener('click', buscarTrenEnMapa);
+  document.getElementById('btn-ubicar-mapa').addEventListener('click', function (e) {
+    e.preventDefault();
+    buscarTrenEnMapa();
+  });
   document.getElementById('mapa-buscar-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
       e.preventDefault();
