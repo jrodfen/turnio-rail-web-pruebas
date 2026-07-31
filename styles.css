@@ -262,3 +262,17 @@ body.monitor-mode #screen-mapa{display:none!important}
 .avisos-row:last-child{border-bottom:0}
 .avisos-fecha{font-size:11px;color:var(--muted);margin:0 0 4px}
 .avisos-texto{font-size:13px;color:var(--text);line-height:1.5}
+
+/* Popup mapa: marcha + aviso */
+.mapa-popup{min-width:210px}
+.mapa-popup-actions{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.mapa-popup-btn--aviso{background:#0f766e}
+.mapa-popup-prox,.mapa-popup-delay{font-size:11px;margin:0 0 6px;color:#334155}
+.mapa-popup-hint{font-size:10px;color:#94a3b8;margin:0 0 6px;line-height:1.3}
+.mapa-popup-mat{font-size:11px;color:#64748b}
+.mapa-canvas-wrap{position:relative}
+.mapa-marcha-sheet{position:absolute;left:10px;right:10px;bottom:10px;z-index:650;max-height:48%;overflow:auto;background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(15,23,42,.18);padding:10px 12px}
+.mapa-marcha-sheet[hidden]{display:none!important}
+.mapa-marcha-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+.mapa-marcha-sheet-head strong{font-size:14px;color:var(--primary-dark)}
+.mapa-marcha-body .marcha-list{max-height:180px;overflow:auto}

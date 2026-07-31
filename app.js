@@ -115,7 +115,10 @@
     document.querySelectorAll('.nav-item').forEach(function (b) {
       b.classList.toggle('active', b.dataset.go === screen);
     });
-    if (screen !== 'mapa') detenerAutoFlota();
+    if (screen !== 'mapa') {
+      detenerAutoFlota();
+      cerrarMarchaMapa();
+    }
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') refrescarAvisosRed();
     if (screen === 'avisos') cargarPantallaAvisos(true);
@@ -1513,22 +1516,17 @@
       var retrasoHtml = Number(a.retrasoNum) > 0
         ? '<span style="color:#ef4444;font-weight:900;">+' + a.retrasoNum + ' min</span>'
         : '<span style="color:#008000;font-weight:900;">En hora</span>';
-      var popup =
-        '<div style="min-width:200px;">' +
-        '<div class="mapa-popup-linea">' + esc(String(a.producto || a.modo || '') + ' · ' + a.codTren) + '</div>' +
-        '<div class="mapa-popup-msg">' + esc(
-          (a.origen || '—') + ' → ' + (a.destino || '—') +
-          (a.mat ? ' · Mat. ' + a.mat : '')
-        ) + '</div>' +
-        '<div style="font-size:11px;margin-bottom:8px;">⏱ ' + retrasoHtml + '</div>' +
-        '<button class="mapa-popup-btn" type="button" data-marcha-tren="' + esc(String(a.codTren)) +
-          '" data-marcha-trip="' + esc(String(a.tripId || '')) + '">📡 Ver marcha en tiempo real</button>' +
-        '</div>';
+      var enrich = enriquecerTrenMapaDesdeRadar_(a);
+      var popup = construirPopupMapaHtml_(enrich);
       var marker = L.marker([lat, lon], {
         icon: icon,
         _alertaColor: color,
-        _codTren: String(a.codTren || '')
-      }).bindPopup(popup, { maxWidth: 280 });
+        _codTren: String(a.codTren || ''),
+        _flotaTren: enrich
+      }).bindPopup(popup, { maxWidth: 300, className: 'mapa-popup-wrap' });
+      marker.on('popupopen', function () {
+        enriquecerPopupMapaAsync_(marker);
+      });
       var key = String(a.codTren || '').replace(/^0+/, '');
       if (key) mapIndex[key] = marker;
       if (cluster) cluster.addLayer(marker);
@@ -1615,13 +1613,166 @@
     })();
   }
   async function marchaDesdePopup(tren, trip) {
-    go('radar');
-    toast('Abriendo marcha del tren ' + tren + '…');
-    setTimeout(function () {
-      var card = list.querySelector('.alert[data-cod="' + tren + '"]');
-      if (card) abrirMarcha(card);
-      else toast('El tren no está en la lista actual del Radar.');
-    }, 250);
+    var sheet = document.getElementById('mapa-marcha-sheet');
+    var body = document.getElementById('mapa-marcha-body');
+    if (!sheet || !body) return;
+    sheet.hidden = false;
+    body.innerHTML = '<div class="marcha-empty">Consultando marcha en vivo…</div>';
+    try {
+      var data = await call('marcha', { codTren: String(tren || ''), tripId: String(trip || '') });
+      renderMarcha(body, data.marcha);
+      // Si la marcha trae horas O/D, refresca el popup del marcador.
+      var m = data.marcha || {};
+      var marker = mapIndex[String(tren || '').replace(/^0+/, '')];
+      if (marker && marker.options && marker.options._flotaTren) {
+        var ft = marker.options._flotaTren;
+        if (m.hOrig) ft.hOrig = m.hOrig;
+        if (m.hDest) ft.hDest = m.hDest;
+        if (m.origen) ft.origen = m.origen;
+        if (m.destino) ft.destino = m.destino;
+        if (m.hDestPrevista) ft.hDestPrevista = m.hDestPrevista;
+        if (marker.getPopup()) marker.getPopup().setContent(construirPopupMapaHtml_(ft));
+      }
+    } catch (e) {
+      body.innerHTML = '<div class="marcha-empty error-text">' + esc(e.message || e) + '</div>';
+    }
+  }
+
+  function cerrarMarchaMapa() {
+    var sheet = document.getElementById('mapa-marcha-sheet');
+    if (sheet) sheet.hidden = true;
+  }
+
+  function enriquecerTrenMapaDesdeRadar_(tren) {
+    var out = Object.assign({}, tren || {});
+    var cod = String(out.codTren || '').replace(/^0+/, '');
+    for (var i = 0; i < radar.length; i++) {
+      var a = radar[i];
+      if (String(a.codTren || '').replace(/^0+/, '') !== cod) continue;
+      if (a.hOrig && !out.hOrig) out.hOrig = String(a.hOrig);
+      if (a.hDest && !out.hDest) out.hDest = String(a.hDest);
+      if (a.nombreOrig && (!out.origen || out.origen === out.codOrigen)) out.origen = a.nombreOrig;
+      if (a.nombreDest && (!out.destino || out.destino === out.codDestino)) out.destino = a.nombreDest;
+      if (a.mat && !out.mat) out.mat = a.mat;
+      if (a.matLabel) out.matLabel = a.matLabel;
+      if (a.mensaje) out.mensaje = a.mensaje;
+      break;
+    }
+    return out;
+  }
+
+  function construirPopupMapaHtml_(a) {
+    var retrasoHtml = Number(a.retrasoNum) > 0
+      ? '<span style="color:#ef4444;font-weight:900;">+' + a.retrasoNum + ' min</span>'
+      : '<span style="color:#008000;font-weight:900;">En hora</span>';
+    var hO = a.hOrig ? ' (' + a.hOrig + 'h)' : '';
+    var hD = a.hDest ? ' (' + a.hDest + 'h)' : '';
+    if (a.hDestPrevista) hD += ' · prev. ' + a.hDestPrevista + 'h';
+    var ruta = (a.origen || '—') + hO + ' → ' + (a.destino || '—') + hD;
+    var prox = '';
+    if (a.estSig) {
+      prox = '<div class="mapa-popup-prox">Próxima: ' + esc(a.estSig) +
+        (a.horaEstSig ? ' · ' + esc(a.horaEstSig) + 'h' : '') + '</div>';
+    }
+    var horasHint = (!a.hOrig && !a.hDest)
+      ? '<div class="mapa-popup-hint">Horas programadas: toca el tren o abre marcha para completarlas</div>'
+      : '';
+    return '<div class="mapa-popup">' +
+      '<div class="mapa-popup-linea">' + esc(String(a.producto || a.modo || '') + ' · ' + a.codTren) + '</div>' +
+      '<div class="mapa-popup-msg">' + esc(ruta) +
+      (a.mat ? '<br><span class="mapa-popup-mat">Mat. ' + esc(a.mat) + '</span>' : '') +
+      '</div>' + prox +
+      '<div class="mapa-popup-delay">⏱ ' + retrasoHtml + '</div>' + horasHint +
+      '<div class="mapa-popup-actions">' +
+      '<button class="mapa-popup-btn" type="button" data-marcha-tren="' + esc(String(a.codTren)) +
+        '" data-marcha-trip="' + esc(String(a.tripId || '')) + '">📡 Marcha</button>' +
+      '<button class="mapa-popup-btn mapa-popup-btn--aviso" type="button" data-aviso-mapa-tren="' +
+        esc(String(a.codTren)) + '" data-aviso-mapa-trip="' + esc(String(a.tripId || '')) +
+        '">💬 Generar aviso</button>' +
+      '</div></div>';
+  }
+
+  async function enriquecerPopupMapaAsync_(marker) {
+    if (!marker || !marker.options || !marker.options._flotaTren) return;
+    var ft = marker.options._flotaTren;
+    if (ft.hOrig && ft.hDest) return;
+    var tren = String(ft.codTren || '').replace(/^0+/, '');
+    if (!tren || ft._horasFetching) return;
+    ft._horasFetching = true;
+    try {
+      var data = await call('tren_manual', { codTren: tren });
+      if (data && data.encontrado && data.datos) {
+        var d = data.datos;
+        if (d.hOrig) ft.hOrig = d.hOrig;
+        if (d.hDest) ft.hDest = d.hDest;
+        if (d.origen) ft.origen = d.origen;
+        if (d.destino) ft.destino = d.destino;
+        if (d.tipo) ft.tipoAviso = d.tipo;
+        if (marker.getPopup() && marker.isPopupOpen && marker.isPopupOpen()) {
+          marker.getPopup().setContent(construirPopupMapaHtml_(ft));
+        }
+      }
+    } catch (_) {
+      // Silencioso: el aviso/marcha pueden completar después.
+    } finally {
+      ft._horasFetching = false;
+    }
+  }
+
+  function encontrarTrenFlota_(tren) {
+    var t = String(tren || '').replace(/^0+/, '');
+    var marker = mapIndex[t];
+    if (marker && marker.options && marker.options._flotaTren) return marker.options._flotaTren;
+    for (var i = 0; i < flotaMapa.length; i++) {
+      if (String(flotaMapa[i].codTren || '').replace(/^0+/, '') === t) {
+        return enriquecerTrenMapaDesdeRadar_(flotaMapa[i]);
+      }
+    }
+    return null;
+  }
+
+  async function avisoDesdeMapa(tren, trip) {
+    var ft = encontrarTrenFlota_(tren) || {};
+    var alertaRadar = encontrarAlertaAviso(tren, trip);
+    if (alertaRadar) {
+      abrirAvisoDesdeAlerta(alertaRadar);
+      return;
+    }
+    // Completar horas/O-D si faltan (Excel / biblia vía tren_manual).
+    if ((!ft.hOrig || !ft.hDest || !ft.origen || !ft.destino) && tren) {
+      try {
+        var data = await call('tren_manual', { codTren: String(tren).replace(/^0+/, '') });
+        if (data && data.encontrado && data.datos) {
+          var d = data.datos;
+          ft = Object.assign({}, ft, {
+            codTren: d.tren || tren,
+            origen: d.origen || ft.origen,
+            destino: d.destino || ft.destino,
+            hOrig: d.hOrig || ft.hOrig,
+            hDest: d.hDest || ft.hDest,
+            tipoAviso: d.tipo || ft.tipoAviso
+          });
+        }
+      } catch (_) {}
+    }
+    var pseudo = {
+      codTren: ft.codTren || tren,
+      tripId: trip || ft.tripId || '',
+      nombreOrig: ft.origen || 'ORIGEN',
+      nombreDest: ft.destino || 'DESTINO',
+      hOrig: ft.hOrig || '',
+      hDest: ft.hDest || '',
+      retrasoNum: Number(ft.retrasoNum || 0),
+      mat: ft.mat || '',
+      matLabel: ft.matLabel || '',
+      linea: (ft.producto || '') + ' | ' + (ft.origen || 'ORIGEN') + ' ➞ ' + (ft.destino || 'DESTINO'),
+      mensaje: Number(ft.retrasoNum) > 0
+        ? ('Circula con ' + ft.retrasoNum + ' minutos de demora.' +
+          (ft.estSig ? (' En ruta hacia ' + ft.estSig +
+            (ft.horaEstSig ? (' (' + ft.horaEstSig + 'h)') : '') + '.') : ''))
+        : 'Circula sin demora reseñable.'
+    };
+    abrirAvisoDesdeAlerta(pseudo);
   }
 
   async function init() {
@@ -1861,11 +2012,30 @@
     var card = e.target.closest('.alert');
     if (card) abrirMarcha(card);
   });
-  document.getElementById('mapa-container').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-marcha-tren]');
-    if (!btn) return;
-    marchaDesdePopup(btn.getAttribute('data-marcha-tren'), btn.getAttribute('data-marcha-trip') || '');
+  // Los popups de Leaflet a veces no delegan bien solo en #mapa-container.
+  document.addEventListener('click', function (e) {
+    var scr = document.getElementById('screen-mapa');
+    if (!scr || !scr.classList.contains('active')) return;
+    var btnMarcha = e.target.closest('[data-marcha-tren]');
+    if (btnMarcha) {
+      e.preventDefault();
+      marchaDesdePopup(
+        btnMarcha.getAttribute('data-marcha-tren'),
+        btnMarcha.getAttribute('data-marcha-trip') || ''
+      );
+      return;
+    }
+    var btnAviso = e.target.closest('[data-aviso-mapa-tren]');
+    if (btnAviso) {
+      e.preventDefault();
+      avisoDesdeMapa(
+        btnAviso.getAttribute('data-aviso-mapa-tren'),
+        btnAviso.getAttribute('data-aviso-mapa-trip') || ''
+      );
+    }
   });
+  var btnCerrarMarchaMapa = document.getElementById('btn-cerrar-mapa-marcha');
+  if (btnCerrarMarchaMapa) btnCerrarMarchaMapa.addEventListener('click', cerrarMarchaMapa);
 
   init();
 }());
