@@ -55,8 +55,12 @@ body.monitor-mode .last-update{color:#9ca3af}
 .orm-option .orm-check{font-size:11px;margin-left:auto;opacity:0}
 .orm-option.selected .orm-check{opacity:1}
 .orm-option.orm-off{border-top:1px solid var(--line);color:var(--muted)}
+.mapa-filtros{display:flex;gap:6px;padding:6px 14px 0;background:var(--bg);flex-wrap:wrap}
+.mapa-filtro{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:800;color:var(--muted);cursor:pointer}
+.mapa-filtro.active{background:#0f172a;color:#fff;border-color:#0f172a}
+.mapa-filtro[data-flota-filtro="demora"].active{background:#b45309;border-color:#b45309}
 .mapa-info-bar{padding:4px 14px;font-size:11px;color:var(--muted);background:var(--bg);display:flex;justify-content:space-between;gap:8px}
-.mapa-canvas-wrap{position:relative;height:calc(100vh - 120px);min-height:420px}
+.mapa-canvas-wrap{position:relative;height:calc(100vh - 150px);min-height:420px}
 #mapa-container{width:100%;height:100%;z-index:1}
 .mapa-buscador{position:absolute;z-index:800;left:12px;right:12px;top:12px;max-width:420px}
 .mapa-buscador-card{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:var(--shadow)}

@@ -32,7 +32,7 @@
         <div class="cards-grid">
           <button class="home-card home-card--purple" data-go="radar" type="button"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
           <button class="home-card home-card--green" data-go="mallas" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
-          <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Posici&oacute;n y marcha de los trenes</span></button>
+          <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Flota Renfe completa (Cercan&iacute;as + LD)</span></button>
           <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
       </section>
@@ -76,8 +76,8 @@
       <section id="screen-mapa" class="screen">
         <div class="mapa-toolbar">
           <button type="button" class="mapa-tool" data-go="radar">&#11013; Radar</button>
-          <h3>&#128506; Mapa en vivo</h3>
-          <span id="mapa-region-label" class="mapa-region"></span>
+          <h3>&#128506; Mapa flota</h3>
+          <span id="mapa-region-label" class="mapa-region">Renfe en vivo</span>
           <div id="orm-wrapper" class="orm-wrapper">
             <button type="button" id="btn-toggle-vias" class="mapa-tool" title="Capa ferroviaria">&#128739; V&iacute;as</button>
             <div id="orm-dropdown" class="orm-dropdown">
@@ -87,7 +87,13 @@
               <button type="button" class="orm-option orm-off" data-orm="off">&#10005; Desactivar<span class="orm-check">&#10003;</span></button>
             </div>
           </div>
-          <button type="button" class="mapa-tool primary" id="btn-refrescar-mapa" title="Actualizar">&#8635;</button>
+          <button type="button" class="mapa-tool primary" id="btn-refrescar-mapa" title="Actualizar flota">&#8635;</button>
+        </div>
+        <div class="mapa-filtros" id="mapa-filtros" role="group" aria-label="Filtros del mapa">
+          <button type="button" class="mapa-filtro active" data-flota-modo="TODOS">Todos</button>
+          <button type="button" class="mapa-filtro" data-flota-modo="LD">Larga dist.</button>
+          <button type="button" class="mapa-filtro" data-flota-modo="CERCANIAS">Cercan&iacute;as</button>
+          <button type="button" class="mapa-filtro" data-flota-filtro="demora" id="mapa-filtro-demora">Solo demoras</button>
         </div>
         <div class="mapa-info-bar">
           <span id="mapa-contador-trenes">— trenes en el mapa</span>
@@ -105,9 +111,8 @@
           <div id="mapa-container"></div>
           <div id="mapa-no-datos" class="mapa-empty" hidden>
             <div class="mapa-empty-ico">&#128506;</div>
-            <p><b>Sin datos de radar cargados</b></p>
-            <p>Ve primero al Radar, escanea la red y vuelve aqu&iacute;.</p>
-            <button type="button" class="btn primary" data-go="radar">Ir al Radar</button>
+            <p><b>Cargando flota Renfe…</b></p>
+            <p>Posiciones en vivo de Cercan&iacute;as y Larga Distancia.</p>
           </div>
         </div>
       </section>

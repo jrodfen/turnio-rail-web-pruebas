@@ -18,6 +18,12 @@
   var mapReady = false;
   var mapMarkers = [];
   var mapIndex = {};
+  var flotaMapa = [];
+  var flotaModo = 'TODOS';
+  var flotaSoloDemora = false;
+  var flotaCargando = false;
+  var flotaTimer = null;
+  var mapaFitHecho = false;
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -106,6 +112,7 @@
     document.querySelectorAll('.nav-item').forEach(function (b) {
       b.classList.toggle('active', b.dataset.go === screen);
     });
+    if (screen !== 'mapa') detenerAutoFlota();
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'mapa') openMapa();
     if (screen === 'mallas') {
@@ -1001,9 +1008,7 @@
       });
       radar = Array.isArray(data.alertas) ? data.alertas : [];
       render();
-      if (document.getElementById('screen-mapa').classList.contains('active') && window._mapaLeaflet) {
-        pintarMarcadores();
-      }
+      // El mapa ya no depende del Radar: usa flota Renfe vía Worker.
     } catch (e) {
       list.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
       if (/sesión|caducada/i.test(e.message)) {
@@ -1040,14 +1045,78 @@
     if (!document.fullscreenElement) document.body.classList.remove('monitor-mode');
   });
 
-  /* ── Mapa Leaflet ───────────────────────────────────────────── */
+  /* ── Mapa Leaflet (flota Renfe ligera) ───────────────────────── */
+  // Colores como en tiempo-real.largorecorrido.renfe.com
   function colorMarcador(a) {
-    if (a.tipo && String(a.tipo).indexOf('ALERTA') >= 0) return '#ef4444';
     var r = Number(a.retrasoNum || 0);
-    if (r >= 25) return '#ef4444';
-    if (r >= 5) return '#f59e0b';
-    if (a.currentStatus === 'STOPPED_AT' && r < 1) return '#3b82f6';
-    return '#22c55e';
+    if (!isFinite(r) || r <= 0) return '#008000';
+    if (r <= 15) return '#008000';
+    if (r <= 60) return '#FFDE21';
+    return '#FF0000';
+  }
+  function textoRetrasoFlota(r) {
+    r = Number(r || 0);
+    if (!isFinite(r) || r === 0) return '✓';
+    if (r < 0) return r + 'm';
+    if (r >= 60) {
+      var h = Math.floor(r / 60);
+      var m = r % 60;
+      return '+' + h + 'h' + (m ? m : '');
+    }
+    return '+' + r;
+  }
+  function flotaFiltrada() {
+    return flotaMapa.filter(function (t) {
+      if (flotaModo === 'LD' && t.modo !== 'LD') return false;
+      if (flotaModo === 'CERCANIAS' && t.modo !== 'CERCANIAS') return false;
+      if (flotaSoloDemora && !(Number(t.retrasoNum) > 0)) return false;
+      return t.lat && t.lon && Math.abs(t.lat) > 0.1 && Math.abs(t.lon) > 0.1;
+    });
+  }
+  async function cargarFlotaMapa(opts) {
+    opts = opts || {};
+    if (flotaCargando) return flotaMapa;
+    flotaCargando = true;
+    var cnt = document.getElementById('mapa-contador-trenes');
+    if (cnt && !flotaMapa.length) cnt.textContent = 'Cargando flota Renfe…';
+    try {
+      var d = null;
+      // Preferente: Worker (sin cuota GAS). Fallback: acción GAS cacheada.
+      try {
+        var r = await fetch(api + '/api/flota', { method: 'GET', cache: 'no-store' });
+        if (r.ok) {
+          var j = await r.json();
+          if (j && j.ok !== false && Array.isArray(j.trenes)) d = j;
+        }
+      } catch (_) {}
+      if (!d) d = await call('flota_mapa', {});
+      flotaMapa = Array.isArray(d.trenes) ? d.trenes : [];
+      var regionLabel = document.getElementById('mapa-region-label');
+      if (regionLabel) {
+        regionLabel.textContent = 'Flota Renfe · LD ' + (d.ld || 0) + ' · Cerc. ' + (d.cercanias || 0);
+      }
+      if (window._mapaLeaflet) pintarMarcadores(!!opts.fit);
+      return flotaMapa;
+    } catch (e) {
+      if (cnt) cnt.textContent = String(e.message || e);
+      throw e;
+    } finally {
+      flotaCargando = false;
+    }
+  }
+  function arrancarAutoFlota() {
+    detenerAutoFlota();
+    flotaTimer = setInterval(function () {
+      var scr = document.getElementById('screen-mapa');
+      if (!scr || !scr.classList.contains('active')) return;
+      cargarFlotaMapa({ fit: false }).catch(function () {});
+    }, 30000);
+  }
+  function detenerAutoFlota() {
+    if (flotaTimer) {
+      clearInterval(flotaTimer);
+      flotaTimer = null;
+    }
   }
   function cargarLeaflet(cb) {
     if (window.L) { cb(); return; }
@@ -1055,6 +1124,10 @@
     link.rel = 'stylesheet';
     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(link);
+    var clusterCss = document.createElement('link');
+    clusterCss.rel = 'stylesheet';
+    clusterCss.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';
+    document.head.appendChild(clusterCss);
     function script(src, ok, fail) {
       var s = document.createElement('script');
       s.src = src;
@@ -1075,13 +1148,13 @@
   function crearMapa() {
     if (window._mapaLeaflet) {
       window._mapaLeaflet.invalidateSize();
-      pintarMarcadores();
+      pintarMarcadores(false);
       return;
     }
     var map = L.map('mapa-container', { zoomControl: false }).setView([40.0, -3.7], 6);
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+      attribution: '© OpenStreetMap · Flota Renfe',
       maxZoom: 19
     }).addTo(map);
     var buscador = document.querySelector('.mapa-buscador');
@@ -1093,6 +1166,10 @@
     if (ormWrap && L.DomEvent) {
       L.DomEvent.disableClickPropagation(ormWrap);
       L.DomEvent.disableScrollPropagation(ormWrap);
+    }
+    var filtros = document.getElementById('mapa-filtros');
+    if (filtros && L.DomEvent) {
+      L.DomEvent.disableClickPropagation(filtros);
     }
 
     // Capas OpenRailwayMap (como en TURNIO GAS)
@@ -1109,17 +1186,16 @@
     leyenda.onAdd = function () {
       var div = L.DomUtil.create('div', 'mapa-leyenda');
       div.innerHTML =
-        '<strong style="display:block;margin-bottom:6px;">Retraso</strong>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#22c55e;"></div> Puntual / &lt;5 min</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#f59e0b;"></div> 5 – 24 min</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ef4444;"></div> ≥ 25 min</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#3b82f6;"></div> En estación</div>';
+        '<strong style="display:block;margin-bottom:6px;">Retraso (Renfe)</strong>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#008000;"></div> ≤ 15 min</div>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FFDE21;"></div> 16 – 60 min</div>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>';
       return div;
     };
     leyenda.addTo(map);
     window._mapaLeaflet = map;
     mapReady = true;
-    pintarMarcadores();
+    pintarMarcadores(!mapaFitHecho);
   }
 
   var ORM_ZOOM_MIN = 9;
@@ -1175,7 +1251,7 @@
     if (!map) return;
     aplicarCapaORM(map, estado);
   }
-  function pintarMarcadores() {
+  function pintarMarcadores(hacerFit) {
     var map = window._mapaLeaflet;
     if (!map) return;
     mapMarkers.forEach(function (m) { map.removeLayer(m); });
@@ -1184,35 +1260,41 @@
     var noData = document.getElementById('mapa-no-datos');
     var cnt = document.getElementById('mapa-contador-trenes');
     var upd = document.getElementById('mapa-last-update');
-    var regionLabel = document.getElementById('mapa-region-label');
-    var regionSel = document.getElementById('region');
-    if (regionLabel && regionSel) regionLabel.textContent = regionSel.options[regionSel.selectedIndex].text;
-    var alertas = radar.filter(function (a) {
-      return a.lat && a.lon && Math.abs(a.lat) > 0.1 && Math.abs(a.lon) > 0.1;
-    });
+    var alertas = flotaFiltrada();
     if (!alertas.length) {
       noData.hidden = false;
-      cnt.textContent = radar.length ? 'Sin coordenadas GPS en este filtro' : 'Sin datos de radar';
+      noData.querySelector('b').textContent = flotaMapa.length
+        ? 'Sin trenes con este filtro'
+        : 'Cargando flota Renfe…';
+      noData.querySelectorAll('p')[1].textContent = flotaMapa.length
+        ? 'Prueba Otro filtro o Solo demoras.'
+        : 'Posiciones en vivo de Cercanías y Larga Distancia.';
+      cnt.textContent = flotaMapa.length ? '0 trenes con este filtro' : 'Cargando flota…';
       return;
     }
     noData.hidden = true;
-    cnt.textContent = alertas.length + ' tren' + (alertas.length !== 1 ? 'es' : '') + ' en el mapa';
+    var demoras = alertas.filter(function (a) { return Number(a.retrasoNum) > 0; }).length;
+    cnt.textContent = alertas.length + ' trenes' +
+      (flotaModo !== 'TODOS' ? ' · ' + flotaModo : '') +
+      (demoras ? ' · ' + demoras + ' con demora' : '');
     upd.textContent = 'Act. ' + new Date().toLocaleTimeString('es-ES', {
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
     var usarCluster = !!(window.L && window.L.markerClusterGroup);
     var cluster = usarCluster ? L.markerClusterGroup({
-      maxClusterRadius: 60,
+      maxClusterRadius: 55,
+      disableClusteringAtZoom: 12,
       iconCreateFunction: function (c) {
-        var color = '#22c55e';
+        var color = '#008000';
         c.getAllChildMarkers().forEach(function (m) {
-          var col = m.options._alertaColor || '#22c55e';
-          if (col === '#ef4444') color = '#ef4444';
-          else if (col === '#f59e0b' && color !== '#ef4444') color = '#f59e0b';
+          var col = m.options._alertaColor || '#008000';
+          if (col === '#FF0000') color = '#FF0000';
+          else if (col === '#FFDE21' && color !== '#FF0000') color = '#FFDE21';
         });
         return L.divIcon({
           className: '',
-          html: '<div class="mapa-cluster" style="background:' + color + ';">' + c.getChildCount() + '</div>',
+          html: '<div class="mapa-cluster" style="background:' + color + ';color:' +
+            (color === '#FFDE21' ? '#111' : '#fff') + ';">' + c.getChildCount() + '</div>',
           iconSize: [38, 38],
           iconAnchor: [19, 19]
         });
@@ -1224,28 +1306,28 @@
       var lat = parseFloat(a.lat);
       var lon = parseFloat(a.lon);
       var color = colorMarcador(a);
-      var texto = Number(a.retrasoNum) > 0 ? '+' + a.retrasoNum : '✓';
+      var texto = textoRetrasoFlota(a.retrasoNum);
+      var ink = color === '#FFDE21' ? '#111' : '#fff';
       var icon = L.divIcon({
         className: '',
-        html: '<div class="mapa-marker" style="width:30px;height:30px;background:' + color + ';">' + texto + '</div>',
+        html: '<div class="mapa-marker" style="width:30px;height:30px;background:' + color + ';color:' + ink + ';">' + texto + '</div>',
         iconSize: [30, 30],
         iconAnchor: [15, 15],
         popupAnchor: [0, -18]
       });
-      var linea = plainText(a.linea || a.codTren || '–');
-      var msg = plainText(a.mensaje || '');
       var retrasoHtml = Number(a.retrasoNum) > 0
         ? '<span style="color:#ef4444;font-weight:900;">+' + a.retrasoNum + ' min</span>'
-        : '<span style="color:#22c55e;font-weight:900;">Puntual</span>';
+        : '<span style="color:#008000;font-weight:900;">En hora</span>';
       var popup =
         '<div style="min-width:200px;">' +
-        '<div class="mapa-popup-linea">' + esc(linea) + '</div>' +
-        '<div class="mapa-popup-msg">' + esc(msg) + '</div>' +
+        '<div class="mapa-popup-linea">' + esc(String(a.producto || a.modo || '') + ' · ' + a.codTren) + '</div>' +
+        '<div class="mapa-popup-msg">' + esc(
+          (a.origen || '—') + ' → ' + (a.destino || '—') +
+          (a.mat ? ' · Mat. ' + a.mat : '')
+        ) + '</div>' +
         '<div style="font-size:11px;margin-bottom:8px;">⏱ ' + retrasoHtml + '</div>' +
-        (a.codTren
-          ? '<button class="mapa-popup-btn" type="button" data-marcha-tren="' + esc(String(a.codTren)) +
-            '" data-marcha-trip="' + esc(String(a.tripId || '')) + '">📡 Ver marcha en tiempo real</button>'
-          : '') +
+        '<button class="mapa-popup-btn" type="button" data-marcha-tren="' + esc(String(a.codTren)) +
+          '" data-marcha-trip="' + esc(String(a.tripId || '')) + '">📡 Ver marcha en tiempo real</button>' +
         '</div>';
       var marker = L.marker([lat, lon], {
         icon: icon,
@@ -1262,17 +1344,22 @@
       map.addLayer(cluster);
       mapMarkers.push(cluster);
     }
-    if (bounds.length > 1) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
-    else if (bounds.length === 1) map.setView(bounds[0], 9);
+    if (hacerFit && bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
+      mapaFitHecho = true;
+    } else if (hacerFit && bounds.length === 1) {
+      map.setView(bounds[0], 9);
+      mapaFitHecho = true;
+    }
   }
   function openMapa() {
-    if (!radar.length) {
-      loadRadar().then(function () {
-        cargarLeaflet(crearMapa);
+    arrancarAutoFlota();
+    cargarLeaflet(function () {
+      crearMapa();
+      cargarFlotaMapa({ fit: !mapaFitHecho }).catch(function (e) {
+        toast(String(e.message || e), 'error');
       });
-      return;
-    }
-    cargarLeaflet(crearMapa);
+    });
   }
   function buscarTrenEnMapa(numForzado) {
     var input = document.getElementById('mapa-buscar-input');
@@ -1286,7 +1373,7 @@
     }
     var marker = mapIndex[num];
     if (!marker) {
-      msg.textContent = 'Tren ' + num + ' no está en el mapa con este filtro.';
+      msg.textContent = 'Tren ' + num + ' no está en la flota con este filtro.';
       msg.className = 'err';
       return false;
     }
@@ -1299,8 +1386,6 @@
       msg.className = '';
     }
 
-    // Si está en un cluster, zoomToShowLayer saca el marcador sin cambiar el
-    // aspecto general del mapa (los clusters siguen igual para el resto).
     var clusterGroup = window._mapaClusterGroup;
     if (clusterGroup && typeof clusterGroup.zoomToShowLayer === 'function' &&
         clusterGroup.hasLayer && clusterGroup.hasLayer(marker)) {
@@ -1315,13 +1400,6 @@
   function abrirMapaTren(tren) {
     var num = String(tren || '').replace(/\D/g, '').replace(/^0+/, '');
     if (!num) { toast('No hay número de tren.'); return; }
-    var alerta = radar.filter(function (a) {
-      return String(a.codTren || '').replace(/^0+/, '') === num;
-    })[0];
-    if (!alerta || !(alerta.lat && alerta.lon && Math.abs(alerta.lat) > 0.1)) {
-      toast('Este tren no tiene posición GPS ahora mismo.');
-      return;
-    }
     go('mapa');
     var intentos = 0;
     (function esperarMapa() {
@@ -1330,8 +1408,11 @@
         buscarTrenEnMapa(num);
         return;
       }
-      if (intentos < 25) setTimeout(esperarMapa, 120);
-      else toast('No se pudo ubicar el tren en el mapa.');
+      if (intentos === 1 || intentos === 8) {
+        cargarFlotaMapa({ fit: false }).catch(function () {});
+      }
+      if (intentos < 30) setTimeout(esperarMapa, 150);
+      else toast('No se pudo ubicar el tren en la flota.');
     })();
   }
   async function marchaDesdePopup(tren, trip) {
@@ -1522,12 +1603,26 @@
     if (dd) dd.classList.remove('open');
   });
   document.getElementById('btn-refrescar-mapa').addEventListener('click', function () {
-    loadRadar().then(function () {
-      if (window._mapaLeaflet) {
-        window._mapaLeaflet.invalidateSize();
-        pintarMarcadores();
-      }
+    cargarFlotaMapa({ fit: false }).then(function (lista) {
+      toast((lista && lista.length ? lista.length : 0) + ' trenes en flota');
+      if (window._mapaLeaflet) window._mapaLeaflet.invalidateSize();
+    }).catch(function (e) {
+      toast(String(e.message || e), 'error');
     });
+  });
+  document.getElementById('mapa-filtros').addEventListener('click', function (e) {
+    var btn = e.target.closest('.mapa-filtro');
+    if (!btn) return;
+    if (btn.hasAttribute('data-flota-filtro')) {
+      flotaSoloDemora = !flotaSoloDemora;
+      btn.classList.toggle('active', flotaSoloDemora);
+    } else {
+      flotaModo = btn.getAttribute('data-flota-modo') || 'TODOS';
+      document.querySelectorAll('.mapa-filtro[data-flota-modo]').forEach(function (el) {
+        el.classList.toggle('active', el.getAttribute('data-flota-modo') === flotaModo);
+      });
+    }
+    if (window._mapaLeaflet) pintarMarcadores(false);
   });
   document.getElementById('btn-ubicar-mapa').addEventListener('click', buscarTrenEnMapa);
   document.getElementById('mapa-buscar-input').addEventListener('keydown', function (e) {
