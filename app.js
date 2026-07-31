@@ -24,6 +24,7 @@
   var flotaCargando = false;
   var flotaTimer = null;
   var mapaFitHecho = false;
+  var intervaloAutoRadar = null;
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -132,6 +133,7 @@
         setMallasStatus(String(err.message || err), true);
       });
     }
+    gestionarAutoRadar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function showApp(persona) {
@@ -151,6 +153,7 @@
     document.getElementById('profile-email').textContent = email;
     loadRadar();
     arrancarVigilanteDesdeCuadrante();
+    gestionarAutoRadar();
   }
 
   // ========== MALLAS Y HORARIOS ==========
@@ -1002,7 +1005,13 @@
   async function loadRadar(opts) {
     opts = opts || {};
     if (window._radarLoading && !opts.force) return window._radarLoading;
-    list.innerHTML = '<div class="empty">Actualizando Radar...</div>';
+    if (!opts.silent) {
+      list.innerHTML = '<div class="empty">Actualizando Radar...</div>';
+    } else if (meta) {
+      meta.textContent = '⏳ Sincronizando...';
+      meta.style.color = '#ff9800';
+    }
+    if (opts.silent && list) list.style.opacity = '0.55';
     window._radarLoading = (async function () {
       var intentos = 0;
       try {
@@ -1019,15 +1028,25 @@
             /actualizando/i.test(String(radar[0].mensaje || ''))
           );
           if (busy && intentos < 4) {
-            list.innerHTML = '<div class="empty">Radar ocupado, reintentando… (' + intentos + '/3)</div>';
+            if (!opts.silent) {
+              list.innerHTML = '<div class="empty">Radar ocupado, reintentando… (' + intentos + '/3)</div>';
+            } else if (meta) {
+              meta.textContent = '⏳ Radar ocupado, reintentando… (' + intentos + '/3)';
+            }
             await new Promise(function (r) { setTimeout(r, 2000); });
             continue;
           }
           render();
+          if (meta) meta.style.color = '';
           return;
         }
       } catch (e) {
-        list.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
+        if (!opts.silent) {
+          list.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
+        } else if (meta) {
+          meta.textContent = '⚠️ Error al sincronizar';
+          meta.style.color = 'var(--red)';
+        }
         if (/sesión|caducada/i.test(e.message)) {
           localStorage.removeItem(sessionKey);
           appShell.hidden = true;
@@ -1036,10 +1055,30 @@
           loginForm.hidden = false;
         }
       } finally {
+        if (list) list.style.opacity = '1';
         window._radarLoading = null;
       }
     })();
     return window._radarLoading;
+  }
+
+  /** Igual que GAS producción: refresco automático cada 2 min con el radar visible. */
+  function gestionarAutoRadar() {
+    var pantallaRadar = document.getElementById('screen-radar');
+    var activa = !!(pantallaRadar && pantallaRadar.classList.contains('active') && !appShell.hidden);
+    if (activa) {
+      if (!intervaloAutoRadar) {
+        intervaloAutoRadar = setInterval(function () {
+          var scr = document.getElementById('screen-radar');
+          if (scr && scr.classList.contains('active') && !appShell.hidden) {
+            loadRadar({ silent: true });
+          }
+        }, 120000);
+      }
+    } else if (intervaloAutoRadar) {
+      clearInterval(intervaloAutoRadar);
+      intervaloAutoRadar = null;
+    }
   }
 
   /* ── Monitor de pared ───────────────────────────────────────── */
@@ -1504,6 +1543,10 @@
   document.getElementById('search').addEventListener('input', render);
   document.getElementById('logout').addEventListener('click', function () {
     setVigilanteState(false, true);
+    if (intervaloAutoRadar) {
+      clearInterval(intervaloAutoRadar);
+      intervaloAutoRadar = null;
+    }
     localStorage.removeItem(sessionKey);
     appShell.hidden = true;
     nav.hidden = true;
