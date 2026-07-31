@@ -237,3 +237,28 @@ body.monitor-mode #screen-mapa{display:none!important}
 .malla-detail{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:8px;color:var(--muted)}
 .malla-detail b{color:var(--text)}
 .malla-hint{font-size:11px;color:var(--primary);font-weight:700;margin-top:6px}
+
+/* Red / avisos oficiales */
+.home-card--red{border-color:rgba(217,48,37,.28);background:linear-gradient(180deg,#fff,#fff5f4)}
+.red-chip{background:#e60000;color:#fff;border:0;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 10px rgba(230,0,0,.2);white-space:nowrap;flex-shrink:0}
+.red-chip span{background:rgba(255,255,255,.3);padding:2px 5px;border-radius:10px;min-width:1.2em;text-align:center}
+.red-chip.is-alert{animation:pulse-red 2s infinite}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(230,0,0,.45)}70%{box-shadow:0 0 0 8px rgba(230,0,0,0)}}
+.infra-container{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(230,0,0,.04)}
+.infra-container[hidden]{display:none!important}
+.infra-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+.infra-header strong{font-size:13px;color:var(--red)}
+.infra-teletipo{max-height:220px;overflow:auto}
+.infra-item{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px;line-height:1.45;color:var(--text)}
+.infra-item:last-child{border-bottom:0}
+.infra-dot{flex-shrink:0}
+.avisos-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin:12px 0}
+.avisos-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.avisos-card-head h3{margin:0;font-size:17px;color:var(--primary-dark)}
+.avisos-card-head .btn{margin:0;padding:8px 12px;font-size:12px;width:auto}
+.avisos-lead{margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.4}
+.avisos-lista{min-height:120px}
+.avisos-row{padding:12px 0;border-bottom:1px solid var(--line)}
+.avisos-row:last-child{border-bottom:0}
+.avisos-fecha{font-size:11px;color:var(--muted);margin:0 0 4px}
+.avisos-texto{font-size:13px;color:var(--text);line-height:1.5}

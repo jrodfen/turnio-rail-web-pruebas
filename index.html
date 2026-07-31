@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=mallas3">
+    <link rel="stylesheet" href="./styles.css?v=red1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -29,10 +29,12 @@
       <section id="screen-home" class="screen active">
         <div class="welcome-hero"><h2 id="welcome-name">Hola</h2><p>Resumen vivo para empezar el d&iacute;a. Los datos se refrescan desde TURNIO.</p></div>
         <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
+        <article class="welcome-card" data-go="avisos"><h3><span>&#128226; Red / avisos</span><button type="button" class="text-btn">Ver avisos</button></h3><div id="home-avisos" class="welcome-muted">Cargando avisos de red...</div></article>
         <div class="cards-grid">
           <button class="home-card home-card--purple" data-go="radar" type="button"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
           <button class="home-card home-card--green" data-go="mallas" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
           <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Flota Renfe completa (Cercan&iacute;as + LD)</span></button>
+          <button class="home-card home-card--red" data-go="avisos" type="button"><b>&#127758; Red / avisos</b><span>Avisos oficiales de infraestructura Renfe</span></button>
           <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
       </section>
@@ -60,7 +62,16 @@
               <option value="norte">&#128205; Norte</option>
               <option value="espana">&#127758; Espa&ntilde;a</option>
             </select>
-            <button type="button" class="red-chip" data-coming="Avisos de red">&#127758; Red <span>0</span></button>
+            <button type="button" class="red-chip" id="btn-estado-red" title="Avisos de infraestructura / red">&#127758; Red <span id="infra-contador">0</span></button>
+          </div>
+          <div class="infra-container" id="infra-main-box" hidden>
+            <div class="infra-header">
+              <strong>Avisos de red (Renfe)</strong>
+              <button type="button" class="text-btn" id="btn-ver-todos-avisos" data-go="avisos">Ver todos</button>
+            </div>
+            <div id="texto-teletipo" class="infra-teletipo">
+              <div class="infra-item">Cargando avisos…</div>
+            </div>
           </div>
           <div class="filters" id="radar-filters" role="group" aria-label="Filtro de trenes">
             <button class="filter" data-mode="CERCANIAS" type="button">&#128642; CERC.</button>
@@ -190,6 +201,19 @@
           <div id="mallas-resultados" class="mallas-resultados"></div>
         </div>
       </section>
+      <section id="screen-avisos" class="screen">
+        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <div class="avisos-card">
+          <div class="avisos-card-head">
+            <h3>&#128226; Avisos de red</h3>
+            <button type="button" class="btn secondary" id="btn-refrescar-avisos">&#8635; Actualizar</button>
+          </div>
+          <p class="avisos-lead">Tabl&oacute;n oficial Renfe (GTFS-RT): infraestructura, accesibilidad y avisos de servicio.</p>
+          <div id="avisos-lista" class="avisos-lista" aria-live="polite">
+            <div class="empty">Cargando avisos…</div>
+          </div>
+        </div>
+      </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
       <section id="screen-ajustes" class="screen">
         <h2 class="ajustes-title">Ajustes</h2>
@@ -292,6 +316,6 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=radar-auto2"></script>
+    <script src="./app.js?v=red1"></script>
   </body>
 </html>

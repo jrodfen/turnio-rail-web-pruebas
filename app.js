@@ -25,6 +25,8 @@
   var flotaTimer = null;
   var mapaFitHecho = false;
   var intervaloAutoRadar = null;
+  var cacheAvisosRed = [];
+  var cargandoAvisosRed = null;
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -115,7 +117,10 @@
     });
     if (screen !== 'mapa') detenerAutoFlota();
     if (screen === 'radar' && !radar.length) loadRadar();
+    if (screen === 'radar') refrescarAvisosRed();
+    if (screen === 'avisos') cargarPantallaAvisos(true);
     if (screen === 'mapa') openMapa();
+    if (screen === 'home') refrescarAvisosRed();
     if (screen === 'mallas') {
       if (window.TurnioMallasGtfs) {
         window.TurnioMallasGtfs.asegurarOperativaGtfs().catch(function (err) {
@@ -154,6 +159,7 @@
     loadRadar();
     arrancarVigilanteDesdeCuadrante();
     gestionarAutoRadar();
+    refrescarAvisosRed();
   }
 
   // ========== MALLAS Y HORARIOS ==========
@@ -1072,6 +1078,7 @@
           var scr = document.getElementById('screen-radar');
           if (scr && scr.classList.contains('active') && !appShell.hidden) {
             loadRadar({ silent: true });
+            refrescarAvisosRed();
           }
         }, 120000);
       }
@@ -1079,6 +1086,118 @@
       clearInterval(intervaloAutoRadar);
       intervaloAutoRadar = null;
     }
+  }
+
+  function fechaAvisoTxt(inicio) {
+    var ts = Number(inicio || 0);
+    if (!ts) return '';
+    // Renfe a veces manda segundos Unix; a veces ms.
+    if (ts < 1e12) ts = ts * 1000;
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function fetchAvisosRed() {
+    if (cargandoAvisosRed) return cargandoAvisosRed;
+    cargandoAvisosRed = (async function () {
+      try {
+        var r = await fetch(api + '/api/avisos', { method: 'GET', cache: 'no-store' });
+        if (r.ok) {
+          var data = await r.json();
+          if (data && Array.isArray(data.avisos)) return data.avisos;
+        }
+      } catch (_) {}
+      try {
+        var dataGas = await call('avisos_red', {});
+        return Array.isArray(dataGas.avisos) ? dataGas.avisos : [];
+      } catch (_) {
+        return cacheAvisosRed.slice();
+      }
+    })();
+    try {
+      return await cargandoAvisosRed;
+    } finally {
+      cargandoAvisosRed = null;
+    }
+  }
+
+  function pintarTeletipoAvisos(avisos) {
+    var box = document.getElementById('texto-teletipo');
+    var cont = document.getElementById('infra-contador');
+    var btn = document.getElementById('btn-estado-red');
+    var home = document.getElementById('home-avisos');
+    var n = Array.isArray(avisos) ? avisos.length : 0;
+    if (cont) cont.textContent = String(n);
+    if (btn) btn.classList.toggle('is-alert', n > 0);
+    if (home) {
+      home.textContent = n
+        ? (n + ' aviso' + (n === 1 ? '' : 's') + ' activo' + (n === 1 ? '' : 's') + ' en la red Renfe')
+        : 'Red operando sin avisos oficiales ahora mismo';
+    }
+    if (!box) return;
+    if (!n) {
+      box.innerHTML = '<div class="infra-item">✅ Red nacional operando sin avisos.</div>';
+      return;
+    }
+    var max = Math.min(n, 12);
+    var html = '';
+    for (var i = 0; i < max; i++) {
+      html += '<div class="infra-item"><span class="infra-dot">🔴</span><span>' +
+        esc(avisos[i].texto || '') + '</span></div>';
+    }
+    if (n > max) {
+      html += '<div class="infra-item"><span class="infra-dot">…</span><span>Y ' +
+        (n - max) + ' más. Pulsa Ver todos.</span></div>';
+    }
+    box.innerHTML = html;
+  }
+
+  function pintarListaAvisos(avisos) {
+    var lista = document.getElementById('avisos-lista');
+    if (!lista) return;
+    if (!avisos || !avisos.length) {
+      lista.innerHTML = '<div class="empty">✅ Red operando con normalidad. No hay avisos activos.</div>';
+      return;
+    }
+    lista.innerHTML = avisos.map(function (av) {
+      var fecha = fechaAvisoTxt(av.inicio);
+      return '<div class="avisos-row">' +
+        (fecha ? '<div class="avisos-fecha">🕐 ' + esc(fecha) + '</div>' : '') +
+        '<div class="avisos-texto">🔴 ' + esc(av.texto || '') + '</div></div>';
+    }).join('');
+  }
+
+  async function refrescarAvisosRed() {
+    try {
+      var avisos = await fetchAvisosRed();
+      cacheAvisosRed = avisos;
+      pintarTeletipoAvisos(avisos);
+      var scr = document.getElementById('screen-avisos');
+      if (scr && scr.classList.contains('active')) pintarListaAvisos(avisos);
+      return avisos;
+    } catch (e) {
+      pintarTeletipoAvisos(cacheAvisosRed);
+      return cacheAvisosRed;
+    }
+  }
+
+  async function cargarPantallaAvisos(force) {
+    var lista = document.getElementById('avisos-lista');
+    if (lista) lista.innerHTML = '<div class="empty">Cargando avisos…</div>';
+    var avisos = force ? await fetchAvisosRed() : (cacheAvisosRed.length ? cacheAvisosRed : await fetchAvisosRed());
+    cacheAvisosRed = avisos;
+    pintarTeletipoAvisos(avisos);
+    pintarListaAvisos(avisos);
+  }
+
+  function toggleTeletipoRed() {
+    var box = document.getElementById('infra-main-box');
+    if (!box) return;
+    var abierto = !box.hidden;
+    box.hidden = abierto;
+    if (!abierto) refrescarAvisosRed();
   }
 
   /* ── Monitor de pared ───────────────────────────────────────── */
@@ -1525,6 +1644,10 @@
   document.querySelectorAll('[data-go]').forEach(function (b) {
     b.addEventListener('click', function () { go(b.dataset.go); });
   });
+  var btnRed = document.getElementById('btn-estado-red');
+  if (btnRed) btnRed.addEventListener('click', toggleTeletipoRed);
+  var btnRefAvisos = document.getElementById('btn-refrescar-avisos');
+  if (btnRefAvisos) btnRefAvisos.addEventListener('click', function () { cargarPantallaAvisos(true); });
   document.querySelectorAll('[data-coming]').forEach(function (b) {
     b.addEventListener('click', function () {
       toast(b.dataset.coming + ' se incorporará en el siguiente bloque.');
