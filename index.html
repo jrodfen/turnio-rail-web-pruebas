@@ -54,24 +54,24 @@
               <button type="button" id="btn-monitor" class="action-btn" title="Modo Monitor de Pared">&#128250; Monitor</button>
               <button type="button" id="btn-mapa" class="action-btn" title="Ver en mapa">&#128506; Mapa</button>
             </div>
-            <div id="region-chips" class="region-chips" role="group" aria-label="Regiones del Radar">
-              <button type="button" class="region-chip active" data-region="andalucia">&#128205; Andaluc&iacute;a</button>
-              <button type="button" class="region-chip" data-region="madrid">&#128205; Madrid</button>
-              <button type="button" class="region-chip" data-region="cataluna">&#128205; Catalu&ntilde;a</button>
-              <button type="button" class="region-chip" data-region="levante">&#128205; C. Valenciana</button>
-              <button type="button" class="region-chip" data-region="norte">&#128205; Norte</button>
-              <button type="button" class="region-chip" data-region="espana">&#127758; Espa&ntilde;a</button>
-            </div>
-            <select id="region" hidden aria-hidden="true" tabindex="-1">
-              <option value="andalucia" selected>Andaluc&iacute;a</option>
-              <option value="madrid">Madrid</option>
-              <option value="cataluna">Catalu&ntilde;a</option>
-              <option value="levante">C. Valenciana</option>
-              <option value="norte">Norte</option>
-              <option value="espana">Espa&ntilde;a</option>
-            </select>
             <button type="button" class="red-chip" id="btn-estado-red" title="Avisos de infraestructura / red">&#127758; Red <span id="infra-contador">0</span></button>
           </div>
+          <div id="region-chips" class="region-chips" role="group" aria-label="Regiones del Radar">
+            <button type="button" class="region-chip active" data-region="andalucia">&#128205; Andaluc&iacute;a</button>
+            <button type="button" class="region-chip" data-region="madrid">&#128205; Madrid</button>
+            <button type="button" class="region-chip" data-region="cataluna">&#128205; Catalu&ntilde;a</button>
+            <button type="button" class="region-chip" data-region="levante">&#128205; C. Valenciana</button>
+            <button type="button" class="region-chip" data-region="norte">&#128205; Norte</button>
+            <button type="button" class="region-chip" data-region="espana">&#127758; Espa&ntilde;a</button>
+          </div>
+          <select id="region" hidden aria-hidden="true" tabindex="-1">
+            <option value="andalucia" selected>Andaluc&iacute;a</option>
+            <option value="madrid">Madrid</option>
+            <option value="cataluna">Catalu&ntilde;a</option>
+            <option value="levante">C. Valenciana</option>
+            <option value="norte">Norte</option>
+            <option value="espana">Espa&ntilde;a</option>
+          </select>
           <div class="infra-container" id="infra-main-box" hidden>
             <div class="infra-header">
               <strong>Avisos de red (Renfe)</strong>
