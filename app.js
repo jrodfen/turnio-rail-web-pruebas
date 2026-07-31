@@ -999,26 +999,47 @@
       panel.innerHTML = '<div class="marcha-empty error-text">' + esc(e.message) + '</div>';
     }
   }
-  async function loadRadar() {
+  async function loadRadar(opts) {
+    opts = opts || {};
+    if (window._radarLoading && !opts.force) return window._radarLoading;
     list.innerHTML = '<div class="empty">Actualizando Radar...</div>';
-    try {
-      var data = await call('radar', {
-        modo: mode,
-        region: document.getElementById('region').value
-      });
-      radar = Array.isArray(data.alertas) ? data.alertas : [];
-      render();
-      // El mapa ya no depende del Radar: usa flota Renfe vía Worker.
-    } catch (e) {
-      list.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
-      if (/sesión|caducada/i.test(e.message)) {
-        localStorage.removeItem(sessionKey);
-        appShell.hidden = true;
-        nav.hidden = true;
-        loginShell.hidden = false;
-        loginForm.hidden = false;
+    window._radarLoading = (async function () {
+      var intentos = 0;
+      try {
+        while (intentos < 4) {
+          intentos++;
+          var data = await call('radar', {
+            modo: mode,
+            region: document.getElementById('region').value
+          });
+          radar = Array.isArray(data.alertas) ? data.alertas : [];
+          var busy = radar.length === 1 && (
+            radar[0]._radarBusy ||
+            /ACTUALIZ/i.test(String(radar[0].tipo || '')) ||
+            /actualizando/i.test(String(radar[0].mensaje || ''))
+          );
+          if (busy && intentos < 4) {
+            list.innerHTML = '<div class="empty">Radar ocupado, reintentando… (' + intentos + '/3)</div>';
+            await new Promise(function (r) { setTimeout(r, 2000); });
+            continue;
+          }
+          render();
+          return;
+        }
+      } catch (e) {
+        list.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
+        if (/sesión|caducada/i.test(e.message)) {
+          localStorage.removeItem(sessionKey);
+          appShell.hidden = true;
+          nav.hidden = true;
+          loginShell.hidden = false;
+          loginForm.hidden = false;
+        }
+      } finally {
+        window._radarLoading = null;
       }
-    }
+    })();
+    return window._radarLoading;
   }
 
   /* ── Monitor de pared ───────────────────────────────────────── */
