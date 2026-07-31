@@ -283,5 +283,14 @@ body.monitor-mode #screen-mapa{display:none!important}
 .region-chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;color:var(--muted);cursor:pointer;line-height:1.2}
 .region-chip.active{background:#0f172a;color:#fff;border-color:#0f172a}
 .region-chip[data-region="espana"].active{background:#1d4ed8;border-color:#1d4ed8}
-@media(max-width:520px){.region-chip{padding:5px 9px;font-size:10px}}
+@media(max-width:520px){
+  .radar-head{flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .radar-head h3{flex:1 1 auto}
+  .radar-actions{order:3;width:100%;gap:5px}
+  .radar-actions .action-btn{flex:1;padding:5px 6px;font-size:10px}
+  .red-chip{margin-left:0;padding:6px 7px;font-size:10px}
+  .region-chips{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:1px 1px 5px;margin-bottom:9px;scrollbar-width:none}
+  .region-chips::-webkit-scrollbar{display:none}
+  .region-chip{flex:0 0 auto;padding:5px 9px;font-size:10px}
+}
 

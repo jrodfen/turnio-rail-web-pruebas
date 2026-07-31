@@ -1156,7 +1156,9 @@
             } else if (meta) {
               meta.textContent = '⏳ Radar ocupado, reintentando… (' + intentos + '/3)';
             }
-            await new Promise(function (r) { setTimeout(r, 2000); });
+            // La lectura multi-región puede tardar mientras otra petición
+            // publica la caché. En móvil no martilleamos el mismo lock.
+            await new Promise(function (r) { setTimeout(r, 5000); });
             continue;
           }
           render();
