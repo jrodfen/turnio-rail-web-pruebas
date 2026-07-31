@@ -1629,29 +1629,69 @@
       else toast('No se pudo ubicar el tren en la flota.');
     })();
   }
+  function renderFichaMarchaInstantanea_(body, ft, tren) {
+    if (!body) return;
+    ft = ft || {};
+    var demora = Number(ft.retrasoNum || 0);
+    var ruta = (ft.origen || '—') +
+      (ft.hOrig ? ' (' + ft.hOrig + 'h)' : '') +
+      ' → ' + (ft.destino || '—') +
+      (ft.hDest ? ' (' + ft.hDest + 'h)' : '');
+    body.innerHTML =
+      '<div class="marcha-head"><strong>📡 Tren ' + esc(String(ft.codTren || tren || '')) +
+      '</strong><span>Cargando marcha…</span></div>' +
+      '<div class="marcha-route">' + esc(ruta) + '</div>' +
+      '<div class="marcha-kpis"><span>' +
+      (demora > 0 ? ('⏱ +' + demora + ' min') : '✅ En hora') +
+      '</span><span>' + esc(ft.estSig ? ('Próxima: ' + ft.estSig +
+        (ft.horaEstSig ? ' · ' + ft.horaEstSig + 'h' : '')) : 'Posición en mapa') +
+      '</span></div>' +
+      '<div class="marcha-empty marcha-loading">Consultando paradas GTFS en vivo…</div>' +
+      '<div class="marcha-source">Vista previa desde flota · completando…</div>';
+  }
+
   async function marchaDesdePopup(tren, trip) {
     var sheet = document.getElementById('mapa-marcha-sheet');
     var body = document.getElementById('mapa-marcha-body');
     if (!sheet || !body) return;
     sheet.hidden = false;
-    body.innerHTML = '<div class="marcha-empty">Consultando marcha en vivo…</div>';
+    var ft = encontrarTrenFlota_(tren) || {};
+    // B) Respuesta inmediata con datos ya en memoria (flota/radar).
+    renderFichaMarchaInstantanea_(body, ft, tren);
     try {
-      var data = await call('marcha', { codTren: String(tren || ''), tripId: String(trip || '') });
+      // A) Marcha rápida: sin malla/operativa; solo GTFS-RT (+ feed del modo si se conoce).
+      var data = await call('marcha', {
+        codTren: String(tren || ''),
+        tripId: String(trip || ft.tripId || ''),
+        omitirMallaPesada: true,
+        rapida: true,
+        modo: String(ft.modo || '')
+      });
       renderMarcha(body, data.marcha);
-      // Si la marcha trae horas O/D, refresca el popup del marcador.
+      if (body.querySelector('.marcha-source')) {
+        body.querySelector('.marcha-source').textContent =
+          'Fuente: Renfe GTFS-RT (rápida · mapa)';
+      }
       var m = data.marcha || {};
       var marker = mapIndex[String(tren || '').replace(/^0+/, '')];
       if (marker && marker.options && marker.options._flotaTren) {
-        var ft = marker.options._flotaTren;
-        if (m.hOrig) ft.hOrig = m.hOrig;
-        if (m.hDest) ft.hDest = m.hDest;
-        if (m.origen) ft.origen = m.origen;
-        if (m.destino) ft.destino = m.destino;
-        if (m.hDestPrevista) ft.hDestPrevista = m.hDestPrevista;
-        if (marker.getPopup()) marker.getPopup().setContent(construirPopupMapaHtml_(ft));
+        var fto = marker.options._flotaTren;
+        if (m.hOrig) fto.hOrig = m.hOrig;
+        if (m.hDest) fto.hDest = m.hDest;
+        if (m.origen) fto.origen = m.origen;
+        if (m.destino) fto.destino = m.destino;
+        if (m.hDestPrevista) fto.hDestPrevista = m.hDestPrevista;
+        if (m.stopActualNombre && !fto.estSig) fto.estSig = m.stopActualNombre;
+        if (marker.getPopup()) marker.getPopup().setContent(construirPopupMapaHtml_(fto));
       }
     } catch (e) {
-      body.innerHTML = '<div class="marcha-empty error-text">' + esc(e.message || e) + '</div>';
+      // Conserva la ficha instantánea y añade el error debajo.
+      var err = document.createElement('div');
+      err.className = 'marcha-empty error-text';
+      err.textContent = String(e.message || e);
+      var loading = body.querySelector('.marcha-loading');
+      if (loading) loading.replaceWith(err);
+      else body.appendChild(err);
     }
   }
 
