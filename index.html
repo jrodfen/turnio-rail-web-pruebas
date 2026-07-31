@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=ficha-panel1">
+    <link rel="stylesheet" href="./styles.css?v=pantallas-a1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -35,7 +35,7 @@
           <button class="home-card home-card--green" data-go="mallas" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
           <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Flota Renfe completa (Cercan&iacute;as + LD)</span></button>
           <button class="home-card home-card--red" data-go="avisos" type="button"><b>&#127758; Red / avisos</b><span>Avisos oficiales de infraestructura Renfe</span></button>
-          <button class="home-card home-card--blue" data-coming="Pantallas en estaci&oacute;n" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Salidas y llegadas ADIF</span></button>
+          <button class="home-card home-card--blue" data-go="pantallas" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Busca por c&oacute;digo o nombre &middot; salidas/llegadas ADIF</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
       </section>
       <section id="screen-radar" class="screen">
@@ -234,6 +234,38 @@
           </div>
         </div>
       </section>
+      <section id="screen-pantallas" class="screen">
+        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <div class="pantallas-card">
+          <div class="pantallas-card-head">
+            <h3>&#128421; Pantallas en estaci&oacute;n</h3>
+            <div class="pantallas-modo" role="group" aria-label="Tipo de pantalla">
+              <button type="button" class="pantallas-modo-btn active" data-pantalla-modo="dl">Salidas</button>
+              <button type="button" class="pantallas-modo-btn" data-pantalla-modo="al">Llegadas</button>
+            </div>
+          </div>
+          <p class="pantallas-lead">Busca por c&oacute;digo ADIF o nombre. Por defecto: Sevilla Santa Justa (51003).</p>
+          <label class="search pantallas-search" for="pantallas-buscar">
+            <span aria-hidden="true">&#128269;</span>
+            <input id="pantallas-buscar" type="search" placeholder="Ej. 51003 o Santa Justa" autocomplete="off" aria-label="Buscar estaci&oacute;n por c&oacute;digo o nombre">
+          </label>
+          <div id="pantallas-resultados" class="pantallas-resultados" role="listbox" aria-label="Resultados de estaciones" hidden></div>
+          <div id="pantallas-seleccion" class="pantallas-seleccion">
+            <div>
+              <b id="pantallas-nombre">Sevilla-Santa Justa</b>
+              <span id="pantallas-codigo">C&oacute;digo 51003</span>
+            </div>
+            <div class="pantallas-seleccion-actions">
+              <button type="button" class="btn secondary" id="btn-pantallas-adif" title="Abrir panel oficial ADIF">ADIF</button>
+              <button type="button" class="btn primary" id="btn-pantallas-abrir" title="Abrir configurador en pesta&ntilde;a">Abrir</button>
+            </div>
+          </div>
+          <div class="pantallas-adif-wrap">
+            <iframe id="iframe-pantallas-adif" title="Pantalla estaci&oacute;n ADIF" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allow="clipboard-write; fullscreen"></iframe>
+          </div>
+          <p class="pantallas-note">Vista v&iacute;a configurador no oficial (pantallas-estaciones). Si ADIF bloquea el iframe, usa <b>Abrir</b> o <b>ADIF</b>.</p>
+        </div>
+      </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
       <section id="screen-ajustes" class="screen">
         <h2 class="ajustes-title">Ajustes</h2>
@@ -358,7 +390,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=ficha-panel1"></script>
+    <script src="./app.js?v=pantallas-a1"></script>
   </body>
 </html>
 

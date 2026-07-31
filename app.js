@@ -278,6 +278,236 @@
       }, 300);
     }, 2500);
   }
+
+  var pantallasEstaciones = null;
+  var pantallasCarga = null;
+  var pantallasModo = 'dl';
+  var pantallasSel = null;
+  var pantallasBuscarTimer = null;
+
+  function pantallasDefault_() {
+    var d = window.TURNIO_PANTALLAS_DEFAULT || { c: '51003', n: 'SEVILLA-SANTA JUSTA' };
+    return { c: String(d.c || '51003'), n: String(d.n || 'SEVILLA-SANTA JUSTA'), cer: 1, feve: 0 };
+  }
+
+  function pantallasNorm_(s) {
+    return String(s || '')
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function pantallasTitulo_(n) {
+    return String(n || '')
+      .toLowerCase()
+      .replace(/(^|[\s\-/])([a-zà-ÿ])/g, function (_, a, b) { return a + b.toUpperCase(); });
+  }
+
+  function pantallasEsc_(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function pantallasBaseUrl_() {
+    var u = String(window.TURNIO_PANTALLAS_URL || 'https://pantallas-estaciones.vercel.app/').replace(/\/?$/, '/');
+    return u + '~/';
+  }
+
+  function pantallasIframeUrl_(codigo, modo) {
+    var interfaz = modo === 'al' ? 'arrivals' : 'departures';
+    return pantallasBaseUrl_() + '?station=' + encodeURIComponent(codigo) + '&interfaz=' + interfaz;
+  }
+
+  function pantallasAdifUrl_(codigo, modo) {
+    return 'https://info.adif.es/?s=' + encodeURIComponent(codigo) + '&v=' + (modo === 'al' ? 'al' : 'dl');
+  }
+
+  function asegurarEstacionesPantallas_() {
+    if (pantallasEstaciones) return Promise.resolve(pantallasEstaciones);
+    if (pantallasCarga) return pantallasCarga;
+    pantallasCarga = fetch('./estaciones-pantallas.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('No se pudo cargar el catálogo de estaciones.');
+        return r.json();
+      })
+      .then(function (arr) {
+        pantallasEstaciones = Array.isArray(arr) ? arr : [];
+        return pantallasEstaciones;
+      })
+      .catch(function (err) {
+        pantallasCarga = null;
+        throw err;
+      });
+    return pantallasCarga;
+  }
+
+  function pintarSeleccionPantallas_() {
+    var st = pantallasSel || pantallasDefault_();
+    var nom = document.getElementById('pantallas-nombre');
+    var cod = document.getElementById('pantallas-codigo');
+    if (nom) nom.textContent = pantallasTitulo_(st.n);
+    if (cod) {
+      var tags = [];
+      if (st.cer) tags.push('Cercanías');
+      if (st.feve) tags.push('Feve');
+      cod.textContent = 'Código ' + st.c + (tags.length ? ' · ' + tags.join(' · ') : '');
+    }
+  }
+
+  function cargarIframePantallas_() {
+    var st = pantallasSel || pantallasDefault_();
+    var iframe = document.getElementById('iframe-pantallas-adif');
+    if (!iframe) return;
+    var url = pantallasIframeUrl_(st.c, pantallasModo);
+    if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
+  }
+
+  function seleccionarEstacionPantallas_(st, opts) {
+    opts = opts || {};
+    pantallasSel = st;
+    pintarSeleccionPantallas_();
+    cargarIframePantallas_();
+    var box = document.getElementById('pantallas-resultados');
+    var inp = document.getElementById('pantallas-buscar');
+    if (box) {
+      box.innerHTML = '';
+      box.hidden = true;
+    }
+    if (inp && !opts.keepQuery) inp.value = '';
+  }
+
+  function filtrarEstacionesPantallas_(q) {
+    var raw = String(q || '').trim();
+    if (!raw) return [];
+    var nq = pantallasNorm_(raw);
+    var digits = raw.replace(/\D/g, '');
+    var list = pantallasEstaciones || [];
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var st = list[i];
+      var code = String(st.c || '');
+      var nameN = pantallasNorm_(st.n);
+      var score = 0;
+      if (digits && code.indexOf(digits) === 0) score = 100 - Math.min(code.length, 20);
+      else if (digits && code.indexOf(digits) >= 0) score = 70;
+      else if (nameN.indexOf(nq) === 0) score = 60;
+      else if (nameN.indexOf(nq) >= 0) score = 40;
+      if (score > 0) out.push({ st: st, score: score });
+    }
+    out.sort(function (a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return String(a.st.n).localeCompare(String(b.st.n), 'es');
+    });
+    return out.slice(0, 18).map(function (x) { return x.st; });
+  }
+
+  function pintarResultadosPantallas_(q) {
+    var box = document.getElementById('pantallas-resultados');
+    if (!box) return;
+    var hits = filtrarEstacionesPantallas_(q);
+    if (!String(q || '').trim()) {
+      box.innerHTML = '';
+      box.hidden = true;
+      return;
+    }
+    if (!hits.length) {
+      box.innerHTML = '<div class="pantallas-res-empty">Sin coincidencias.</div>';
+      box.hidden = false;
+      return;
+    }
+    box.innerHTML = hits.map(function (st) {
+      var meta = [];
+      if (st.cer) meta.push('Cerc.');
+      if (st.feve) meta.push('Feve');
+      return '<button type="button" class="pantallas-res" role="option" data-code="' +
+        pantallasEsc_(st.c) + '">' +
+        '<span><b>' + pantallasEsc_(pantallasTitulo_(st.n)) + '</b><span>' + pantallasEsc_(st.c) + '</span></span>' +
+        (meta.length ? '<span class="pantallas-res-meta">' + pantallasEsc_(meta.join(' · ')) + '</span>' : '') +
+        '</button>';
+    }).join('');
+    box.hidden = false;
+  }
+
+  function abrirPantallas() {
+    if (!pantallasSel) pantallasSel = pantallasDefault_();
+    pintarSeleccionPantallas_();
+    document.querySelectorAll('[data-pantalla-modo]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.pantallaModo === pantallasModo);
+    });
+    asegurarEstacionesPantallas_()
+      .then(function (arr) {
+        if (!pantallasSel && arr && arr.length) {
+          var found = arr.find(function (x) { return x.c === '51003'; });
+          pantallasSel = found || pantallasDefault_();
+        }
+        pintarSeleccionPantallas_();
+        cargarIframePantallas_();
+      })
+      .catch(function (err) {
+        toast(String(err.message || err), 'error');
+        cargarIframePantallas_();
+      });
+  }
+
+  function wirePantallasUi_() {
+    var inp = document.getElementById('pantallas-buscar');
+    var box = document.getElementById('pantallas-resultados');
+    var btnAdif = document.getElementById('btn-pantallas-adif');
+    var btnAbrir = document.getElementById('btn-pantallas-abrir');
+    if (inp) {
+      inp.addEventListener('input', function () {
+        var q = inp.value;
+        clearTimeout(pantallasBuscarTimer);
+        pantallasBuscarTimer = setTimeout(function () {
+          asegurarEstacionesPantallas_()
+            .then(function () { pintarResultadosPantallas_(q); })
+            .catch(function (err) { toast(String(err.message || err), 'error'); });
+        }, 120);
+      });
+      inp.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') {
+          inp.value = '';
+          if (box) { box.innerHTML = ''; box.hidden = true; }
+        }
+      });
+    }
+    if (box) {
+      box.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-code]');
+        if (!btn) return;
+        var code = btn.getAttribute('data-code');
+        var st = (pantallasEstaciones || []).find(function (x) { return String(x.c) === code; });
+        if (st) seleccionarEstacionPantallas_(st);
+      });
+    }
+    document.querySelectorAll('[data-pantalla-modo]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        pantallasModo = b.dataset.pantallaModo === 'al' ? 'al' : 'dl';
+        document.querySelectorAll('[data-pantalla-modo]').forEach(function (x) {
+          x.classList.toggle('active', x.dataset.pantallaModo === pantallasModo);
+        });
+        cargarIframePantallas_();
+      });
+    });
+    if (btnAdif) {
+      btnAdif.addEventListener('click', function () {
+        var st = pantallasSel || pantallasDefault_();
+        window.open(pantallasAdifUrl_(st.c, pantallasModo), '_blank', 'noopener');
+      });
+    }
+    if (btnAbrir) {
+      btnAbrir.addEventListener('click', function () {
+        var st = pantallasSel || pantallasDefault_();
+        window.open(pantallasIframeUrl_(st.c, pantallasModo), '_blank', 'noopener');
+      });
+    }
+  }
+
   function go(screen) {
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
     var el = document.getElementById('screen-' + screen);
@@ -292,6 +522,7 @@
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') refrescarAvisosRed();
     if (screen === 'avisos') cargarPantallaAvisos(true);
+    if (screen === 'pantallas') abrirPantallas();
     if (screen === 'mapa') openMapa();
     if (screen === 'home') refrescarAvisosRed();
     if (screen === 'mallas') {
@@ -2136,6 +2367,7 @@
       toast(b.dataset.coming + ' se incorporará en el siguiente bloque.');
     });
   });
+  wirePantallasUi_();
   document.querySelectorAll('.filter').forEach(function (b) {
     b.addEventListener('click', function () {
       mode = b.dataset.mode;
