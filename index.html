@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=marcha-dark1">
+    <link rel="stylesheet" href="./styles.css?v=ficha-panel1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -125,13 +125,19 @@
             <div id="mapa-busqueda-msg" role="status" aria-live="polite"></div>
           </div>
           <div id="mapa-container"></div>
-          <div id="mapa-marcha-sheet" class="mapa-marcha-sheet" hidden>
-            <div class="mapa-marcha-sheet-head">
-              <strong>Marcha en vivo</strong>
+          <div id="mapa-marcha-sheet" class="mapa-ficha-panel" hidden>
+            <div class="mapa-ficha-head">
+              <div class="mapa-ficha-head-text">
+                <strong id="mapa-ficha-titulo">Ficha del tren</strong>
+                <span id="mapa-ficha-subtitulo" class="mapa-ficha-sub"></span>
+              </div>
               <button type="button" id="btn-cerrar-mapa-marcha" class="aviso-close" aria-label="Cerrar">&times;</button>
             </div>
-            <div id="mapa-marcha-body" class="mapa-marcha-body">
-              <div class="marcha-empty">Selecciona un tren en el mapa.</div>
+            <div class="mapa-ficha-scroll">
+              <div id="mapa-ficha-info" class="mapa-ficha-info"></div>
+              <div id="mapa-marcha-body" class="mapa-marcha-body">
+                <div class="marcha-empty">Selecciona un tren en el mapa.</div>
+              </div>
             </div>
           </div>
           <div id="mapa-no-datos" class="mapa-empty" hidden>
@@ -352,7 +358,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=mapa-region1"></script>
+    <script src="./app.js?v=ficha-panel1"></script>
   </body>
 </html>
 

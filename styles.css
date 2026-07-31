@@ -272,12 +272,23 @@ body.monitor-mode #screen-mapa{display:none!important}
 .mapa-popup-hint{font-size:10px;color:#94a3b8;margin:0 0 6px;line-height:1.3}
 .mapa-popup-mat{font-size:11px;color:#64748b}
 .mapa-canvas-wrap{position:relative}
-.mapa-marcha-sheet{position:absolute;left:10px;right:10px;bottom:10px;z-index:650;max-height:48%;overflow:auto;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(15,23,42,.18);padding:10px 12px}
-.mapa-marcha-sheet[hidden]{display:none!important}
-.mapa-marcha-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
-.mapa-marcha-sheet-head strong{font-size:14px;color:var(--primary-dark)}
-.mapa-marcha-body{color:var(--text)}
-.mapa-marcha-body .marcha-list{max-height:180px;overflow:auto}
+.mapa-ficha-panel{position:absolute;left:10px;right:10px;bottom:10px;z-index:650;max-height:70%;display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(15,23,42,.18);overflow:hidden}
+.mapa-ficha-panel[hidden]{display:none!important}
+.mapa-ficha-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:10px 12px 8px;border-bottom:1px solid var(--line);flex-shrink:0}
+.mapa-ficha-head-text{min-width:0;flex:1}
+.mapa-ficha-head strong{display:block;font-size:14px;color:var(--primary-dark);line-height:1.25}
+.mapa-ficha-sub{display:block;margin-top:2px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapa-ficha-scroll{overflow:auto;-webkit-overflow-scrolling:touch;padding:0 12px 12px;flex:1;min-height:0}
+.mapa-ficha-info{padding:10px 0 8px;border-bottom:1px dashed var(--line);margin-bottom:8px}
+.mapa-ficha-info .mapa-popup-linea{color:var(--text)}
+.mapa-ficha-info .mapa-popup-msg,
+.mapa-ficha-info .mapa-popup-prox,
+.mapa-ficha-info .mapa-popup-delay,
+.mapa-ficha-info .mapa-popup-hint,
+.mapa-ficha-info .mapa-popup-mat{color:var(--muted)}
+.mapa-ficha-info .mapa-popup-actions{margin-top:8px}
+.mapa-marcha-body{color:var(--text);padding-bottom:4px}
+.mapa-marcha-body .marcha-list{max-height:none}
 .mapa-marcha-body .marcha-route,
 .mapa-marcha-body .marcha-step,
 .mapa-marcha-body .marcha-step span,
@@ -285,8 +296,14 @@ body.monitor-mode #screen-mapa{display:none!important}
 .mapa-marcha-body .marcha-empty,
 .mapa-marcha-body .marcha-source,
 .mapa-marcha-body .marcha-head span{color:var(--muted)}
+.mapa-marcha-body .marcha-head strong{color:var(--primary-dark)}
 @media(prefers-color-scheme:dark){
-  .mapa-marcha-sheet{box-shadow:0 10px 28px rgba(0,0,0,.45)}
+  .mapa-ficha-panel{box-shadow:0 10px 28px rgba(0,0,0,.45)}
+}
+@media(max-width:700px){
+  .mapa-ficha-panel{left:0;right:0;bottom:0;max-height:78vh;border-radius:16px 16px 0 0;border-left:0;border-right:0;border-bottom:0}
+  .mapa-ficha-head{padding:12px 14px 10px}
+  .mapa-ficha-scroll{padding:0 14px calc(12px + env(safe-area-inset-bottom))}
 }
 
 /* Selector de regiones (popup) */
