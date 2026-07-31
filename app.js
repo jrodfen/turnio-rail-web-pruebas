@@ -98,7 +98,13 @@
     regionesSeleccionadas = normalizarRegionesFront_(lista);
     try { localStorage.setItem(REGIONES_LS_KEY, JSON.stringify(regionesSeleccionadas)); } catch (e) {}
     pintarChipsRegion_();
-    if (!opts.silent) loadRadar({ force: true });
+    if (opts.silent) return;
+    // Debounce: al pulsar varios chips no martilleamos el ScriptLock del GAS.
+    if (window._regionDebounce) clearTimeout(window._regionDebounce);
+    window._regionDebounce = setTimeout(function () {
+      window._regionDebounce = null;
+      loadRadar({ force: true, keepOnBusy: true });
+    }, 450);
   }
   function toggleRegionChip(regionId) {
     var r = String(regionId || '').toLowerCase();
@@ -1126,8 +1132,16 @@
   async function loadRadar(opts) {
     opts = opts || {};
     if (window._radarLoading && !opts.force) return window._radarLoading;
-    if (!opts.silent) {
+    // Si ya hay una carga en curso, encola la última petición (cambio de región).
+    if (window._radarLoading && opts.force) {
+      window._radarPendingOpts = opts;
+      return window._radarLoading;
+    }
+    if (!opts.silent && !opts.keepOnBusy) {
       list.innerHTML = '<div class="empty">Actualizando Radar...</div>';
+    } else if (!opts.silent && opts.keepOnBusy && meta) {
+      meta.textContent = '⏳ Actualizando regiones…';
+      meta.style.color = '#ff9800';
     } else if (meta) {
       meta.textContent = '⏳ Sincronizando...';
       meta.style.color = '#ff9800';
@@ -1136,7 +1150,7 @@
     window._radarLoading = (async function () {
       var intentos = 0;
       try {
-        while (intentos < 4) {
+        while (intentos < 5) {
           intentos++;
           var regiones = obtenerRegionesRadar();
           var data = await call('radar', {
@@ -1150,16 +1164,23 @@
             /ACTUALIZ/i.test(String(radar[0].tipo || '')) ||
             /actualizando/i.test(String(radar[0].mensaje || ''))
           );
-          if (busy && intentos < 4) {
-            if (!opts.silent) {
-              list.innerHTML = '<div class="empty">Radar ocupado, reintentando… (' + intentos + '/3)</div>';
-            } else if (meta) {
-              meta.textContent = '⏳ Radar ocupado, reintentando… (' + intentos + '/3)';
+          if (busy && intentos < 5) {
+            // Conserva la lista anterior; no sustituir por la tarjeta "ocupado".
+            if (meta) {
+              meta.textContent = '⏳ Radar ocupado, reintentando… (' + intentos + '/4)';
+              meta.style.color = '#ff9800';
             }
-            // La lectura multi-región puede tardar mientras otra petición
-            // publica la caché. En móvil no martilleamos el mismo lock.
-            await new Promise(function (r) { setTimeout(r, 5000); });
+            toast('Radar ocupado, reintentando…');
+            await new Promise(function (r) { setTimeout(r, 2500); });
             continue;
+          }
+          if (busy) {
+            if (meta) {
+              meta.textContent = '⏳ Radar aún sincronizando. Pulsa de nuevo en unos segundos.';
+              meta.style.color = '#ff9800';
+            }
+            // No pinta la tarjeta busy como única alerta.
+            return;
           }
           render();
           if (meta) meta.style.color = '';
@@ -1182,6 +1203,11 @@
       } finally {
         if (list) list.style.opacity = '1';
         window._radarLoading = null;
+        var pending = window._radarPendingOpts;
+        if (pending) {
+          window._radarPendingOpts = null;
+          loadRadar(pending);
+        }
       }
     })();
     return window._radarLoading;

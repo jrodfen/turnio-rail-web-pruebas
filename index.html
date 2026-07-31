@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=multi-region1">
+    <link rel="stylesheet" href="./styles.css?v=multi-region2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -57,12 +57,12 @@
             <button type="button" class="red-chip" id="btn-estado-red" title="Avisos de infraestructura / red">&#127758; Red <span id="infra-contador">0</span></button>
           </div>
           <div id="region-chips" class="region-chips" role="group" aria-label="Regiones del Radar">
-            <button type="button" class="region-chip active" data-region="andalucia">&#128205; Andaluc&iacute;a</button>
-            <button type="button" class="region-chip" data-region="madrid">&#128205; Madrid</button>
-            <button type="button" class="region-chip" data-region="cataluna">&#128205; Catalu&ntilde;a</button>
-            <button type="button" class="region-chip" data-region="levante">&#128205; C. Valenciana</button>
-            <button type="button" class="region-chip" data-region="norte">&#128205; Norte</button>
-            <button type="button" class="region-chip" data-region="espana">&#127758; Espa&ntilde;a</button>
+            <button type="button" class="region-chip active" data-region="andalucia" title="Andaluc&iacute;a"><span class="chip-full">&#128205; Andaluc&iacute;a</span><span class="chip-short">And.</span></button>
+            <button type="button" class="region-chip" data-region="madrid" title="Madrid"><span class="chip-full">&#128205; Madrid</span><span class="chip-short">Mad.</span></button>
+            <button type="button" class="region-chip" data-region="cataluna" title="Catalu&ntilde;a"><span class="chip-full">&#128205; Catalu&ntilde;a</span><span class="chip-short">Cat.</span></button>
+            <button type="button" class="region-chip" data-region="levante" title="C. Valenciana"><span class="chip-full">&#128205; C. Valenciana</span><span class="chip-short">Lev.</span></button>
+            <button type="button" class="region-chip" data-region="norte" title="Norte"><span class="chip-full">&#128205; Norte</span><span class="chip-short">Norte</span></button>
+            <button type="button" class="region-chip" data-region="espana" title="Espa&ntilde;a"><span class="chip-full">&#127758; Espa&ntilde;a</span><span class="chip-short">ES</span></button>
           </div>
           <select id="region" hidden aria-hidden="true" tabindex="-1">
             <option value="andalucia" selected>Andaluc&iacute;a</option>
@@ -333,7 +333,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=multi-region1"></script>
+    <script src="./app.js?v=multi-region2"></script>
   </body>
 </html>
 
