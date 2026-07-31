@@ -39,6 +39,19 @@
     norte: 'Norte',
     espana: 'España'
   };
+  // Extensión aproximada para el encuadre inicial del mapa. Solo se usa
+  // cuando hay una región seleccionada; con varias se conserva el encuadre
+  // automático de toda la flota.
+  var REGION_MAP_BOUNDS = {
+    andalucia: [[35.75, -7.65], [38.35, -1.90]],
+    madrid: [[39.75, -4.95], [41.25, -2.45]],
+    cataluna: [[40.45, 0.15], [42.95, 3.45]],
+    levante: [[37.70, -1.55], [40.90, 0.75]],
+    norte: [[41.90, -9.45], [44.10, -1.35]],
+    cyl: [[40.00, -7.10], [43.10, -1.90]],
+    aragon: [[39.80, -2.35], [42.90, 0.85]],
+    extremadura: [[37.70, -7.80], [40.65, -4.75]]
+  };
 
   function leerRegionesGuardadas_() {
     try {
@@ -103,6 +116,8 @@
     opts = opts || {};
     var prev = regionesSeleccionadas.join('+');
     regionesSeleccionadas = normalizarRegionesFront_(lista);
+    // El próximo acceso al mapa debe recalcular el encuadre de la selección.
+    if (regionesSeleccionadas.join('+') !== prev) mapaFitHecho = false;
     try { localStorage.setItem(REGIONES_LS_KEY, JSON.stringify(regionesSeleccionadas)); } catch (e) {}
     pintarResumenRegiones_();
     if (opts.silent) return;
@@ -1732,7 +1747,12 @@
       map.addLayer(cluster);
       mapMarkers.push(cluster);
     }
-    if (hacerFit && bounds.length > 1) {
+    var regionesMapa = obtenerRegionesRadar();
+    var encuadreRegion = regionesMapa.length === 1 && REGION_MAP_BOUNDS[regionesMapa[0]];
+    if (hacerFit && encuadreRegion) {
+      map.fitBounds(REGION_MAP_BOUNDS[regionesMapa[0]], { padding: [24, 24], maxZoom: 9 });
+      mapaFitHecho = true;
+    } else if (hacerFit && bounds.length > 1) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
       mapaFitHecho = true;
     } else if (hacerFit && bounds.length === 1) {
