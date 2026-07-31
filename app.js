@@ -21,12 +21,12 @@
   var flotaMapa = [];
   var flotaModo = 'TODOS';
   var flotaSoloDemora = false;
-  var flotaCargando = false;
   var flotaTimer = null;
   var mapaFitHecho = false;
   var intervaloAutoRadar = null;
   var cacheAvisosRed = [];
   var cargandoAvisosRed = null;
+  var flotaCargaPromise = null;
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -160,6 +160,8 @@
     arrancarVigilanteDesdeCuadrante();
     gestionarAutoRadar();
     refrescarAvisosRed();
+    // Precarga flota del mapa en segundo plano (no mallas: demasiado pesado).
+    precargarFlotaMapa();
   }
 
   // ========== MALLAS Y HORARIOS ==========
@@ -1254,34 +1256,48 @@
   }
   async function cargarFlotaMapa(opts) {
     opts = opts || {};
-    if (flotaCargando) return flotaMapa;
-    flotaCargando = true;
+    if (flotaCargaPromise) return flotaCargaPromise;
     var cnt = document.getElementById('mapa-contador-trenes');
-    if (cnt && !flotaMapa.length) cnt.textContent = 'Cargando flota Renfe…';
-    try {
-      var d = null;
-      // Preferente: Worker (sin cuota GAS). Fallback: acción GAS cacheada.
+    var silencioso = !!opts.silent;
+    if (cnt && !flotaMapa.length && !silencioso) cnt.textContent = 'Cargando flota Renfe…';
+    flotaCargaPromise = (async function () {
       try {
-        var r = await fetch(api + '/api/flota', { method: 'GET', cache: 'no-store' });
-        if (r.ok) {
-          var j = await r.json();
-          if (j && j.ok !== false && Array.isArray(j.trenes)) d = j;
+        var d = null;
+        // Preferente: Worker (sin cuota GAS). Fallback: acción GAS cacheada.
+        try {
+          var r = await fetch(api + '/api/flota', { method: 'GET', cache: 'no-store' });
+          if (r.ok) {
+            var j = await r.json();
+            if (j && j.ok !== false && Array.isArray(j.trenes)) d = j;
+          }
+        } catch (_) {}
+        if (!d) d = await call('flota_mapa', {});
+        flotaMapa = Array.isArray(d.trenes) ? d.trenes : [];
+        var regionLabel = document.getElementById('mapa-region-label');
+        if (regionLabel) {
+          regionLabel.textContent = 'Flota Renfe · LD ' + (d.ld || 0) + ' · Cerc. ' + (d.cercanias || 0);
         }
-      } catch (_) {}
-      if (!d) d = await call('flota_mapa', {});
-      flotaMapa = Array.isArray(d.trenes) ? d.trenes : [];
-      var regionLabel = document.getElementById('mapa-region-label');
-      if (regionLabel) {
-        regionLabel.textContent = 'Flota Renfe · LD ' + (d.ld || 0) + ' · Cerc. ' + (d.cercanias || 0);
+        if (window._mapaLeaflet) pintarMarcadores(!!opts.fit);
+        else if (cnt && flotaMapa.length) {
+          cnt.textContent = flotaMapa.length + ' trenes listos · abre el mapa';
+        }
+        return flotaMapa;
+      } catch (e) {
+        if (cnt && !silencioso) cnt.textContent = String(e.message || e);
+        throw e;
+      } finally {
+        flotaCargaPromise = null;
       }
-      if (window._mapaLeaflet) pintarMarcadores(!!opts.fit);
-      return flotaMapa;
-    } catch (e) {
-      if (cnt) cnt.textContent = String(e.message || e);
-      throw e;
-    } finally {
-      flotaCargando = false;
-    }
+    })();
+    return flotaCargaPromise;
+  }
+
+  /** Precarga al login: descarga flota sin montar Leaflet. */
+  function precargarFlotaMapa() {
+    if (flotaMapa.length || flotaCargaPromise) return flotaCargaPromise;
+    return cargarFlotaMapa({ silent: true, fit: false }).catch(function () {
+      // Silencioso: se reintenta al abrir el mapa.
+    });
   }
   function arrancarAutoFlota() {
     detenerAutoFlota();
@@ -1535,6 +1551,10 @@
     arrancarAutoFlota();
     cargarLeaflet(function () {
       crearMapa();
+      // Si la precarga ya terminó, pinta al momento; si no, espera la misma promesa.
+      if (flotaMapa.length && window._mapaLeaflet) {
+        pintarMarcadores(!mapaFitHecho);
+      }
       cargarFlotaMapa({ fit: !mapaFitHecho }).catch(function (e) {
         toast(String(e.message || e), 'error');
       });
