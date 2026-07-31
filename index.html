@@ -70,7 +70,7 @@
               <button type="button" class="text-btn" id="btn-ver-todos-avisos" data-go="avisos">Ver todos</button>
             </div>
             <div id="texto-teletipo" class="infra-teletipo">
-              <div class="infra-item">Cargando avisosâ€¦</div>
+              <div class="infra-item">Cargando avisos&hellip;</div>
             </div>
           </div>
           <div class="filters" id="radar-filters" role="group" aria-label="Filtro de trenes">
@@ -107,14 +107,14 @@
           <button type="button" class="mapa-filtro" data-flota-filtro="demora" id="mapa-filtro-demora">Solo demoras</button>
         </div>
         <div class="mapa-info-bar">
-          <span id="mapa-contador-trenes">â€” trenes en el mapa</span>
+          <span id="mapa-contador-trenes">&mdash; trenes en el mapa</span>
           <span id="mapa-last-update"></span>
         </div>
         <div class="mapa-canvas-wrap">
           <div class="mapa-buscador">
             <div class="mapa-buscador-card">
               <span aria-hidden="true">&#128269;</span>
-              <input id="mapa-buscar-input" type="search" inputmode="numeric" enterkeyhint="search" placeholder="Buscar tren por n&uacute;meroâ€¦" autocomplete="off" aria-label="Buscar tren por n&uacute;mero">
+              <input id="mapa-buscar-input" type="search" inputmode="numeric" enterkeyhint="search" placeholder="Buscar tren por n&uacute;mero&hellip;" autocomplete="off" aria-label="Buscar tren por n&uacute;mero">
               <button type="button" id="btn-ubicar-mapa">Ubicar</button>
             </div>
             <div id="mapa-busqueda-msg" role="status" aria-live="polite"></div>
@@ -131,7 +131,7 @@
           </div>
           <div id="mapa-no-datos" class="mapa-empty" hidden>
             <div class="mapa-empty-ico">&#128506;</div>
-            <p><b>Cargando flota Renfeâ€¦</b></p>
+            <p><b>Cargando flota Renfe&hellip;</b></p>
             <p>Posiciones en vivo de Cercan&iacute;as y Larga Distancia.</p>
           </div>
         </div>
@@ -140,9 +140,9 @@
         <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
         <div id="gtfs-carga" class="mallas-card mallas-card--cuadro">
           <div class="gtfs-carga-ico" aria-hidden="true">&#128646;</div>
-          <h3>Sincronizando operativaâ€¦</h3>
+          <h3>Sincronizando operativa&hellip;</h3>
           <p class="mallas-lead">Descargando el archivo de mallas (~28 MB). La primera vez puede tardar; las siguientes saldr&aacute;n de la cach&eacute; del dispositivo.</p>
-          <div id="gtfs-status" class="mallas-status">Estableciendo conexi&oacute;nâ€¦</div>
+          <div id="gtfs-status" class="mallas-status">Estableciendo conexi&oacute;n&hellip;</div>
           <div id="gtfs-progress-wrap" class="gtfs-progress-wrap" hidden>
             <div id="gtfs-progress-bar" class="gtfs-progress-bar"></div>
           </div>
@@ -155,7 +155,7 @@
           <p class="mallas-lead">Consulta por estaci&oacute;n, producto, fecha y hora. Pulsa las tarjetas para ver la hoja de ruta.</p>
           <label class="aviso-label" for="inputEstacionBuscar">Estaci&oacute;n</label>
           <div class="searchable-select-container">
-            <input id="inputEstacionBuscar" type="search" placeholder="Selecciona o escribe para buscarâ€¦" autocomplete="off">
+            <input id="inputEstacionBuscar" type="search" placeholder="Selecciona o escribe para buscar&hellip;" autocomplete="off">
             <div id="listaEstacionesCustom" class="searchable-select-list" hidden></div>
             <div id="msgSinEstacion" class="searchable-empty" hidden>No se encontr&oacute; ninguna estaci&oacute;n</div>
           </div>
@@ -219,7 +219,7 @@
           </div>
           <p class="avisos-lead">Tabl&oacute;n oficial Renfe (GTFS-RT): infraestructura, accesibilidad y avisos de servicio.</p>
           <div id="avisos-lista" class="avisos-lista" aria-live="polite">
-            <div class="empty">Cargando avisosâ€¦</div>
+            <div class="empty">Cargando avisos&hellip;</div>
           </div>
         </div>
       </section>
@@ -247,7 +247,7 @@
     </main>
     <nav id="bottom-nav" class="fixed-nav" hidden>
       <button class="nav-item active" data-go="home" type="button"><span>&#127968;</span>Inicio</button>
-      <button class="nav-item" data-go="trafico" type="button"><span>&#128642;</span>CirculaciÃ³n</button>
+      <button class="nav-item" data-go="trafico" type="button"><span>&#128642;</span>Circulaci&oacute;n</button>
       <button class="nav-item" data-go="ajustes" type="button"><span>&#9881;</span>Ajustes</button>
       <button class="nav-item" data-go="perfil" type="button"><span>&#128100;</span>Cuenta</button>
     </nav>
@@ -289,10 +289,10 @@
           <button type="button" class="btn secondary" id="btn-guardar-firma">Guardar firma</button>
         </details>
         <label class="aviso-label" for="cg-buscador">Buscar en COP&Eacute;RNICO</label>
-        <input id="cg-buscador" type="search" placeholder="Ej: ASFA, material, climaâ€¦" autocomplete="off">
+        <input id="cg-buscador" type="search" placeholder="Ej: ASFA, material, clima&hellip;" autocomplete="off">
         <div id="cg-resultados" class="aviso-resultados" hidden></div>
         <label class="aviso-label" for="cg-mensaje">Mensaje</label>
-        <textarea id="cg-mensaje" rows="7" placeholder="El aviso aparecer&aacute; aqu&iacute;â€¦"></textarea>
+        <textarea id="cg-mensaje" rows="7" placeholder="El aviso aparecer&aacute; aqu&iacute;&hellip;"></textarea>
         <div class="vig-modal-actions">
           <button type="button" class="btn secondary" id="btn-cancelar-aviso">Cancelar</button>
           <button type="button" class="btn primary" id="btn-copiar-aviso">&#128203; Copiar y cerrar</button>
@@ -320,7 +320,7 @@
           <circle cx="26" cy="26" r="25" fill="none"/>
           <path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
         </svg>
-        <h3 id="texto-exito-animado">Â¡Hecho!</h3>
+        <h3 id="texto-exito-animado">&iexcl;Hecho!</h3>
       </div>
     </div>
     <script src="./turnio-config.js"></script>
