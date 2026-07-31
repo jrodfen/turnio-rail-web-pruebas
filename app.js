@@ -747,7 +747,19 @@
           (proxima.hora ? ' (' + proxima.hora + 'h).' : '.');
       }
       if (contexto.llegadaDestino) {
-        situacion += ' Llegada prevista a ' + id.destino + ': ' + contexto.llegadaDestino + 'h.';
+        var okLlegada = true;
+        if (proxima && proxima.hora) {
+          var mL = String(contexto.llegadaDestino).match(/^(\d{1,2}):(\d{2})$/);
+          var mP = String(proxima.hora).match(/^(\d{1,2}):(\d{2})$/);
+          if (mL && mP) {
+            var minL = Number(mL[1]) * 60 + Number(mL[2]);
+            var minP = Number(mP[1]) * 60 + Number(mP[2]);
+            if (minL < minP && (minP - minL) < 12 * 60) okLlegada = false;
+          }
+        }
+        if (okLlegada) {
+          situacion += ' Llegada prevista a ' + id.destino + ': ' + contexto.llegadaDestino + 'h.';
+        }
       }
       situacion += ' [INCIDENCIA_AQUI].';
       document.getElementById('cg-mensaje').value = construirMensajeAviso({
