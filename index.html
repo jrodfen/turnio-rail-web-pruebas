@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=multi-region2">
+    <link rel="stylesheet" href="./styles.css?v=region-popup1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -56,14 +56,11 @@
             </div>
             <button type="button" class="red-chip" id="btn-estado-red" title="Avisos de infraestructura / red">&#127758; Red <span id="infra-contador">0</span></button>
           </div>
-          <div id="region-chips" class="region-chips" role="group" aria-label="Regiones del Radar">
-            <button type="button" class="region-chip active" data-region="andalucia" title="Andaluc&iacute;a"><span class="chip-full">&#128205; Andaluc&iacute;a</span><span class="chip-short">And.</span></button>
-            <button type="button" class="region-chip" data-region="madrid" title="Madrid"><span class="chip-full">&#128205; Madrid</span><span class="chip-short">Mad.</span></button>
-            <button type="button" class="region-chip" data-region="cataluna" title="Catalu&ntilde;a"><span class="chip-full">&#128205; Catalu&ntilde;a</span><span class="chip-short">Cat.</span></button>
-            <button type="button" class="region-chip" data-region="levante" title="C. Valenciana"><span class="chip-full">&#128205; C. Valenciana</span><span class="chip-short">Lev.</span></button>
-            <button type="button" class="region-chip" data-region="norte" title="Norte"><span class="chip-full">&#128205; Norte</span><span class="chip-short">Norte</span></button>
-            <button type="button" class="region-chip" data-region="espana" title="Espa&ntilde;a"><span class="chip-full">&#127758; Espa&ntilde;a</span><span class="chip-short">ES</span></button>
-          </div>
+          <button type="button" id="btn-regiones" class="region-summary" aria-haspopup="dialog" aria-controls="modal-regiones" title="Elegir regiones del Radar">
+            <span class="region-summary-ico" aria-hidden="true">&#128205;</span>
+            <span id="region-summary-label" class="region-summary-label">Andaluc&iacute;a</span>
+            <span class="region-summary-caret" aria-hidden="true">&#9662;</span>
+          </button>
           <select id="region" hidden aria-hidden="true" tabindex="-1">
             <option value="andalucia" selected>Andaluc&iacute;a</option>
             <option value="madrid">Madrid</option>
@@ -260,6 +257,28 @@
       <button class="nav-item" data-go="perfil" type="button"><span>&#128100;</span>Cuenta</button>
     </nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="modal-regiones" class="vig-modal region-modal" hidden>
+      <div class="vig-modal-card region-modal-card" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-regiones">
+        <div class="aviso-modal-head">
+          <h2 id="titulo-modal-regiones">Regiones del Radar</h2>
+          <button type="button" class="aviso-close" id="btn-cerrar-regiones" aria-label="Cerrar">&times;</button>
+        </div>
+        <p class="aviso-help">Elige hasta 3 regiones. Espa&ntilde;a sustituye al resto.</p>
+        <div id="region-modal-list" class="region-modal-list" role="group" aria-label="Regiones">
+          <label class="region-check"><input type="checkbox" value="andalucia"><span>Andaluc&iacute;a</span></label>
+          <label class="region-check"><input type="checkbox" value="madrid"><span>Madrid</span></label>
+          <label class="region-check"><input type="checkbox" value="cataluna"><span>Catalu&ntilde;a</span></label>
+          <label class="region-check"><input type="checkbox" value="levante"><span>C. Valenciana</span></label>
+          <label class="region-check"><input type="checkbox" value="norte"><span>Norte</span></label>
+          <label class="region-check region-check--espana"><input type="checkbox" value="espana"><span>Espa&ntilde;a (todas)</span></label>
+        </div>
+        <p id="region-modal-hint" class="region-modal-hint">0 / 3 seleccionadas</p>
+        <div class="vig-modal-actions">
+          <button type="button" class="btn secondary" id="btn-cancelar-regiones">Cancelar</button>
+          <button type="button" class="btn primary" id="btn-aplicar-regiones">Aplicar</button>
+        </div>
+      </div>
+    </div>
     <div id="modal-retraso-grave" class="vig-modal" hidden>
       <div class="vig-modal-card vig-modal-card--red">
         <div class="vig-modal-ico" aria-hidden="true">&#9888;</div>
@@ -333,7 +352,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=multi-region2"></script>
+    <script src="./app.js?v=region-popup1"></script>
   </body>
 </html>
 

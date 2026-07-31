@@ -30,6 +30,15 @@
   var REGION_MAX = 3;
   var REGIONES_LS_KEY = 'turnio_radar_regiones';
   var regionesSeleccionadas = ['andalucia'];
+  var regionesBorrador = ['andalucia'];
+  var REGION_LABELS = {
+    andalucia: 'Andalucía',
+    madrid: 'Madrid',
+    cataluna: 'Cataluña',
+    levante: 'C. Valenciana',
+    norte: 'Norte',
+    espana: 'España'
+  };
 
   function leerRegionesGuardadas_() {
     try {
@@ -59,14 +68,17 @@
     if (out.length > REGION_MAX) out = out.slice(0, REGION_MAX);
     return out;
   }
+  function etiquetaRegiones_(lista) {
+    return normalizarRegionesFront_(lista).map(function (r) {
+      return REGION_LABELS[r] || r;
+    }).join(' + ');
+  }
   function sincronizarSelectRegionHidden_() {
     var sel = document.getElementById('region');
     if (!sel) return;
-    // Compat: el select oculto guarda la primera / la clave unida.
     var v = regionesSeleccionadas.length === 1
       ? regionesSeleccionadas[0]
       : regionesSeleccionadas.join('+');
-    // Asegura opción temporal si es multi.
     var found = false;
     for (var i = 0; i < sel.options.length; i++) {
       if (sel.options[i].value === v) { found = true; break; }
@@ -79,15 +91,9 @@
     }
     sel.value = v;
   }
-  function pintarChipsRegion_() {
-    var box = document.getElementById('region-chips');
-    if (!box) return;
-    var set = {};
-    regionesSeleccionadas.forEach(function (r) { set[r] = true; });
-    box.querySelectorAll('.region-chip').forEach(function (btn) {
-      var r = btn.getAttribute('data-region');
-      btn.classList.toggle('active', !!set[r]);
-    });
+  function pintarResumenRegiones_() {
+    var lab = document.getElementById('region-summary-label');
+    if (lab) lab.textContent = etiquetaRegiones_(regionesSeleccionadas);
     sincronizarSelectRegionHidden_();
   }
   function obtenerRegionesRadar() {
@@ -95,37 +101,86 @@
   }
   function setRegionesRadar(lista, opts) {
     opts = opts || {};
+    var prev = regionesSeleccionadas.join('+');
     regionesSeleccionadas = normalizarRegionesFront_(lista);
     try { localStorage.setItem(REGIONES_LS_KEY, JSON.stringify(regionesSeleccionadas)); } catch (e) {}
-    pintarChipsRegion_();
+    pintarResumenRegiones_();
     if (opts.silent) return;
-    // Debounce: al pulsar varios chips no martilleamos el ScriptLock del GAS.
-    if (window._regionDebounce) clearTimeout(window._regionDebounce);
-    window._regionDebounce = setTimeout(function () {
-      window._regionDebounce = null;
-      loadRadar({ force: true, keepOnBusy: true });
-    }, 450);
+    if (regionesSeleccionadas.join('+') === prev) return;
+    loadRadar({ force: true, keepOnBusy: true });
   }
-  function toggleRegionChip(regionId) {
-    var r = String(regionId || '').toLowerCase();
-    if (!r) return;
-    if (r === 'espana') {
-      setRegionesRadar(['espana']);
-      return;
+  function leerChecksRegionesModal_() {
+    var box = document.getElementById('region-modal-list');
+    if (!box) return [];
+    var out = [];
+    box.querySelectorAll('input[type="checkbox"]').forEach(function (inp) {
+      if (inp.checked) out.push(inp.value);
+    });
+    return out;
+  }
+  function pintarChecksRegionesModal_(lista) {
+    var set = {};
+    normalizarRegionesFront_(lista).forEach(function (r) { set[r] = true; });
+    var box = document.getElementById('region-modal-list');
+    if (!box) return;
+    box.querySelectorAll('.region-check').forEach(function (lab) {
+      var inp = lab.querySelector('input');
+      if (!inp) return;
+      var on = !!set[inp.value];
+      inp.checked = on;
+      lab.classList.toggle('is-on', on);
+    });
+    var hint = document.getElementById('region-modal-hint');
+    var n = Object.keys(set).length;
+    if (hint) {
+      if (set.espana) hint.textContent = 'España (todas las regiones)';
+      else hint.textContent = n + ' / ' + REGION_MAX + ' seleccionadas';
     }
-    var cur = regionesSeleccionadas.filter(function (x) { return x !== 'espana'; });
-    var idx = cur.indexOf(r);
-    if (idx >= 0) {
-      cur.splice(idx, 1);
-      if (!cur.length) cur = ['andalucia'];
+  }
+  function onToggleRegionModalCheck_(inp) {
+    var val = String(inp.value || '');
+    var checked = !!inp.checked;
+    var cur = leerChecksRegionesModal_().filter(function (r) { return r !== val; });
+    if (checked) {
+      if (val === 'espana') {
+        regionesBorrador = ['espana'];
+      } else {
+        cur = cur.filter(function (r) { return r !== 'espana'; });
+        if (cur.length >= REGION_MAX) {
+          inp.checked = false;
+          toast('Máximo ' + REGION_MAX + ' regiones');
+          pintarChecksRegionesModal_(regionesBorrador);
+          return;
+        }
+        cur.push(val);
+        regionesBorrador = cur.length ? cur : ['andalucia'];
+      }
     } else {
-      if (cur.length >= REGION_MAX) {
-        toast('Máximo ' + REGION_MAX + ' regiones. Quita una antes.');
+      if (!cur.length) {
+        inp.checked = true;
+        toast('Deja al menos una región');
         return;
       }
-      cur.push(r);
+      regionesBorrador = cur;
     }
-    setRegionesRadar(cur);
+    regionesBorrador = normalizarRegionesFront_(regionesBorrador);
+    pintarChecksRegionesModal_(regionesBorrador);
+  }
+  function abrirModalRegiones() {
+    var modal = document.getElementById('modal-regiones');
+    if (!modal) return;
+    regionesBorrador = regionesSeleccionadas.slice();
+    pintarChecksRegionesModal_(regionesBorrador);
+    modal.hidden = false;
+  }
+  function cerrarModalRegiones() {
+    var modal = document.getElementById('modal-regiones');
+    if (modal) modal.hidden = true;
+  }
+  function aplicarModalRegiones() {
+    var lista = normalizarRegionesFront_(leerChecksRegionesModal_());
+    cerrarModalRegiones();
+    setRegionesRadar(lista);
   }
 
   var esc = function (s) {
@@ -2030,10 +2085,17 @@
       loadRadar();
     });
   });
-  document.getElementById('region-chips').addEventListener('click', function (ev) {
-    var btn = ev.target && ev.target.closest ? ev.target.closest('.region-chip') : null;
-    if (!btn) return;
-    toggleRegionChip(btn.getAttribute('data-region'));
+  document.getElementById('btn-regiones').addEventListener('click', abrirModalRegiones);
+  document.getElementById('btn-cerrar-regiones').addEventListener('click', cerrarModalRegiones);
+  document.getElementById('btn-cancelar-regiones').addEventListener('click', cerrarModalRegiones);
+  document.getElementById('btn-aplicar-regiones').addEventListener('click', aplicarModalRegiones);
+  document.getElementById('modal-regiones').addEventListener('click', function (ev) {
+    if (ev.target === document.getElementById('modal-regiones')) cerrarModalRegiones();
+  });
+  document.getElementById('region-modal-list').addEventListener('change', function (ev) {
+    var inp = ev.target;
+    if (!inp || inp.type !== 'checkbox') return;
+    onToggleRegionModalCheck_(inp);
   });
   // Compat: si algo cambia el select oculto, respeta el valor.
   document.getElementById('region').addEventListener('change', function () {
@@ -2041,7 +2103,7 @@
     setRegionesRadar(String(v).split(/[+ ,]+/));
   });
   regionesSeleccionadas = leerRegionesGuardadas_();
-  pintarChipsRegion_();
+  pintarResumenRegiones_();
   document.getElementById('search').addEventListener('input', render);
   document.getElementById('logout').addEventListener('click', function () {
     setVigilanteState(false, true);
