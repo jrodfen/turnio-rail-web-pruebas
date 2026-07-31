@@ -1,11 +1,11 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=mapa-aviso1">
+    <link rel="stylesheet" href="./styles.css?v=multi-region1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -54,13 +54,21 @@
               <button type="button" id="btn-monitor" class="action-btn" title="Modo Monitor de Pared">&#128250; Monitor</button>
               <button type="button" id="btn-mapa" class="action-btn" title="Ver en mapa">&#128506; Mapa</button>
             </div>
-            <select id="region" aria-label="Regi&oacute;n del Radar">
-              <option value="andalucia">&#128205; Andaluc&iacute;a</option>
-              <option value="madrid">&#128205; Madrid</option>
-              <option value="cataluna">&#128205; Catalu&ntilde;a</option>
-              <option value="levante">&#128205; C. Valenciana</option>
-              <option value="norte">&#128205; Norte</option>
-              <option value="espana">&#127758; Espa&ntilde;a</option>
+            <div id="region-chips" class="region-chips" role="group" aria-label="Regiones del Radar">
+              <button type="button" class="region-chip active" data-region="andalucia">&#128205; Andaluc&iacute;a</button>
+              <button type="button" class="region-chip" data-region="madrid">&#128205; Madrid</button>
+              <button type="button" class="region-chip" data-region="cataluna">&#128205; Catalu&ntilde;a</button>
+              <button type="button" class="region-chip" data-region="levante">&#128205; C. Valenciana</button>
+              <button type="button" class="region-chip" data-region="norte">&#128205; Norte</button>
+              <button type="button" class="region-chip" data-region="espana">&#127758; Espa&ntilde;a</button>
+            </div>
+            <select id="region" hidden aria-hidden="true" tabindex="-1">
+              <option value="andalucia" selected>Andaluc&iacute;a</option>
+              <option value="madrid">Madrid</option>
+              <option value="cataluna">Catalu&ntilde;a</option>
+              <option value="levante">C. Valenciana</option>
+              <option value="norte">Norte</option>
+              <option value="espana">Espa&ntilde;a</option>
             </select>
             <button type="button" class="red-chip" id="btn-estado-red" title="Avisos de infraestructura / red">&#127758; Red <span id="infra-contador">0</span></button>
           </div>
@@ -325,7 +333,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=delay-aviso1"></script>
+    <script src="./app.js?v=multi-region1"></script>
   </body>
 </html>
 

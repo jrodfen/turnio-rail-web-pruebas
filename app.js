@@ -27,6 +27,100 @@
   var cacheAvisosRed = [];
   var cargandoAvisosRed = null;
   var flotaCargaPromise = null;
+  var REGION_MAX = 3;
+  var REGIONES_LS_KEY = 'turnio_radar_regiones';
+  var regionesSeleccionadas = ['andalucia'];
+
+  function leerRegionesGuardadas_() {
+    try {
+      var raw = localStorage.getItem(REGIONES_LS_KEY);
+      if (!raw) return ['andalucia'];
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || !arr.length) return ['andalucia'];
+      return normalizarRegionesFront_(arr);
+    } catch (e) {
+      return ['andalucia'];
+    }
+  }
+  function normalizarRegionesFront_(lista) {
+    var valid = {
+      andalucia: 1, madrid: 1, cataluna: 1, levante: 1, norte: 1, espana: 1
+    };
+    var out = [];
+    var seen = {};
+    (lista || []).forEach(function (r) {
+      var k = String(r || '').toLowerCase().trim();
+      if (!valid[k] || seen[k]) return;
+      seen[k] = true;
+      out.push(k);
+    });
+    if (!out.length) out = ['andalucia'];
+    if (out.indexOf('espana') >= 0) return ['espana'];
+    if (out.length > REGION_MAX) out = out.slice(0, REGION_MAX);
+    return out;
+  }
+  function sincronizarSelectRegionHidden_() {
+    var sel = document.getElementById('region');
+    if (!sel) return;
+    // Compat: el select oculto guarda la primera / la clave unida.
+    var v = regionesSeleccionadas.length === 1
+      ? regionesSeleccionadas[0]
+      : regionesSeleccionadas.join('+');
+    // Asegura opción temporal si es multi.
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === v) { found = true; break; }
+    }
+    if (!found) {
+      var opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    }
+    sel.value = v;
+  }
+  function pintarChipsRegion_() {
+    var box = document.getElementById('region-chips');
+    if (!box) return;
+    var set = {};
+    regionesSeleccionadas.forEach(function (r) { set[r] = true; });
+    box.querySelectorAll('.region-chip').forEach(function (btn) {
+      var r = btn.getAttribute('data-region');
+      btn.classList.toggle('active', !!set[r]);
+    });
+    sincronizarSelectRegionHidden_();
+  }
+  function obtenerRegionesRadar() {
+    return regionesSeleccionadas.slice();
+  }
+  function setRegionesRadar(lista, opts) {
+    opts = opts || {};
+    regionesSeleccionadas = normalizarRegionesFront_(lista);
+    try { localStorage.setItem(REGIONES_LS_KEY, JSON.stringify(regionesSeleccionadas)); } catch (e) {}
+    pintarChipsRegion_();
+    if (!opts.silent) loadRadar({ force: true });
+  }
+  function toggleRegionChip(regionId) {
+    var r = String(regionId || '').toLowerCase();
+    if (!r) return;
+    if (r === 'espana') {
+      setRegionesRadar(['espana']);
+      return;
+    }
+    var cur = regionesSeleccionadas.filter(function (x) { return x !== 'espana'; });
+    var idx = cur.indexOf(r);
+    if (idx >= 0) {
+      cur.splice(idx, 1);
+      if (!cur.length) cur = ['andalucia'];
+    } else {
+      if (cur.length >= REGION_MAX) {
+        toast('Máximo ' + REGION_MAX + ' regiones. Quita una antes.');
+        return;
+      }
+      cur.push(r);
+    }
+    setRegionesRadar(cur);
+  }
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -530,22 +624,26 @@
     parpadearLedVigilante();
     toast('Vigilante CGO escaneando red…');
     try {
-      var regionEl = document.getElementById('region');
-      var region = regionEl ? regionEl.value : 'andalucia';
-      var data = await call('vigilante_chequeo', { region: region });
+      var regiones = obtenerRegionesRadar();
+      var data = await call('vigilante_chequeo', {
+        region: regiones.join('+'),
+        regiones: regiones
+      });
       if (!vigilanteActivo) return;
       var criticos = (data && data.criticos) || [];
       var n = procesarCriticos(criticos);
       var umbral = resumenUmbralRadar();
+      var etiqueta = regiones.join('+');
       if (n > 0) {
-        toast('Vigilante: ' + n + ' crítico' + (n === 1 ? '' : 's') + ' en ' + region);
+        toast('Vigilante: ' + n + ' crítico' + (n === 1 ? '' : 's') + ' en ' + etiqueta);
       } else if (umbral.altas > 0) {
         toast('Conectado: 0 críticos nuevos (Radar ve ' + umbral.altas + ' ≥ umbral; pueden estar ya avisados o sin ruta GPS)');
       } else {
         toast('Conectado: sin críticos ahora (umbral AVE/Alvia ≥15 min, resto ≥25)');
       }
       console.info('[Vigilante]', {
-        region: region,
+        region: etiqueta,
+        regiones: regiones,
         criticos: criticos.length,
         muestra: criticos.slice(0, 3),
         radarAltas: umbral.altas,
@@ -1040,9 +1138,11 @@
       try {
         while (intentos < 4) {
           intentos++;
+          var regiones = obtenerRegionesRadar();
           var data = await call('radar', {
             modo: mode,
-            region: document.getElementById('region').value
+            region: regiones.join('+'),
+            regiones: regiones
           });
           radar = Array.isArray(data.alertas) ? data.alertas : [];
           var busy = radar.length === 1 && (
@@ -1902,7 +2002,18 @@
       loadRadar();
     });
   });
-  document.getElementById('region').addEventListener('change', loadRadar);
+  document.getElementById('region-chips').addEventListener('click', function (ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('.region-chip') : null;
+    if (!btn) return;
+    toggleRegionChip(btn.getAttribute('data-region'));
+  });
+  // Compat: si algo cambia el select oculto, respeta el valor.
+  document.getElementById('region').addEventListener('change', function () {
+    var v = document.getElementById('region').value || 'andalucia';
+    setRegionesRadar(String(v).split(/[+ ,]+/));
+  });
+  regionesSeleccionadas = leerRegionesGuardadas_();
+  pintarChipsRegion_();
   document.getElementById('search').addEventListener('input', render);
   document.getElementById('logout').addEventListener('click', function () {
     setVigilanteState(false, true);

@@ -19,6 +19,7 @@ body.monitor-mode .fixed-nav,
 body.monitor-mode .back,
 body.monitor-mode .radar-top-row,
 body.monitor-mode #region,
+body.monitor-mode #region-chips,
 body.monitor-mode #radar-filters,
 body.monitor-mode #radar-manual,
 body.monitor-mode #radar-search-box,
@@ -276,3 +277,11 @@ body.monitor-mode #screen-mapa{display:none!important}
 .mapa-marcha-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
 .mapa-marcha-sheet-head strong{font-size:14px;color:var(--primary-dark)}
 .mapa-marcha-body .marcha-list{max-height:180px;overflow:auto}
+
+/* Multi-región Radar */
+.region-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.region-chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;color:var(--muted);cursor:pointer;line-height:1.2}
+.region-chip.active{background:#0f172a;color:#fff;border-color:#0f172a}
+.region-chip[data-region="espana"].active{background:#1d4ed8;border-color:#1d4ed8}
+@media(max-width:520px){.region-chip{padding:5px 9px;font-size:10px}}
+
