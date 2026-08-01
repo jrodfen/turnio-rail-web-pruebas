@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'roles3');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'roles4');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -280,6 +280,8 @@
   }
 
   var adminCargando_ = false;
+  var adminPerfilesCache_ = [];
+  var adminExpandidoId_ = '';
   function fmtFechaCorta_(iso) {
     if (!iso) return '—';
     var d = new Date(iso);
@@ -304,6 +306,74 @@
     if (isNaN(d.getTime())) return '';
     return d.toISOString();
   }
+  function adminFiltroTexto_() {
+    var el = document.getElementById('admin-buscar');
+    return String(el && el.value || '').trim().toLowerCase();
+  }
+  function pintarAdminLista_() {
+    var lista = document.getElementById('admin-lista');
+    var meta = document.getElementById('admin-meta');
+    if (!lista) return;
+    var q = adminFiltroTexto_();
+    var filas = adminPerfilesCache_.filter(function (p) {
+      if (!q) return true;
+      var hay = [p.email, p.display_name, p.role_code].join(' ').toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+    if (meta) {
+      meta.textContent = filas.length + (q ? ' / ' + adminPerfilesCache_.length : '') +
+        ' perfil' + (adminPerfilesCache_.length === 1 ? '' : 'es');
+    }
+    if (!adminPerfilesCache_.length) {
+      lista.innerHTML = '<p class="empty">No hay perfiles en Supabase.</p>';
+      return;
+    }
+    if (!filas.length) {
+      lista.innerHTML = '<p class="empty">Ningún perfil coincide con la búsqueda.</p>';
+      return;
+    }
+    lista.innerHTML = filas.map(function (p) {
+      var id = esc(p.id);
+      var role = String(p.role_code || 'LECTURA').toUpperCase();
+      var esYo = sessionProfile.id && String(sessionProfile.id) === String(p.id);
+      var abierto = adminExpandidoId_ && String(adminExpandidoId_) === String(p.id);
+      var opts = ['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].map(function (r) {
+        return '<option value="' + r + '"' + (r === role ? ' selected' : '') + '>' + r + '</option>';
+      }).join('');
+      return (
+        '<article class="admin-row' + (p.active ? '' : ' admin-row--off') + (abierto ? ' open' : '') +
+          '" data-admin-id="' + id + '">' +
+          '<button type="button" class="admin-row-main" data-admin-toggle="' + id + '" aria-expanded="' + (abierto ? 'true' : 'false') + '">' +
+            '<span class="admin-row-who">' +
+              '<b>' + esc(p.display_name || p.email || 'Sin nombre') + (esYo ? ' · tú' : '') + '</b>' +
+              '<span>' + esc(p.email || '') + '</span>' +
+            '</span>' +
+            '<span class="admin-row-tags">' +
+              '<span class="admin-pill admin-pill--role">' + esc(role) + '</span>' +
+              (p.active ? '' : '<span class="admin-pill">Off</span>') +
+              (p.linked ? '' : '<span class="admin-pill">Sin Auth</span>') +
+            '</span>' +
+            '<span class="admin-row-chev" aria-hidden="true">' + (abierto ? '▾' : '▸') + '</span>' +
+          '</button>' +
+          '<div class="admin-row-edit"' + (abierto ? '' : ' hidden') + '>' +
+            '<div class="admin-card-grid">' +
+              '<label>Rol<select class="admin-role">' + opts + '</select></label>' +
+              '<label class="admin-active-lab"><input type="checkbox" class="admin-active"' +
+                (p.active ? ' checked' : '') + (esYo ? ' disabled' : '') + '> Activo</label>' +
+              '<label class="admin-exp-lab">Caduca (INVITADO)<input type="date" class="admin-expires" value="' +
+                esc(isoAFechaInput_(p.expires_at)) + '"' + (role === 'INVITADO' ? '' : ' disabled') + '></label>' +
+            '</div>' +
+            '<div class="admin-card-foot">' +
+              '<span class="admin-card-meta">Actualizado: ' + esc(fmtFechaCorta_(p.updated_at)) +
+                (p.expires_at && role === 'INVITADO' ? ' · Fin: ' + esc(fmtFechaCorta_(p.expires_at)) : '') +
+              '</span>' +
+              '<button type="button" class="action-btn admin-save" data-admin-save="' + id + '">Guardar</button>' +
+            '</div>' +
+          '</div>' +
+        '</article>'
+      );
+    }).join('');
+  }
   async function cargarAdminPerfiles_() {
     var lista = document.getElementById('admin-lista');
     var meta = document.getElementById('admin-meta');
@@ -318,47 +388,10 @@
     if (meta) meta.textContent = '…';
     try {
       var d = await call('admin_listar_perfiles');
-      var filas = Array.isArray(d.perfiles) ? d.perfiles : [];
-      if (meta) meta.textContent = filas.length + ' perfil' + (filas.length === 1 ? '' : 'es');
-      if (!filas.length) {
-        lista.innerHTML = '<p class="empty">No hay perfiles en Supabase.</p>';
-        return;
-      }
-      lista.innerHTML = filas.map(function (p) {
-        var id = esc(p.id);
-        var role = String(p.role_code || 'LECTURA').toUpperCase();
-        var esYo = sessionProfile.id && String(sessionProfile.id) === String(p.id);
-        var opts = ['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].map(function (r) {
-          return '<option value="' + r + '"' + (r === role ? ' selected' : '') + '>' + r + '</option>';
-        }).join('');
-        return (
-          '<article class="admin-card' + (p.active ? '' : ' admin-card--off') + '" data-admin-id="' + id + '">' +
-            '<div class="admin-card-head">' +
-              '<div class="admin-card-who">' +
-                '<b>' + esc(p.display_name || p.email || 'Sin nombre') + '</b>' +
-                '<span>' + esc(p.email || '') + (esYo ? ' · tú' : '') + '</span>' +
-              '</div>' +
-              '<span class="admin-pill' + (p.linked ? ' admin-pill--ok' : '') + '">' +
-                (p.linked ? 'Vinculado' : 'Sin Auth') +
-              '</span>' +
-            '</div>' +
-            '<div class="admin-card-grid">' +
-              '<label>Rol<select class="admin-role" data-f="role">' + opts + '</select></label>' +
-              '<label class="admin-active-lab"><input type="checkbox" class="admin-active" data-f="active"' +
-                (p.active ? ' checked' : '') + (esYo ? ' disabled' : '') + '> Activo</label>' +
-              '<label class="admin-exp-lab">Caduca (INVITADO)<input type="date" class="admin-expires" data-f="expires" value="' +
-                esc(isoAFechaInput_(p.expires_at)) + '"' + (role === 'INVITADO' ? '' : ' disabled') + '></label>' +
-            '</div>' +
-            '<div class="admin-card-foot">' +
-              '<span class="admin-card-meta">Actualizado: ' + esc(fmtFechaCorta_(p.updated_at)) +
-                (p.expires_at && role === 'INVITADO' ? ' · Fin: ' + esc(fmtFechaCorta_(p.expires_at)) : '') +
-              '</span>' +
-              '<button type="button" class="action-btn admin-save" data-admin-save="' + id + '">Guardar</button>' +
-            '</div>' +
-          '</article>'
-        );
-      }).join('');
+      adminPerfilesCache_ = Array.isArray(d.perfiles) ? d.perfiles : [];
+      pintarAdminLista_();
     } catch (err) {
+      adminPerfilesCache_ = [];
       lista.innerHTML = '<p class="empty error-text">' + esc(err.message || err) + '</p>';
       if (meta) meta.textContent = 'error';
     } finally {
@@ -3148,6 +3181,10 @@
   });
   var btnAdminRef = document.getElementById('btn-admin-refrescar');
   if (btnAdminRef) btnAdminRef.addEventListener('click', function () { cargarAdminPerfiles_(); });
+  var adminBuscar = document.getElementById('admin-buscar');
+  if (adminBuscar) {
+    adminBuscar.addEventListener('input', function () { pintarAdminLista_(); });
+  }
   var adminFormNuevo = document.getElementById('admin-form-nuevo');
   if (adminFormNuevo) adminFormNuevo.addEventListener('submit', crearAdminPerfil_);
   var adminNuevoRol = document.getElementById('admin-nuevo-rol');
@@ -3160,16 +3197,25 @@
     adminListaEl.addEventListener('change', function (ev) {
       var t = ev.target;
       if (!t || !t.classList.contains('admin-role')) return;
-      var card = t.closest('.admin-card');
+      var card = t.closest('.admin-row');
       if (!card) return;
       var exp = card.querySelector('.admin-expires');
       if (exp) exp.disabled = String(t.value).toUpperCase() !== 'INVITADO';
     });
     adminListaEl.addEventListener('click', function (ev) {
-      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-admin-save]') : null;
-      if (!btn) return;
-      var card = btn.closest('.admin-card');
-      if (card) guardarAdminPerfil_(card);
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var saveBtn = t.closest('[data-admin-save]');
+      if (saveBtn) {
+        var cardSave = saveBtn.closest('.admin-row');
+        if (cardSave) guardarAdminPerfil_(cardSave);
+        return;
+      }
+      var toggle = t.closest('[data-admin-toggle]');
+      if (!toggle) return;
+      var id = toggle.getAttribute('data-admin-toggle') || '';
+      adminExpandidoId_ = adminExpandidoId_ === id ? '' : id;
+      pintarAdminLista_();
     });
   }
   document.getElementById('btn-obtener-actualizacion').addEventListener('click', function () {
