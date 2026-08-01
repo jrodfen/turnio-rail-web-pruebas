@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces6');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces7');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3411,18 +3411,44 @@
       }
     });
   }
-  function abrirUrlSinReferer_(url) {
-    var a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noreferrer';
-    a.setAttribute('referrerpolicy', 'no-referrer');
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      if (a.parentNode) a.parentNode.removeChild(a);
-    }, 0);
+  function htmlAyudanteCombinados_(url) {
+    return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+      '<meta name="referrer" content="no-referrer">' +
+      '<title>TURNIO · Combinados</title>' +
+      '<style>body{font-family:Segoe UI,sans-serif;padding:24px;max-width:520px;margin:auto;line-height:1.4}' +
+      'a{color:#0b57d0;word-break:break-all}</style></head><body>' +
+      '<h1 style="font-size:18px">Descarga Trenes Combinados</h1>' +
+      '<p>Redirigiendo a Copérnico…</p>' +
+      '<p>Si no empieza la descarga, <a id="m" href="' + String(url).replace(/"/g, '&quot;') +
+      '" referrerpolicy="no-referrer">pulsa aquí</a>.</p>' +
+      '<script>setTimeout(function(){location.replace(' + JSON.stringify(url) + ')},80)<\\/script>' +
+      '</body></html>';
+  }
+  /** data: (origen opaco) → Copérnico; más parecido a pegar la URL que abrir desde TURNIO. */
+  function abrirUrlViaDataRedirect_(url) {
+    var dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlAyudanteCombinados_(url));
+    var w = window.open(dataUrl, '_blank');
+    return !!w;
+  }
+  /** HTML en Descargas: al abrirlo (file://) el navegador sí suele mandar la sesión a Copérnico. */
+  function descargarAyudanteCombinadosHtml_(url) {
+    try {
+      var blob = new Blob([htmlAyudanteCombinados_(url)], { type: 'text/html;charset=utf-8' });
+      var blobUrl = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'TURNIO-combinados.htm';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        if (a.parentNode) a.parentNode.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      }, 1500);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
   function abrirCopernicoCombinadosHoy_() {
     var url = urlExcelCombinadosHoy_();
@@ -3431,15 +3457,26 @@
       return;
     }
     pintarUrlCombinadosUi_(url);
-    try {
-      abrirUrlSinReferer_(url);
-      toast('Abriendo descarga Combinados…', 'success');
-    } catch (err) {
-      /* ignore: usamos copia como respaldo */
+    copiarTextoClipboard_(url).catch(function () { /* ignore */ });
+
+    var opened = false;
+    try { opened = abrirUrlViaDataRedirect_(url); } catch (err1) { opened = false; }
+
+    var helper = descargarAyudanteCombinadosHtml_(url);
+    if (opened) {
+      toast(
+        helper
+          ? 'Abriendo descarga… Si falla, abre TURNIO-combinados.htm en Descargas.'
+          : 'Abriendo descarga Combinados…',
+        'success'
+      );
+      return;
     }
-    copiarTextoClipboard_(url).then(function () {
-      /* Enlace también en portapapeles por si el navegador bloquea la pestaña */
-    }).catch(function () { /* ignore */ });
+    if (helper) {
+      toast('Abre el archivo TURNIO-combinados.htm de Descargas (ahí sí baja con tu sesión).', 'success');
+      return;
+    }
+    toast('Enlace copiado: pégalo en la barra (Ctrl+L → Ctrl+V → Enter).', 'success');
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
