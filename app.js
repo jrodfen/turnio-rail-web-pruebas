@@ -3418,6 +3418,8 @@
     }
     var btnAyuda = document.getElementById('btn-cx-ayuda');
     if (btnAyuda) btnAyuda.addEventListener('click', abrirAyudaCx_);
+    var btnAyudaCirc = document.getElementById('btn-cx-ayuda-circ');
+    if (btnAyudaCirc) btnAyudaCirc.addEventListener('click', abrirAyudaCx_);
     var btnAyudaCerrar = document.getElementById('btn-cx-ayuda-cerrar');
     if (btnAyudaCerrar) btnAyudaCerrar.addEventListener('click', cerrarAyudaCx_);
     var ayudaOv = document.getElementById('cx-help-overlay');

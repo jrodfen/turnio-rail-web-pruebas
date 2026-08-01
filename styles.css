@@ -245,6 +245,16 @@ body.monitor-mode #screen-mapa{display:none!important}
 .cx-enc-alt-meta{font-size:11px;color:var(--muted);font-weight:700}
 .cx-enc-alt p{margin:0;font-size:12px;line-height:1.35;color:var(--text)}
 .cx-enc-empty{text-align:center;color:var(--muted);padding:18px 8px;font-size:13px;line-height:1.4}
+.circ-group-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cx-help-ico{
+  margin:0;width:28px;height:28px;border-radius:50%;
+  border:1.5px solid rgba(5,150,105,.45);background:rgba(5,150,105,.1);
+  color:#047857;font-size:15px;font-weight:900;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0
+}
+.cx-help-ico:hover{background:rgba(5,150,105,.18)}
+.cx-help-ico:active{transform:scale(.96)}
+.cx-help-btn{margin:0;border:1px solid rgba(5,150,105,.35);background:rgba(5,150,105,.08);color:#047857;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
 .cx-help-btn:active{transform:scale(.97)}
 .cx-help-overlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:12px}
 .cx-help-overlay[hidden]{display:none!important}
@@ -405,6 +415,7 @@ body.monitor-mode #screen-mapa{display:none!important}
 .circ-tile--mapa{border-color:rgba(234,88,12,.35);background:linear-gradient(160deg,rgba(234,88,12,.07),var(--bg))}
 .circ-tile--mallas{border-color:rgba(5,150,105,.35);background:linear-gradient(160deg,rgba(5,150,105,.07),var(--bg))}
 .circ-tile--kms{border-color:rgba(15,118,110,.35);background:linear-gradient(160deg,rgba(15,118,110,.07),var(--bg))}
+.circ-tile--pantallas{border-color:rgba(45,127,249,.35);background:linear-gradient(160deg,rgba(45,127,249,.07),var(--bg))}
 .circ-tile:active,.circ-link:active{transform:scale(.98)}
 .circ-link{margin:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:12px 10px;font-size:12px;font-weight:800;cursor:pointer;text-align:center;line-height:1.25;min-height:46px}
 @media (max-width:380px){

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se11">
+    <link rel="stylesheet" href="./styles.css?v=cx-se12">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -45,14 +45,7 @@
           </article>
         </div>
 
-        <div class="home-shortcuts">
-          <h3 class="home-glance-title">Atajo</h3>
-          <button class="home-card home-card--blue home-card--solo" data-go="pantallas" type="button">
-            <b>&#128421; Pantallas en estaci&oacute;n</b>
-            <span>Busca por c&oacute;digo o nombre &middot; salidas/llegadas ADIF</span>
-          </button>
-        </div>
-        <p class="foot-note">Radar, mapa, mallas, kms y enlaces est&aacute;n en la pesta&ntilde;a Circulaci&oacute;n.</p>
+        <p class="foot-note">Radar, mapa, mallas, kms, pantallas y enlaces est&aacute;n en la pesta&ntilde;a Circulaci&oacute;n.</p>
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
@@ -255,7 +248,7 @@
         </div>
       </section>
       <section id="screen-pantallas" class="screen">
-        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
         <div class="pantallas-card">
           <div class="pantallas-card-head">
             <h3>&#128421; Pantallas en estaci&oacute;n</h3>
@@ -328,6 +321,10 @@
               <b>&#128207; Kms</b>
               <span>Distancia entre estaciones</span>
             </button>
+            <button type="button" class="circ-tile circ-tile--pantallas" data-go="pantallas">
+              <b>&#128421; Pantallas</b>
+              <span>Salidas / llegadas ADIF</span>
+            </button>
             <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
               <b>&#128279; Enlazados</b>
               <span>Panel de conexiones</span>
@@ -338,7 +335,10 @@
         <div class="circ-group circ-group--conex">
           <div class="circ-group-head">
             <h3 class="circ-group-title">Servicios enlazados</h3>
-            <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
+            <div class="circ-group-head-actions">
+              <button type="button" class="cx-help-ico" id="btn-cx-ayuda-circ" title="Manual de servicios enlazados" aria-label="Ayuda servicios enlazados">?</button>
+              <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
+            </div>
           </div>
           <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados. Se guarda en este dispositivo y caduca al cambiar de d&iacute;a.</p>
           <div class="cx-upload-row" id="cx-upload-circ">
@@ -373,7 +373,7 @@
           <div class="cx-panel-head">
             <h3>&#128279; Servicios enlazados</h3>
             <div class="cx-panel-head-actions">
-              <button type="button" class="cx-help-btn" id="btn-cx-ayuda" title="Manual de uso">&#10067; Ayuda</button>
+              <button type="button" class="cx-help-ico" id="btn-cx-ayuda" title="Manual de uso" aria-label="Ayuda">?</button>
               <span class="circ-chip circ-chip--green" id="cx-panel-chip">Sin cargar</span>
             </div>
           </div>
@@ -740,7 +740,7 @@
     <script src="./cx-retrasos.js?v=cx-se11"></script>
     <script src="./cx-encaminar.js?v=cx-se11"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=cx-se11"></script>
+    <script src="./app.js?v=cx-se12"></script>
   </body>
 </html>
 
