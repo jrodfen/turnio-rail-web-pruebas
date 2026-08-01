@@ -313,16 +313,6 @@
       .replace(/"/g, '&quot;');
   }
 
-  function pantallasBaseUrl_() {
-    var u = String(window.TURNIO_PANTALLAS_URL || 'https://pantallas-estaciones.vercel.app/').replace(/\/?$/, '/');
-    return u + '~/';
-  }
-
-  function pantallasIframeUrl_(codigo, modo) {
-    var interfaz = modo === 'al' ? 'arrivals' : 'departures';
-    return pantallasBaseUrl_() + '?station=' + encodeURIComponent(codigo) + '&interfaz=' + interfaz;
-  }
-
   function pantallasAdifUrl_(codigo, modo) {
     return 'https://info.adif.es/?s=' + encodeURIComponent(codigo) + '&v=' + (modo === 'al' ? 'al' : 'dl');
   }
@@ -363,7 +353,7 @@
     var st = pantallasSel || pantallasDefault_();
     var iframe = document.getElementById('iframe-pantallas-adif');
     if (!iframe) return;
-    var url = pantallasIframeUrl_(st.c, pantallasModo);
+    var url = pantallasAdifUrl_(st.c, pantallasModo);
     if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
   }
 
@@ -457,7 +447,6 @@
   function wirePantallasUi_() {
     var inp = document.getElementById('pantallas-buscar');
     var box = document.getElementById('pantallas-resultados');
-    var btnAdif = document.getElementById('btn-pantallas-adif');
     var btnAbrir = document.getElementById('btn-pantallas-abrir');
     if (inp) {
       inp.addEventListener('input', function () {
@@ -494,16 +483,10 @@
         cargarIframePantallas_();
       });
     });
-    if (btnAdif) {
-      btnAdif.addEventListener('click', function () {
-        var st = pantallasSel || pantallasDefault_();
-        window.open(pantallasAdifUrl_(st.c, pantallasModo), '_blank', 'noopener');
-      });
-    }
     if (btnAbrir) {
       btnAbrir.addEventListener('click', function () {
         var st = pantallasSel || pantallasDefault_();
-        window.open(pantallasIframeUrl_(st.c, pantallasModo), '_blank', 'noopener');
+        window.open(pantallasAdifUrl_(st.c, pantallasModo), '_blank', 'noopener');
       });
     }
   }

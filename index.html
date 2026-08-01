@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=pantallas-a1">
+    <link rel="stylesheet" href="./styles.css?v=pantallas-adif1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -256,14 +256,13 @@
               <span id="pantallas-codigo">C&oacute;digo 51003</span>
             </div>
             <div class="pantallas-seleccion-actions">
-              <button type="button" class="btn secondary" id="btn-pantallas-adif" title="Abrir panel oficial ADIF">ADIF</button>
-              <button type="button" class="btn primary" id="btn-pantallas-abrir" title="Abrir configurador en pesta&ntilde;a">Abrir</button>
+              <button type="button" class="btn primary" id="btn-pantallas-abrir" title="Abrir panel oficial ADIF">Abrir ADIF</button>
             </div>
           </div>
           <div class="pantallas-adif-wrap">
             <iframe id="iframe-pantallas-adif" title="Pantalla estaci&oacute;n ADIF" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allow="clipboard-write; fullscreen"></iframe>
           </div>
-          <p class="pantallas-note">Vista v&iacute;a configurador no oficial (pantallas-estaciones). Si ADIF bloquea el iframe, usa <b>Abrir</b> o <b>ADIF</b>.</p>
+          <p class="pantallas-note">Panel oficial ADIF (<code>info.adif.es</code>). Si el navegador bloquea el iframe, usa <b>Abrir ADIF</b>.</p>
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
@@ -390,7 +389,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=pantallas-a1"></script>
+    <script src="./app.js?v=pantallas-adif1"></script>
   </body>
 </html>
 
