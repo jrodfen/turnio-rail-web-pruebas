@@ -2692,6 +2692,45 @@
       );
     });
   }
+  function postCopernicoDescarga_(fields) {
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'http://copernico.sir.renfe.es/copernico/SrvRenfeSeguimiento';
+    form.target = '_blank';
+    form.style.display = 'none';
+    Object.keys(fields).forEach(function (name) {
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = fields[name];
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(function () {
+      if (form.parentNode) form.parentNode.removeChild(form);
+    }, 1000);
+  }
+  var btnCombinadosXls = document.getElementById('btn-coper-trenes-combinados-xls');
+  if (btnCombinadosXls) {
+    btnCombinadosXls.addEventListener('click', function () {
+      var f = fechaCoperDdMmYyyy_();
+      postCopernicoDescarga_({
+        todo: 'combinados',
+        excel: 'E',
+        codusuario: '',
+        hoy: f,
+        perfil: '3',
+        inicio: 'false',
+        servicio1: '',
+        estacion: '',
+        orden: '4',
+        fechaInicio: f,
+        fechaFin: f
+      });
+      toast('Solicitando TrenesCombinados.xls… (hace falta sesión Copérnico)', 'success');
+    });
+  }
   document.getElementById('btn-mallas-buscar').addEventListener('click', buscarMallaTren);
   document.getElementById('mallas-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); buscarMallaTren(); }
