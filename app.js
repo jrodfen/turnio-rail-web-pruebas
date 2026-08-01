@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces16');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces17');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -131,6 +131,14 @@
   }
   function obtenerRegionesRadar() {
     return regionesSeleccionadas.slice();
+  }
+  /** Región primaria para MARCHA_PARADAS (una hoja; multi-región → primera). */
+  function regionMarchaActual_() {
+    var r = regionesSeleccionadas && regionesSeleccionadas[0]
+      ? String(regionesSeleccionadas[0]).toLowerCase()
+      : 'andalucia';
+    if (r === 'espana') return 'andalucia';
+    return r || 'andalucia';
   }
   function setRegionesRadar(lista, opts) {
     opts = opts || {};
@@ -1275,7 +1283,11 @@
     var trip = item.getAttribute('data-trip') || '';
     panel.innerHTML = '<div class="marcha-empty">Consultando marcha / itinerario en vivo…</div>';
     try {
-      var data = await call('marcha', { codTren: tren, tripId: trip });
+      var data = await call('marcha', {
+        codTren: tren,
+        tripId: trip,
+        region: regionMarchaActual_()
+      });
       var m = data.marcha;
       if (m && m.ok) {
         item.classList.add('live');
@@ -1951,17 +1963,25 @@
     var rows = paradas.slice(0, 24).map(function (p) {
       var cl = p.esActual ? 'actual' : p.esPasada ? 'pasada' : '';
       var icon = p.esActual ? '&#128205;' : p.esPasada ? '&#10003;' : '&#9675;';
+      var dMin = Number(p.delayMin || 0);
+      var delayHtml = '';
+      if (dMin > 0) {
+        var etiqueta = p.retrasoLlegada || p.esPasada
+          ? ('llegó +' + dMin + ' min')
+          : ('previsto +' + dMin + ' min');
+        delayHtml = ' <em>' + etiqueta + '</em>';
+      } else if (p.retrasoLlegada) {
+        delayHtml = ' <em>puntual</em>';
+      }
       return '<div class="marcha-step ' + cl + '"><b>' + esc(p.horaEst || p.horaProgramada || '--:--') +
-        '</b><span>' + icon + ' ' + esc(p.nombre || 'Parada') +
-        (Number(p.delayMin || 0) > 0 ? ' <em>+' + Number(p.delayMin) + ' min</em>' : '') +
-        '</span></div>';
+        '</b><span>' + icon + ' ' + esc(p.nombre || 'Parada') + delayHtml + '</span></div>';
     }).join('');
     panel.innerHTML = '<div class="marcha-head"><strong>&#128225; Marcha en vivo · Tren ' + esc(m.numTren || '') +
       '</strong><span>' + labelStatus(m.status) + '</span></div>' + ruta +
       '<div class="marcha-kpis"><span>' + (retraso > 0 ? '&#9201; ' + esc(retTxt) : '&#9989; Puntual') +
       '</span><span>' + esc(m.stopActualNombre || 'Posición disponible') + '</span></div>' +
       (rows ? '<div class="marcha-list">' + rows + '</div>' : '<div class="marcha-empty">Sin paradas disponibles en el feed.</div>') +
-      '<div class="marcha-source">Fuente: Renfe GTFS-RT</div>';
+      '<div class="marcha-source">Fuente: Renfe GTFS-RT · llegadas registradas en TURNIO</div>';
   }
   async function abrirMarcha(card) {
     var panel = card.querySelector('.marcha-panel');
@@ -1972,7 +1992,11 @@
     panel.hidden = false;
     panel.innerHTML = '<div class="marcha-empty">Consultando marcha en vivo...</div>';
     try {
-      var data = await call('marcha', { codTren: tren, tripId: String(card.dataset.trip || '') });
+      var data = await call('marcha', {
+        codTren: tren,
+        tripId: String(card.dataset.trip || ''),
+        region: regionMarchaActual_()
+      });
       renderMarcha(panel, data.marcha);
     } catch (e) {
       panel.innerHTML = '<div class="marcha-empty error-text">' + esc(e.message) + '</div>';
@@ -2817,7 +2841,8 @@
         tripId: String(trip || ft.tripId || ''),
         omitirMallaPesada: true,
         rapida: true,
-        modo: String(ft.modo || '')
+        modo: String(ft.modo || ''),
+        region: regionMarchaActual_()
       });
       var m = data.marcha || {};
       // Actualiza cabecera con datos de marcha si llegan O/D/horas.
