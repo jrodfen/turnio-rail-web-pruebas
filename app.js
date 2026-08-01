@@ -704,6 +704,7 @@
     if (screen !== 'mapa') {
       detenerAutoFlota();
       cerrarMarchaMapa();
+      salirMapaFullscreen_();
     }
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') refrescarAvisosRed();
@@ -1876,7 +1877,65 @@
   }
   document.addEventListener('fullscreenchange', function () {
     if (!document.fullscreenElement) document.body.classList.remove('monitor-mode');
+    syncMapaFullscreenUi_();
   });
+  document.addEventListener('webkitfullscreenchange', syncMapaFullscreenUi_);
+
+  function mapaFullscreenEl_() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function syncMapaFullscreenUi_() {
+    var scr = document.getElementById('screen-mapa');
+    var btn = document.getElementById('btn-fullscreen-mapa');
+    var activo = !!(scr && mapaFullscreenEl_() === scr);
+    if (btn) {
+      btn.classList.toggle('mapa-fs-on', activo);
+      btn.setAttribute('aria-pressed', activo ? 'true' : 'false');
+      btn.textContent = activo ? '✕' : '⛶';
+      btn.title = activo ? 'Salir de pantalla completa' : 'Pantalla completa';
+    }
+    if (window._mapaLeaflet) {
+      setTimeout(function () {
+        try { window._mapaLeaflet.invalidateSize(); } catch (_) {}
+      }, 180);
+    }
+  }
+
+  function salirMapaFullscreen_() {
+    var fs = mapaFullscreenEl_();
+    var scr = document.getElementById('screen-mapa');
+    if (!fs || fs !== scr) return;
+    try {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    } catch (_) {}
+  }
+
+  function toggleMapaFullscreen_() {
+    var scr = document.getElementById('screen-mapa');
+    if (!scr) return;
+    var fs = mapaFullscreenEl_();
+    try {
+      if (fs === scr) {
+        salirMapaFullscreen_();
+        return;
+      }
+      var req = scr.requestFullscreen || scr.webkitRequestFullscreen || scr.mozRequestFullScreen || scr.msRequestFullscreen;
+      if (!req) {
+        toast('Este navegador no permite pantalla completa.', 'error');
+        return;
+      }
+      Promise.resolve(req.call(scr)).then(function () {
+        syncMapaFullscreenUi_();
+        toast('Mapa a pantalla completa · Esc o ✕ para salir', 'success');
+      }).catch(function () {
+        toast('No se pudo activar pantalla completa.', 'error');
+      });
+    } catch (err) {
+      toast('No se pudo activar pantalla completa.', 'error');
+    }
+  }
 
   /* ── Mapa Leaflet (flota Renfe ligera) ───────────────────────── */
   // Colores como en tiempo-real.largorecorrido.renfe.com
@@ -2905,6 +2964,14 @@
       toast(String(e.message || e), 'error');
     });
   });
+  var btnFsMapa = document.getElementById('btn-fullscreen-mapa');
+  if (btnFsMapa) {
+    btnFsMapa.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleMapaFullscreen_();
+    });
+  }
   document.getElementById('mapa-filtros').addEventListener('click', function (e) {
     var btn = e.target.closest('.mapa-filtro');
     if (!btn) return;

@@ -68,6 +68,50 @@ body.monitor-mode #modal-aviso-manual{z-index:31000}
 .mapa-info-bar{padding:4px 14px;font-size:11px;color:var(--muted);background:var(--bg);display:flex;justify-content:space-between;gap:8px}
 .mapa-canvas-wrap{position:relative;height:calc(100vh - 150px);min-height:420px}
 #mapa-container{width:100%;height:100%;z-index:1}
+.mapa-tool.mapa-fs-on{background:#111827;color:#fff;border-color:#111827}
+
+/* Mapa a pantalla completa: aprovecha todo el viewport; toolbar/filtros/buscador/ficha siguen activos */
+#screen-mapa:fullscreen,
+#screen-mapa:-webkit-full-screen{
+  display:flex!important;
+  flex-direction:column;
+  width:100%;
+  height:100%;
+  max-height:100%;
+  min-height:0;
+  padding:0;
+  margin:0;
+  overflow:hidden;
+  background:var(--bg);
+  box-sizing:border-box;
+}
+#screen-mapa:fullscreen .mapa-toolbar,
+#screen-mapa:-webkit-full-screen .mapa-toolbar,
+#screen-mapa:fullscreen .mapa-filtros,
+#screen-mapa:-webkit-full-screen .mapa-filtros,
+#screen-mapa:fullscreen .mapa-info-bar,
+#screen-mapa:-webkit-full-screen .mapa-info-bar{
+  flex-shrink:0;
+}
+#screen-mapa:fullscreen .mapa-canvas-wrap,
+#screen-mapa:-webkit-full-screen .mapa-canvas-wrap{
+  flex:1 1 auto;
+  height:auto!important;
+  min-height:0;
+  max-height:none;
+}
+#screen-mapa:fullscreen .orm-dropdown,
+#screen-mapa:-webkit-full-screen .orm-dropdown{
+  z-index:10050;
+}
+#screen-mapa:fullscreen .mapa-buscador,
+#screen-mapa:-webkit-full-screen .mapa-buscador{
+  z-index:1000;
+}
+#screen-mapa:fullscreen .mapa-ficha-panel,
+#screen-mapa:-webkit-full-screen .mapa-ficha-panel{
+  z-index:1100;
+}
 .mapa-buscador{position:absolute;z-index:800;left:12px;right:12px;top:12px;max-width:420px}
 .mapa-buscador-card{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:var(--shadow)}
 .mapa-buscador-card input{border:0;background:transparent;padding:8px 0;flex:1;min-width:0}
