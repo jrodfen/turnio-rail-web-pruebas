@@ -1666,6 +1666,9 @@
             // No pinta la tarjeta busy como única alerta.
             return;
           }
+          if (window.TurnioCxRetrasos) {
+            window.TurnioCxRetrasos.aplicarDesdeRadar(radar, 'turnio-radar');
+          }
           render();
           if (meta) meta.style.color = '';
           return;
@@ -1900,6 +1903,9 @@
         } catch (_) {}
         if (!d) d = await call('flota_mapa', {});
         flotaMapa = Array.isArray(d.trenes) ? d.trenes : [];
+        if (window.TurnioCxRetrasos) {
+          window.TurnioCxRetrasos.aplicarDesdeFlota(flotaMapa, 'turnio-flota');
+        }
         var regionLabel = document.getElementById('mapa-region-label');
         if (regionLabel) {
           regionLabel.textContent = 'Flota Renfe · LD ' + (d.ld || 0) + ' · Cerc. ' + (d.cercanias || 0);
@@ -3273,6 +3279,11 @@
     refrescarUiConexiones_();
     pintarBotonesEstacionCx_();
     if (window.TurnioCxRetrasos) {
+      window.TurnioCxRetrasos.setLoader(function () {
+        return cargarFlotaMapa({ silent: true, fit: false }).then(function () {
+          return flotaMapa;
+        });
+      });
       window.TurnioCxRetrasos.onChange(function () {
         refrescarLiveIndCx_();
         var scr = document.getElementById('screen-conexiones');
@@ -3280,13 +3291,19 @@
         var modal = document.getElementById('modal-conexiones');
         if (modal && !modal.hidden && cxTrenModal_) abrirModalConexiones_(cxTrenModal_);
       });
-      window.TurnioCxRetrasos.startPolling(5 * 60 * 1000);
+      if (flotaMapa.length) {
+        window.TurnioCxRetrasos.aplicarDesdeFlota(flotaMapa, 'turnio-flota');
+      }
+      if (radar.length) {
+        window.TurnioCxRetrasos.aplicarDesdeRadar(radar, 'turnio-radar');
+      }
+      window.TurnioCxRetrasos.startPolling(2 * 60 * 1000);
       var liveInd = document.getElementById('cx-live-ind');
       if (liveInd) {
         liveInd.addEventListener('click', function () {
           liveInd.classList.remove('ok', 'err');
           liveInd.classList.add('loading');
-          liveInd.textContent = 'Recargando tiempo real…';
+          liveInd.textContent = 'Recargando flota TURNIO…';
           window.TurnioCxRetrasos.cargar();
         });
       }

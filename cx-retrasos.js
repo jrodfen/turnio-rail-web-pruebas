@@ -1,15 +1,10 @@
 /**
- * Retrasos en tiempo real para el panel de servicios enlazados.
- * Fuente principal: retrasos.json vivo de servicios-enlazados (GitHub Actions).
- * Fallback: flotaLD Renfe (y proxy CORS si hace falta).
+ * Retrasos para servicios enlazados usando el tiempo real de TURNIO
+ * (flota del mapa /api/flota o flota_mapa), no el JSON de GitHub Pages.
  */
 (function (global) {
   'use strict';
 
-  var RETRASOS_SE =
-    'https://jrodfen.github.io/servicios-enlazados/retrasos.json';
-  var RETRASOS_RENFE =
-    'https://tiempo-real.largorecorrido.renfe.com/renfe-visor/flotaLD.json';
   var MAPEO_URL =
     'https://cdn.jsdelivr.net/gh/jrodfen/servicios-enlazados@main/mapeo_trenes.json';
 
@@ -21,7 +16,6 @@
     cargado: false,
     total: 0,
     fuente: '',
-    fechaJson: '',
     horaJson: '—',
     recarga: '—',
     error: ''
@@ -29,6 +23,7 @@
   var pollTimer = null;
   var listeners = [];
   var mapeoPromise = null;
+  var externalLoader = null;
 
   function limpiarCod(val) {
     var s = String(val == null ? '' : val).trim();
@@ -121,7 +116,7 @@
       (info.tipo === 'equivalencia' ? ' cx-retraso-eq' : '');
     var title = info.tipo === 'equivalencia'
       ? 'Cruce venta/circulación: ' + info.codigoExcel + ' → ' + info.codigoJson
-      : 'Tiempo real: ' + info.codigoJson;
+      : 'Tiempo real TURNIO: ' + info.codigoJson;
     return ' <span class="' + clases + '" title="' + esc(title) + '">' + esc(textoBadge(info)) + '</span>';
   }
 
@@ -170,27 +165,59 @@
       '</b><br><small class="cxn-espera-sub">real</small></div></div>';
   }
 
-  function aplicarJson(json, fuente) {
-    var next = Object.create(null);
-    (json.trenes || []).forEach(function (t) {
-      var cod = limpiarCod(t.codComercial);
-      if (!cod) return;
-      next[cod] = parseInt(t.ultRetraso, 10) || 0;
-    });
-    data = next;
+  function stampMeta_(fuente) {
     meta.cargado = true;
     meta.total = Object.keys(data).length;
-    meta.fuente = fuente;
+    meta.fuente = fuente || 'turnio';
     meta.error = '';
-    meta.fechaJson = json.fechaActualizacion || '';
-    meta.horaJson = '—';
-    if (meta.fechaJson) {
-      var m = String(meta.fechaJson).match(/T(\d{2}:\d{2})/);
-      if (m) meta.horaJson = m[1];
-    }
+    meta.horaJson = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     meta.recarga = new Date().toLocaleTimeString('es-ES', {
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
+  }
+
+  function codDesdeTren_(t) {
+    return limpiarCod(t && (t.codTren || t.codComercial || t.tren || t.servicio || t.numTren));
+  }
+
+  function retrasoDesdeTren_(t) {
+    if (!t) return 0;
+    if (t.retrasoNum != null && t.retrasoNum !== '') return parseInt(t.retrasoNum, 10) || 0;
+    if (t.ultRetraso != null && t.ultRetraso !== '') return parseInt(t.ultRetraso, 10) || 0;
+    if (t.retraso != null && t.retraso !== '') return parseInt(t.retraso, 10) || 0;
+    if (t.delayMin != null && t.delayMin !== '') return parseInt(t.delayMin, 10) || 0;
+    return 0;
+  }
+
+  /** Sustituye el índice con la flota viva de TURNIO (mapa). */
+  function aplicarDesdeFlota(trenes, fuente) {
+    var next = Object.create(null);
+    (trenes || []).forEach(function (t) {
+      var cod = codDesdeTren_(t);
+      if (!cod) return;
+      next[cod] = retrasoDesdeTren_(t);
+    });
+    data = next;
+    stampMeta_(fuente || 'turnio-flota');
+    notificar();
+    return estado();
+  }
+
+  /** Fusiona demoras del Radar TURNIO (no borra el resto de la flota). */
+  function aplicarDesdeRadar(alertas, fuente) {
+    var hubo = false;
+    (alertas || []).forEach(function (a) {
+      var cod = codDesdeTren_(a);
+      if (!cod) return;
+      if (a.retrasoNum == null && a.ultRetraso == null && a.retraso == null) return;
+      data[cod] = retrasoDesdeTren_(a);
+      hubo = true;
+    });
+    if (hubo) {
+      stampMeta_(fuente || (meta.fuente ? meta.fuente + '+radar' : 'turnio-radar'));
+      notificar();
+    }
+    return estado();
   }
 
   function notificar() {
@@ -199,31 +226,29 @@
     });
   }
 
+  function setLoader(fn) {
+    externalLoader = typeof fn === 'function' ? fn : null;
+  }
+
   function cargar() {
     return asegurarMapeo().then(function () {
-      var bust = '?v=' + Date.now();
-      return fetchJson(RETRASOS_SE + bust, 8000)
-        .then(function (json) {
-          aplicarJson(json, 'servicios-enlazados');
-        })
-        .catch(function () {
-          return fetchJson(RETRASOS_RENFE + bust, 8000).then(function (json) {
-            aplicarJson(json, 'renfe-flotaLD');
-          });
-        })
-        .catch(function () {
-          var proxy = 'https://corsproxy.io/?' + encodeURIComponent(RETRASOS_RENFE + bust);
-          return fetchJson(proxy, 10000).then(function (json) {
-            if (json && json.contents) json = JSON.parse(json.contents);
-            aplicarJson(json, 'proxy-renfe');
-          });
+      if (!externalLoader) {
+        meta.cargado = false;
+        meta.error = 'Sin cargador de flota TURNIO';
+        notificar();
+        return estado();
+      }
+      return Promise.resolve()
+        .then(function () { return externalLoader(); })
+        .then(function (trenes) {
+          if (!trenes || !trenes.length) throw new Error('Flota TURNIO vacía');
+          aplicarDesdeFlota(trenes, 'turnio-flota');
+          return estado();
         })
         .catch(function (err) {
-          meta.cargado = false;
+          meta.cargado = Object.keys(data).length > 0;
           meta.error = String(err && err.message ? err.message : err);
-          meta.fuente = '';
-        })
-        .then(function () {
+          if (!meta.cargado) meta.fuente = '';
           notificar();
           return estado();
         });
@@ -239,8 +264,8 @@
       recarga: meta.recarga,
       error: meta.error,
       label: meta.cargado
-        ? ('Tiempo real · ' + meta.total + ' trenes · JSON ' + meta.horaJson + ' · ' + meta.recarga)
-        : (meta.error ? ('Sin retrasos · ' + meta.error) : 'Cargando tiempo real…')
+        ? ('TURNIO tiempo real · ' + meta.total + ' trenes · ' + meta.recarga)
+        : (meta.error ? ('Sin flota · ' + meta.error) : 'Cargando flota TURNIO…')
     };
   }
 
@@ -251,7 +276,7 @@
   function startPolling(ms) {
     stopPolling();
     cargar();
-    pollTimer = setInterval(cargar, Math.max(60000, ms || 5 * 60 * 1000));
+    pollTimer = setInterval(cargar, Math.max(30000, ms || 2 * 60 * 1000));
   }
 
   function stopPolling() {
@@ -260,11 +285,14 @@
   }
 
   global.TurnioCxRetrasos = {
+    setLoader: setLoader,
     cargar: cargar,
     startPolling: startPolling,
     stopPolling: stopPolling,
     estado: estado,
     onChange: onChange,
+    aplicarDesdeFlota: aplicarDesdeFlota,
+    aplicarDesdeRadar: aplicarDesdeRadar,
     detalle: detalle,
     minutos: minutos,
     badgeHtml: badgeHtml,
