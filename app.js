@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces9');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces10');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3411,28 +3411,6 @@
       }
     });
   }
-  function esEdge_() {
-    return /\bEdg\//.test(navigator.userAgent || '');
-  }
-  /** Abre URL Copérnico sin Referer (parecido a pegar en la barra) → descarga .xls. */
-  function abrirUrlNoReferrer_(url) {
-    try {
-      var a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noreferrer';
-      a.setAttribute('referrerpolicy', 'no-referrer');
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () {
-        if (a.parentNode) a.parentNode.removeChild(a);
-      }, 0);
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
   function htmlAyudanteCombinados_(url) {
     var safe = String(url).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
@@ -3444,7 +3422,7 @@
       'code{font-size:11px;word-break:break-all;display:block;background:#f3f3f3;padding:10px;border-radius:8px}</style>' +
       '</head><body>' +
       '<h1>Descarga Trenes Combinados</h1>' +
-      '<p>Edge bloquea abrir Copérnico (http) desde TURNIO (https). Este archivo local s&iacute; puede.</p>' +
+      '<p>Abre este archivo y se descarga el Excel (.xls) de Cop&eacute;rnico.</p>' +
       '<p><a class="btn" id="go" href="' + safe + '" referrerpolicy="no-referrer">Descargar Excel ahora</a></p>' +
       '<p>O pega este enlace en la barra:</p><code id="u"></code>' +
       '<script>(function(){var u=' + JSON.stringify(url) + ';' +
@@ -3452,7 +3430,7 @@
       'setTimeout(function(){location.replace(u)},200);})()<\\/script>' +
       '</body></html>';
   }
-  /** Fallback Edge: .htm local que redirige a Copérnico (ahí baja el .xls). */
+  /** .htm local (HTTPS/blob) → al abrirlo baja el .xls de Copérnico con la sesión. */
   function descargarAyudanteCombinadosHtml_(url) {
     try {
       var blob = new Blob([htmlAyudanteCombinados_(url)], { type: 'text/html;charset=utf-8' });
@@ -3481,14 +3459,8 @@
     pintarUrlCombinadosUi_(url);
     copiarTextoClipboard_(url).catch(function () { /* ignore */ });
 
-    /* Chrome: abrir Copérnico → descarga .xls. Edge: bloquea http desde https → .htm + pegar URL. */
-    if (!esEdge_()) {
-      if (abrirUrlNoReferrer_(url)) {
-        toast('Descargando Excel Combinados (.xls)…', 'success');
-        return;
-      }
-    } else if (descargarAyudanteCombinadosHtml_(url)) {
-      toast('Edge: abre TURNIO-combinados.htm en Descargas para bajar el .xls (o pega el enlace).', 'success');
+    if (descargarAyudanteCombinadosHtml_(url)) {
+      toast('Abre TURNIO-combinados.htm en Descargas → baja el .xls. (Enlace también copiado.)', 'success');
       return;
     }
     toast('Enlace copiado. Pégalo en la barra: Ctrl+L → Ctrl+V → Enter.', 'success');
