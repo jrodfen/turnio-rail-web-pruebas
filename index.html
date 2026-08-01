@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se18">
+    <link rel="stylesheet" href="./styles.css?v=cx-se19">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -316,72 +316,76 @@
         </div>
       </section>
       <section id="screen-trafico" class="screen">
-        <h2 class="circ-title">Circulaci&oacute;n</h2>
-        <p class="circ-lead">Herramientas TURNIO y atajos operativos de Cop&eacute;rnico.</p>
+        <header class="circ-head">
+          <h2 class="circ-title">Circulaci&oacute;n</h2>
+          <p class="circ-lead">Herramientas TURNIO y atajos operativos de Cop&eacute;rnico.</p>
+        </header>
 
-        <div class="circ-group">
-          <h3 class="circ-group-title">En TURNIO</h3>
-          <div class="circ-grid circ-grid--turnio">
-            <button type="button" class="circ-tile circ-tile--radar" data-go="radar">
-              <b>&#128225; Radar</b>
-              <span>Retrasos e incidencias</span>
-            </button>
-            <button type="button" class="circ-tile circ-tile--mapa" data-go="mapa">
-              <b>&#128506; Mapa</b>
-              <span>Flota en vivo</span>
-            </button>
-            <button type="button" class="circ-tile circ-tile--mallas" data-go="mallas">
-              <b>&#128646; Mallas</b>
-              <span>Horarios y d&iacute;as</span>
-            </button>
-            <button type="button" class="circ-tile circ-tile--kms" data-go="kms">
-              <b>&#128207; Kms</b>
-              <span>Distancia entre estaciones</span>
-            </button>
-            <button type="button" class="circ-tile circ-tile--pantallas" data-go="pantallas">
-              <b>&#128421; Pantallas</b>
-              <span>Salidas / llegadas ADIF</span>
-            </button>
-            <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
-              <b>&#128279; Enlazados</b>
-              <span>Panel de conexiones</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="circ-group circ-group--conex">
-          <div class="circ-group-head">
-            <h3 class="circ-group-title">Servicios enlazados</h3>
-            <div class="circ-group-head-actions">
-              <button type="button" class="cx-help-ico" id="btn-cx-ayuda-circ" title="Manual de servicios enlazados" aria-label="Ayuda servicios enlazados">?</button>
-              <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
+        <div class="circ-layout">
+          <div class="circ-group circ-group--turnio">
+            <h3 class="circ-group-title">En TURNIO</h3>
+            <div class="circ-grid circ-grid--turnio">
+              <button type="button" class="circ-tile circ-tile--radar" data-go="radar">
+                <b>&#128225; Radar</b>
+                <span>Retrasos e incidencias</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--mapa" data-go="mapa">
+                <b>&#128506; Mapa</b>
+                <span>Flota en vivo</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--mallas" data-go="mallas">
+                <b>&#128646; Mallas</b>
+                <span>Horarios y d&iacute;as</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--kms" data-go="kms">
+                <b>&#128207; Kms</b>
+                <span>Distancia entre estaciones</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--pantallas" data-go="pantallas">
+                <b>&#128421; Pantallas</b>
+                <span>Salidas / llegadas ADIF</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
+                <b>&#128279; Enlazados</b>
+                <span>Panel de conexiones</span>
+              </button>
             </div>
           </div>
-          <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados. Se guarda en este dispositivo y caduca al cambiar de d&iacute;a.</p>
-          <div class="cx-upload-row" id="cx-upload-circ">
-            <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
-            <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar" data-cx-label-idle="Cargar Excel del d&iacute;a" data-cx-label-ready="Recargar">Cargar Excel del d&iacute;a</button>
-            <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar" hidden>Quitar</button>
-          </div>
-          <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
-          <button type="button" class="btn secondary" id="btn-cx-abrir-panel" style="margin:0;width:100%;">Abrir panel de enlaces</button>
-        </div>
 
-        <div class="circ-group circ-group--coper">
-          <div class="circ-group-head">
-            <h3 class="circ-group-title">Cop&eacute;rnico</h3>
-            <span class="circ-chip">Red Renfe</span>
+          <div class="circ-group circ-group--conex">
+            <div class="circ-group-head">
+              <h3 class="circ-group-title">Servicios enlazados</h3>
+              <div class="circ-group-head-actions">
+                <button type="button" class="cx-help-ico" id="btn-cx-ayuda-circ" title="Manual de servicios enlazados" aria-label="Ayuda servicios enlazados">?</button>
+                <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
+              </div>
+            </div>
+            <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados. Se guarda en este dispositivo y caduca al cambiar de d&iacute;a.</p>
+            <div class="cx-upload-row" id="cx-upload-circ">
+              <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
+              <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar" data-cx-label-idle="Cargar Excel del d&iacute;a" data-cx-label-ready="Recargar">Cargar Excel del d&iacute;a</button>
+              <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar" hidden>Quitar</button>
+            </div>
+            <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
+            <button type="button" class="btn secondary" id="btn-cx-abrir-panel">Abrir panel de enlaces</button>
           </div>
-          <p class="circ-note">Abren en ventana nueva. Necesitas sesi&oacute;n en Cop&eacute;rnico.</p>
-          <div class="circ-grid circ-grid--links" id="circ-coper-links">
-            <button type="button" class="circ-link" data-coper="sitra">Control SITRA</button>
-            <button type="button" class="circ-link" data-coper="anadir-dt">A&ntilde;adir DT</button>
-            <button type="button" class="circ-link" data-coper="sin-justificar">Sin justificar</button>
-            <button type="button" class="circ-link" data-coper="transbordados">Transbordados</button>
-            <button type="button" class="circ-link" data-coper="matricula-real">Matr&iacute;cula real</button>
-            <button type="button" class="circ-link" data-coper="ficha-vehiculo">Ficha veh&iacute;culo</button>
-            <button type="button" class="circ-link" data-coper="v-vehiculo">V. veh&iacute;culo</button>
-            <button type="button" class="circ-link" data-coper="historico-kms">Hist&oacute;rico Kms</button>
+
+          <div class="circ-group circ-group--coper">
+            <div class="circ-group-head">
+              <h3 class="circ-group-title">Cop&eacute;rnico</h3>
+              <span class="circ-chip">Red Renfe</span>
+            </div>
+            <p class="circ-note">Abren en ventana nueva. Necesitas sesi&oacute;n en Cop&eacute;rnico.</p>
+            <div class="circ-grid circ-grid--links" id="circ-coper-links">
+              <button type="button" class="circ-link" data-coper="sitra">Control SITRA</button>
+              <button type="button" class="circ-link" data-coper="anadir-dt">A&ntilde;adir DT</button>
+              <button type="button" class="circ-link" data-coper="sin-justificar">Sin justificar</button>
+              <button type="button" class="circ-link" data-coper="transbordados">Transbordados</button>
+              <button type="button" class="circ-link" data-coper="matricula-real">Matr&iacute;cula real</button>
+              <button type="button" class="circ-link" data-coper="ficha-vehiculo">Ficha veh&iacute;culo</button>
+              <button type="button" class="circ-link" data-coper="v-vehiculo">V. veh&iacute;culo</button>
+              <button type="button" class="circ-link" data-coper="historico-kms">Hist&oacute;rico Kms</button>
+            </div>
           </div>
         </div>
       </section>
