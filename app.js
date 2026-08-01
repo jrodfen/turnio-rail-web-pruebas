@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces3');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces4');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3348,55 +3348,29 @@
         // Mismo atajo que Anthony: informe histórico de kms en Copérnico.
         return base + 'SrvRenfeTablas?todo=buscarinformekms&inicio=S';
       case 'combinados':
-        // Solo referencia: la descarga real es POST (ver descargarExcelCombinadosPost_).
         return (window.TurnioConexiones && window.TurnioConexiones.urlCombinadosHoy)
           ? window.TurnioConexiones.urlCombinadosHoy()
-          : '';
+          : (base + 'SrvRenfeSeguimiento?todo=combinados&excel=E&codusuario=&hoy=' + encodeURIComponent(f.slash)
+            + '&perfil=3&inicio=false&servicio1=&estacion=&orden=4&fechaInicio=' + encodeURIComponent(f.slash)
+            + '&fechaFin=' + encodeURIComponent(f.slash));
       default:
         return '';
     }
   }
-  /** Misma petición que el botón Excel de Copérnico (POST excel=E). GET no descarga. */
-  function descargarExcelCombinadosPost_() {
-    var f = fechaCoperPartes_();
-    var fields = {
-      todo: 'combinados',
-      excel: 'E',
-      codusuario: '',
-      hoy: f.slash,
-      perfil: '3',
-      inicio: 'false',
-      servicio1: '',
-      estacion: '',
-      orden: '4',
-      fechaInicio: f.slash,
-      fechaFin: f.slash
-    };
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'http://copernico.sir.renfe.es/copernico/SrvRenfeSeguimiento';
-    form.target = '_blank';
-    form.style.display = 'none';
-    Object.keys(fields).forEach(function (name) {
-      var input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = fields[name];
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    try {
-      form.submit();
-      toast('Descarga Combinados… Si no baja, abre Copérnico (sesión) y pulsa de nuevo.', 'success');
-    } catch (err) {
-      toast('No se pudo iniciar la descarga de Combinados.', 'error');
-    }
-    setTimeout(function () {
-      if (form.parentNode) form.parentNode.removeChild(form);
-    }, 2500);
-  }
+  /** Abre la URL de descarga Combinados (GET excel=E) en ventana nueva — red Renfe + sesión. */
   function abrirCopernicoCombinadosHoy_() {
-    descargarExcelCombinadosPost_();
+    var url = urlCopernicoAtajo_('combinados');
+    if (!url) {
+      toast('No se pudo montar la URL de Combinados.', 'error');
+      return;
+    }
+    try {
+      var w = window.open(url, '_blank');
+      if (!w) toast('Permite ventanas emergentes para descargar el Excel.', 'error');
+      else toast('Abriendo descarga Combinados…', 'success');
+    } catch (err) {
+      toast('No se pudo abrir la descarga de Combinados.', 'error');
+    }
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
@@ -3405,7 +3379,7 @@
       if (!btn) return;
       var key = btn.getAttribute('data-coper');
       if (key === 'combinados') {
-        descargarExcelCombinadosPost_();
+        abrirCopernicoCombinadosHoy_();
         return;
       }
       var url = urlCopernicoAtajo_(key);
