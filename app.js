@@ -253,13 +253,30 @@
   }
   function toast(text, type) {
     var t = document.getElementById('toast');
+    if (!t) return;
+    montarToast_(t);
+    // Sin tipo → azul TURNIO (antes: texto blanco sobre fondo transparente).
+    var kind = type || 'info';
     t.textContent = text;
-    t.className = 'toast show' + (type ? (' ' + type) : '');
+    t.className = 'toast show' + (kind === 'info' ? '' : (' ' + kind));
     clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(function () {
       t.classList.remove('show');
       t.className = 'toast';
-    }, 2800);
+    }, 3200);
+  }
+
+  /** En fullscreen nativo del mapa el toast debe vivir dentro de #screen-mapa. */
+  function montarToast_(el) {
+    if (!el) return;
+    var scr = document.getElementById('screen-mapa');
+    var fs = typeof mapaFullscreenEl_ === 'function' ? mapaFullscreenEl_() : (document.fullscreenElement || null);
+    var host = document.body;
+    if (scr && fs === scr) {
+      if (el.parentElement !== scr) scr.appendChild(el);
+      return;
+    }
+    if (el.parentElement !== host) host.appendChild(el);
   }
 
   function lanzarExitoAnimado(mensaje) {
@@ -1023,7 +1040,7 @@
         clearInterval(intervaloVigilante);
         intervaloVigilante = null;
       }
-      if (!silentOff) toast('Vigilante desactivado');
+      if (!silentOff) toast('Vigilante desactivado', 'error');
     }
   }
 
@@ -1141,7 +1158,7 @@
     if (!vigilanteActivo || chequeoEnCurso) return;
     chequeoEnCurso = true;
     parpadearLedVigilante();
-    toast('Vigilante CGO escaneando red…');
+    toast('Vigilante CGO escaneando red…', 'success');
     try {
       var regiones = obtenerRegionesRadar();
       var data = await call('vigilante_chequeo', {
@@ -1154,11 +1171,11 @@
       var umbral = resumenUmbralRadar();
       var etiqueta = regiones.join('+');
       if (n > 0) {
-        toast('Vigilante: ' + n + ' crítico' + (n === 1 ? '' : 's') + ' en ' + etiqueta);
+        toast('Vigilante: ' + n + ' crítico' + (n === 1 ? '' : 's') + ' en ' + etiqueta, 'error');
       } else if (umbral.altas > 0) {
-        toast('Conectado: 0 críticos nuevos (Radar ve ' + umbral.altas + ' ≥ umbral; pueden estar ya avisados o sin ruta GPS)');
+        toast('Conectado: 0 críticos nuevos (Radar ve ' + umbral.altas + ' ≥ umbral; pueden estar ya avisados o sin ruta GPS)', 'success');
       } else {
-        toast('Conectado: sin críticos ahora (umbral AVE/Alvia ≥15 min, resto ≥25)');
+        toast('Conectado: sin críticos ahora (umbral AVE/Alvia ≥15 min, resto ≥25)', 'success');
       }
       console.info('[Vigilante]', {
         region: etiqueta,
@@ -1169,7 +1186,7 @@
         radarAvisos: umbral.avisos
       });
     } catch (err) {
-      if (vigilanteActivo) toast('Vigilante error: ' + String(err.message || err));
+      if (vigilanteActivo) toast('Vigilante error: ' + String(err.message || err), 'error');
       console.warn('[Vigilante] fallo', err);
     } finally {
       chequeoEnCurso = false;
@@ -1925,6 +1942,8 @@
       var m = document.getElementById(id);
       if (m && !m.hidden) montarModalVigilante_(m);
     });
+    var toastEl = document.getElementById('toast');
+    if (toastEl) montarToast_(toastEl);
     if (window._mapaLeaflet) {
       setTimeout(function () {
         try { window._mapaLeaflet.invalidateSize(); } catch (_) {}
