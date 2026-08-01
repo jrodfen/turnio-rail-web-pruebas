@@ -33,11 +33,16 @@ body.monitor-mode .radar-head{border:0;margin:0 0 12px;padding:0;color:#eee}
 body.monitor-mode .radar-head h3{color:#eee;font-size:18px}
 body.monitor-mode #radar-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;background:transparent;border:0;padding:0;font-family:inherit}
 body.monitor-mode .summary-chips{grid-column:1/-1;justify-content:flex-start}
-body.monitor-mode .alert{margin:0;min-height:140px;display:flex;flex-direction:column;background:#161616;border-color:#333;color:#f3f4f6}
+/* Misma paleta de tarjetas que el Radar (grave/warning/normal). Solo layout mural. */
+body.monitor-mode .alert{margin:0;min-height:140px;display:flex;flex-direction:column}
 body.monitor-mode .alert .train{font-size:15px}
 body.monitor-mode .alert .message{flex:1;font-size:13px;line-height:1.35}
-body.monitor-mode .alert-bottom .generate{display:none}
+body.monitor-mode .alert-bottom{flex-wrap:wrap;gap:8px}
+body.monitor-mode .alert-bottom .generate{display:inline-flex;align-items:center}
 body.monitor-mode .last-update{color:#9ca3af}
+/* Modal de aviso por encima del botón Salir del monitor */
+body.monitor-mode #modal-aviso-cg,
+body.monitor-mode #modal-aviso-manual{z-index:31000}
 
 /* Mapa */
 #screen-mapa{padding:0;overflow:hidden;position:relative;min-height:100vh}
