@@ -714,6 +714,9 @@
         });
       }
     }
+    if (screen === 'conexiones') {
+      if (typeof pintarPanelConexiones_ === 'function') pintarPanelConexiones_();
+    }
     if (screen === 'mallas-localizador') {
       asegurarRutasMallas().catch(function (err) {
         setMallasStatus(String(err.message || err), true);
@@ -2872,49 +2875,100 @@
     if (card) abrirMarcha(card);
   });
 
-  /* Servicios enlazados (Excel diario → botón verde en Radar) */
+  /* Servicios enlazados (Excel diario → panel TURNIO + botón en Radar) */
+  var cxFiltroEstacion_ = '';
+  var cxFiltroTren_ = '';
+  var cxTrenModal_ = '';
+
+  function htmlTarjetaConexion_(f, numResaltado) {
+    var num = String(numResaltado || '');
+    var rol = num && f.servicio === num ? 'Sale / llega al enlace' : (num && f.servicioEnlazado === num ? 'Enlazado desde otro servicio' : 'Conexión');
+    return '<article class="cx-card">' +
+      '<div class="cx-card-head"><b>&#128279; ' + esc(f.servicio) + ' &#8594; ' + esc(f.servicioEnlazado) +
+      '</b><span>' + esc(f.estacionEnlace || 'Enlace') + '</span></div>' +
+      '<p class="muted">' + esc(rol) + '</p>' +
+      '<p>' + esc(f.origen || '—') + ' (' + esc(f.horaSalidaOrig || '--:--') + ') · llega enlace ' +
+      esc(f.horaLlegadaEnlace || '--:--') + ' · sale ' + esc(f.horaSalidaEnlace || f.horaSalida || '--:--') + '</p>' +
+      '<p>Destino ' + esc(f.destino || '—') + ' (' + esc(f.horaLlegada || '--:--') + ')' +
+      (f.tiempoConexion ? ' · margen ' + esc(String(f.tiempoConexion)) + ' min' : '') +
+      (f.viajeros ? ' · ' + esc(String(f.viajeros)) + ' viajeros' : '') + '</p>' +
+      '</article>';
+  }
+
   function refrescarUiConexiones_() {
     var cx = window.TurnioConexiones;
     var st = cx ? cx.estado() : { cargado: false, total: 0, meta: {} };
-    var chip = document.getElementById('cx-status-chip');
-    var meta = document.getElementById('cx-upload-meta');
-    if (chip) {
+    ['cx-status-chip', 'cx-panel-chip'].forEach(function (id) {
+      var chip = document.getElementById(id);
+      if (!chip) return;
       chip.textContent = st.cargado ? (st.total + ' filas') : 'Sin cargar';
       chip.classList.toggle('circ-chip--green', !!st.cargado);
-    }
-    if (meta) {
-      meta.textContent = st.cargado
-        ? ('Cargado hoy · ' + (st.meta.nombre || 'fichero') + ' · ' + st.total + ' conexiones')
-        : 'Ningún fichero cargado hoy. Caduca al cambiar de día.';
-    }
+    });
+    var txt = st.cargado
+      ? ('Cargado hoy · ' + (st.meta.nombre || 'fichero') + ' · ' + st.total + ' conexiones')
+      : 'Ningún fichero cargado hoy. Caduca al cambiar de día.';
+    ['cx-upload-meta', 'cx-panel-meta'].forEach(function (id) {
+      var meta = document.getElementById(id);
+      if (meta) meta.textContent = txt;
+    });
   }
+
+  function pintarBotonesEstacionCx_() {
+    var wrap = document.getElementById('cx-est-btns');
+    var cx = window.TurnioConexiones;
+    if (!wrap || !cx) return;
+    wrap.innerHTML = cx.estacionesPreferidasUi().map(function (e) {
+      var active = (e.id || '') === (cxFiltroEstacion_ || '');
+      return '<button type="button" class="cx-est-btn' + (active ? ' active' : '') +
+        '" data-cx-est="' + esc(e.id) + '">' + esc(e.label) + '</button>';
+    }).join('');
+  }
+
+  function pintarPanelConexiones_() {
+    var cx = window.TurnioConexiones;
+    var box = document.getElementById('cx-resultados');
+    var cnt = document.getElementById('cx-contador');
+    var input = document.getElementById('cx-buscar-tren');
+    refrescarUiConexiones_();
+    pintarBotonesEstacionCx_();
+    if (!cx || !box) return;
+    if (input && cxFiltroTren_ && input.value !== cxFiltroTren_) input.value = cxFiltroTren_;
+    var st = cx.estado();
+    if (!st.cargado) {
+      if (cnt) cnt.textContent = '0';
+      box.innerHTML = '<div class="empty">Carga el Excel/HTML de Trenes Combinados para ver enlaces aquí.</div>';
+      return;
+    }
+    var tren = cx.limpiarNumTren((input && input.value) || cxFiltroTren_ || '');
+    cxFiltroTren_ = tren;
+    var filas = cx.listar({
+      soloPreferidas: true,
+      estacion: cxFiltroEstacion_,
+      tren: tren,
+      limit: 150
+    });
+    if (cnt) cnt.textContent = filas.length + (filas.length >= 150 ? '+' : '');
+    if (!filas.length) {
+      box.innerHTML = '<div class="empty">No hay conexiones con estos filtros.</div>';
+      return;
+    }
+    box.innerHTML = filas.map(function (f) { return htmlTarjetaConexion_(f, tren); }).join('');
+  }
+
   function abrirModalConexiones_(numTren) {
     var cx = window.TurnioConexiones;
     var modal = document.getElementById('modal-conexiones');
     var lista = document.getElementById('cx-modal-lista');
     var sub = document.getElementById('cx-modal-sub');
-    var link = document.getElementById('btn-abrir-servicios-enlazados');
     if (!cx || !modal || !lista) return;
     var num = cx.limpiarNumTren(numTren);
+    cxTrenModal_ = num;
     var filas = cx.conexionesDeTren(num, true);
     if (sub) sub.textContent = 'Tren ' + num + ' · ' + filas.length + ' enlace(s) en estaciones preferidas.';
-    if (link) link.href = cx.URL_SERVICIOS_ENLAZADOS;
     if (!filas.length) {
       lista.innerHTML = '<div class="empty">No hay enlaces preferidos para este tren en el fichero de hoy.</div>';
     } else {
-      lista.innerHTML = filas.map(function (f) {
-        var rol = f.servicio === num ? 'Sale / llega al enlace' : 'Enlazado desde otro servicio';
-        return '<article class="cx-card">' +
-          '<div class="cx-card-head"><b>&#128279; ' + esc(f.servicio) + ' &#8594; ' + esc(f.servicioEnlazado) +
-          '</b><span>' + esc(f.estacionEnlace || 'Enlace') + '</span></div>' +
-          '<p class="muted">' + esc(rol) + '</p>' +
-          '<p>' + esc(f.origen || '—') + ' (' + esc(f.horaSalidaOrig || '--:--') + ') · llega enlace ' +
-          esc(f.horaLlegadaEnlace || '--:--') + ' · sale ' + esc(f.horaSalidaEnlace || f.horaSalida || '--:--') + '</p>' +
-          '<p>Destino ' + esc(f.destino || '—') + ' (' + esc(f.horaLlegada || '--:--') + ')' +
-          (f.tiempoConexion ? ' · margen ' + esc(String(f.tiempoConexion)) + ' min' : '') +
-          (f.viajeros ? ' · ' + esc(String(f.viajeros)) + ' viajeros' : '') + '</p>' +
-          '</article>';
-      }).join('');
+      lista.innerHTML = filas.map(function (f) { return htmlTarjetaConexion_(f, num); }).join('');
     }
     modal.hidden = false;
   }
@@ -2922,41 +2976,88 @@
     var modal = document.getElementById('modal-conexiones');
     if (modal) modal.hidden = true;
   }
-  (function cablearConexionesUi_() {
+  function cargarArchivoConexionesUi_(file) {
     var cx = window.TurnioConexiones;
-    var input = document.getElementById('cx-file-input');
-    var btnLoad = document.getElementById('btn-cx-cargar');
-    var btnClear = document.getElementById('btn-cx-limpiar');
-    if (btnLoad && input) {
-      btnLoad.addEventListener('click', function () { input.click(); });
+    if (!file || !cx) return;
+    toast('Leyendo conexiones…', 'success');
+    cx.cargarArchivo(file).then(function (st) {
+      refrescarUiConexiones_();
+      render();
+      pintarPanelConexiones_();
+      toast('Conexiones cargadas: ' + st.total + ' filas', 'success');
+    }).catch(function (err) {
+      toast(String(err.message || err), 'error');
+    });
+  }
+  function limpiarConexionesUi_() {
+    var cx = window.TurnioConexiones;
+    if (!cx) return;
+    if (!cx.estado().cargado) { toast('No hay fichero cargado.'); return; }
+    if (!confirm('¿Quitar el Excel de conexiones de este dispositivo?')) return;
+    cx.limpiar();
+    cxFiltroTren_ = '';
+    cxFiltroEstacion_ = '';
+    refrescarUiConexiones_();
+    render();
+    pintarPanelConexiones_();
+    toast('Conexiones eliminadas.');
+  }
+  (function cablearConexionesUi_() {
+    function bindFile(btnId, inputId) {
+      var btn = document.getElementById(btnId);
+      var input = document.getElementById(inputId);
+      if (!btn || !input) return;
+      btn.addEventListener('click', function () { input.click(); });
       input.addEventListener('change', function () {
         var file = input.files && input.files[0];
         input.value = '';
-        if (!file || !cx) return;
-        toast('Leyendo conexiones…', 'success');
-        cx.cargarArchivo(file).then(function (st) {
-          refrescarUiConexiones_();
-          render();
-          toast('Conexiones cargadas: ' + st.total + ' filas', 'success');
-        }).catch(function (err) {
-          toast(String(err.message || err), 'error');
-        });
+        cargarArchivoConexionesUi_(file);
       });
     }
-    if (btnClear && cx) {
-      btnClear.addEventListener('click', function () {
-        if (!cx.estado().cargado) { toast('No hay fichero cargado.'); return; }
-        if (!confirm('¿Quitar el Excel de conexiones de este dispositivo?')) return;
-        cx.limpiar();
-        refrescarUiConexiones_();
-        render();
-        toast('Conexiones eliminadas.');
+    bindFile('btn-cx-cargar', 'cx-file-input');
+    bindFile('btn-cx-cargar-panel', 'cx-file-input-panel');
+    var btnClear = document.getElementById('btn-cx-limpiar');
+    if (btnClear) btnClear.addEventListener('click', limpiarConexionesUi_);
+    var btnClearP = document.getElementById('btn-cx-limpiar-panel');
+    if (btnClearP) btnClearP.addEventListener('click', limpiarConexionesUi_);
+    var btnAbrir = document.getElementById('btn-cx-abrir-panel');
+    if (btnAbrir) btnAbrir.addEventListener('click', function () { go('conexiones'); });
+    var estWrap = document.getElementById('cx-est-btns');
+    if (estWrap) {
+      estWrap.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-cx-est]');
+        if (!b) return;
+        cxFiltroEstacion_ = b.getAttribute('data-cx-est') || '';
+        pintarPanelConexiones_();
+      });
+    }
+    var btnBuscar = document.getElementById('btn-cx-buscar');
+    var inputTren = document.getElementById('cx-buscar-tren');
+    if (btnBuscar) btnBuscar.addEventListener('click', function () {
+      cxFiltroTren_ = (window.TurnioConexiones && window.TurnioConexiones.limpiarNumTren(inputTren && inputTren.value)) || '';
+      pintarPanelConexiones_();
+    });
+    if (inputTren) {
+      inputTren.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          cxFiltroTren_ = (window.TurnioConexiones && window.TurnioConexiones.limpiarNumTren(inputTren.value)) || '';
+          pintarPanelConexiones_();
+        }
       });
     }
     ['btn-cerrar-conexiones', 'btn-cerrar-conexiones-2'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('click', cerrarModalConexiones_);
     });
+    var btnVerPanel = document.getElementById('btn-cx-ver-panel');
+    if (btnVerPanel) {
+      btnVerPanel.addEventListener('click', function () {
+        cxFiltroTren_ = cxTrenModal_ || '';
+        cerrarModalConexiones_();
+        go('conexiones');
+      });
+    }
     var modal = document.getElementById('modal-conexiones');
     if (modal) {
       modal.addEventListener('click', function (e) {
@@ -2964,6 +3065,7 @@
       });
     }
     refrescarUiConexiones_();
+    pintarBotonesEstacionCx_();
   })();
   // Los popups de Leaflet a veces no delegan bien solo en #mapa-container.
   document.addEventListener('click', function (e) {

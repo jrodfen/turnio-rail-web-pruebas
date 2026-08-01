@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-radar1">
+    <link rel="stylesheet" href="./styles.css?v=cx-panel1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -37,6 +37,7 @@
           <button class="home-card home-card--red" data-go="avisos" type="button"><b>&#127758; Red / avisos</b><span>Avisos oficiales de infraestructura Renfe</span></button>
           <button class="home-card home-card--blue" data-go="pantallas" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Busca por c&oacute;digo o nombre &middot; salidas/llegadas ADIF</span></button>
           <button class="home-card home-card--teal" data-go="kms" type="button"><b>&#128207; Calcular kms</b><span>Distancia entre estaciones comerciales Renfe</span></button>
+          <button class="home-card home-card--conex" data-go="conexiones" type="button"><b>&#128279; Servicios enlazados</b><span>Carga el Excel del d&iacute;a y consulta enlaces</span></button>
         </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
       </section>
       <section id="screen-radar" class="screen">
@@ -305,6 +306,10 @@
               <b>&#128506; Mapa</b>
               <span>Flota en vivo</span>
             </button>
+            <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
+              <b>&#128279; Enlazados</b>
+              <span>Panel de conexiones</span>
+            </button>
           </div>
         </div>
 
@@ -313,14 +318,14 @@
             <h3 class="circ-group-title">Servicios enlazados</h3>
             <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
           </div>
-          <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados de Cop&eacute;rnico. Se guarda en este dispositivo y caduca al cambiar de d&iacute;a. En Radar, el bot&oacute;n se pone verde si el tren tiene enlace en estaciones preferidas (Sevilla SJ, C&oacute;rdoba, M&aacute;laga, Antequera, Granada, Dos Hermanas).</p>
+          <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados. Se guarda en este dispositivo y caduca al cambiar de d&iacute;a. El panel vive dentro de TURNIO (sin salir a otra web).</p>
           <div class="cx-upload-row">
             <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
             <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar">Cargar Excel del d&iacute;a</button>
             <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-limpiar">Quitar</button>
           </div>
           <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
-          <a class="cx-external-link" id="link-servicios-enlazados" href="https://jrodfen.github.io/servicios-enlazados/" target="_blank" rel="noopener noreferrer">Abrir panel Servicios enlazados &#8599;</a>
+          <button type="button" class="btn secondary" id="btn-cx-abrir-panel" style="margin:0;width:100%;">Abrir panel de enlaces</button>
         </div>
 
         <div class="circ-group circ-group--coper">
@@ -338,6 +343,34 @@
             <button type="button" class="circ-link" data-coper="ficha-vehiculo">Ficha veh&iacute;culo</button>
             <button type="button" class="circ-link" data-coper="v-vehiculo">V. veh&iacute;culo</button>
           </div>
+        </div>
+      </section>
+      <section id="screen-conexiones" class="screen">
+        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
+        <div class="cx-panel">
+          <div class="cx-panel-head">
+            <h3>&#128279; Servicios enlazados</h3>
+            <span class="circ-chip circ-chip--green" id="cx-panel-chip">Sin cargar</span>
+          </div>
+          <p class="mallas-lead">Consulta dentro de TURNIO. Filtra por estaci&oacute;n preferida o n&uacute;mero de tren (puedes probarlo aunque el Radar est&eacute; vac&iacute;o).</p>
+          <div class="cx-upload-row">
+            <input type="file" id="cx-file-input-panel" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
+            <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar-panel">Cargar Excel</button>
+            <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-limpiar-panel">Quitar</button>
+          </div>
+          <p class="cx-upload-meta" id="cx-panel-meta">Ning&uacute;n fichero cargado hoy.</p>
+          <div class="cx-filters">
+            <div class="cx-est-row" id="cx-est-btns" role="group" aria-label="Estaciones preferidas"></div>
+            <div class="cx-search-row">
+              <input id="cx-buscar-tren" type="search" inputmode="numeric" placeholder="N&ordm; tren (ej. 13017)" autocomplete="off" aria-label="Buscar tren">
+              <button type="button" class="btn primary" id="btn-cx-buscar">Buscar</button>
+            </div>
+          </div>
+          <div class="gtfs-results-meta">
+            <span>Solo estaciones preferidas</span>
+            <span id="cx-contador">0</span>
+          </div>
+          <div id="cx-resultados" class="cx-resultados"></div>
         </div>
       </section>
       <section id="screen-ajustes" class="screen">
@@ -462,7 +495,7 @@
         <div id="cx-modal-lista" class="cx-modal-lista"></div>
         <div class="vig-modal-actions">
           <button type="button" class="btn secondary" id="btn-cerrar-conexiones-2">Cerrar</button>
-          <a class="btn primary" id="btn-abrir-servicios-enlazados" href="https://jrodfen.github.io/servicios-enlazados/" target="_blank" rel="noopener noreferrer">Abrir panel completo</a>
+          <button type="button" class="btn primary" id="btn-cx-ver-panel">Ver en panel TURNIO</button>
         </div>
       </div>
     </div>
@@ -476,9 +509,9 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx1"></script>
+    <script src="./conexiones.js?v=cx2"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=cx-radar1"></script>
+    <script src="./app.js?v=cx-panel1"></script>
   </body>
 </html>
 

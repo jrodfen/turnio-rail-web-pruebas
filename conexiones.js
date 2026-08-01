@@ -3,7 +3,6 @@
   'use strict';
 
   var STORAGE_KEY = 'turnio-conexiones-v1';
-  var URL_SERVICIOS_ENLAZADOS = 'https://jrodfen.github.io/servicios-enlazados/';
 
   /* Estaciones preferidas (mismo criterio que servicios-enlazados CG). */
   var ESTACIONES_PREFERIDAS = [
@@ -248,15 +247,56 @@
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
   }
 
+  function listar(opts) {
+    opts = opts || {};
+    var soloPref = opts.soloPreferidas !== false;
+    var estacion = normalizarTexto_(opts.estacion || '');
+    var tren = limpiarNumTren_(opts.tren || '');
+    var q = normalizarTexto_(opts.q || '');
+    var limit = Math.max(1, Math.min(Number(opts.limit) || 120, 400));
+    var out = [];
+    for (var i = 0; i < state.filas.length; i++) {
+      var f = state.filas[i];
+      if (soloPref && !f.preferida) continue;
+      if (tren && f.servicio !== tren && f.servicioEnlazado !== tren) continue;
+      if (estacion) {
+        var est = normalizarTexto_(f.estacionEnlace);
+        if (est.indexOf(estacion) < 0) continue;
+      }
+      if (q) {
+        var blob = normalizarTexto_([
+          f.servicio, f.servicioEnlazado, f.origen, f.destino, f.estacionEnlace
+        ].join(' '));
+        if (blob.indexOf(q) < 0) continue;
+      }
+      out.push(f);
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  function estacionesPreferidasUi() {
+    return [
+      { id: '', label: 'Todas preferidas' },
+      { id: 'sevilla s.j', label: 'Sevilla SJ' },
+      { id: 'cordoba', label: 'Córdoba' },
+      { id: 'malaga', label: 'Málaga MZ' },
+      { id: 'antequera', label: 'Antequera' },
+      { id: 'granada', label: 'Granada' },
+      { id: 'dos hermanas', label: 'Dos Hermanas' }
+    ];
+  }
+
   cargarDesdeStorage_();
 
   global.TurnioConexiones = {
     cargarArchivo: cargarArchivo,
     estado: estado,
     conexionesDeTren: conexionesDeTren,
+    listar: listar,
+    estacionesPreferidasUi: estacionesPreferidasUi,
     tieneEnlaces: tieneEnlaces,
     limpiar: limpiar,
-    limpiarNumTren: limpiarNumTren_,
-    URL_SERVICIOS_ENLAZADOS: URL_SERVICIOS_ENLAZADOS
+    limpiarNumTren: limpiarNumTren_
   };
 })(window);
