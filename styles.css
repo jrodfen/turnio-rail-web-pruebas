@@ -172,7 +172,6 @@ body.monitor-mode #screen-mapa{display:none!important}
 .ajustes-tools-note{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.4}
 .ajustes-tools-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ajustes-link-btn{margin:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:12px 10px;font-size:13px;font-weight:800;cursor:pointer;text-align:center;line-height:1.25}
-.ajustes-link-btn--wide{width:100%;margin-top:8px}
 .ajustes-link-btn:active{transform:scale(.98);background:#eef4ff}
 @media (max-width:360px){.ajustes-tools-row{grid-template-columns:1fr}}
 
