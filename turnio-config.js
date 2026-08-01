@@ -3,4 +3,3 @@
 window.TURNIO_EXTERNAL_API =
   new URLSearchParams(window.location.search).get("api") ||
   "https://api-pruebas.turniorail.es";
-window.TURNIO_PANTALLAS_DEFAULT = { c: "51003", n: "SEVILLA-SANTA JUSTA" };
