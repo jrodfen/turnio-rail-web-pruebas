@@ -2659,12 +2659,12 @@
   });
 
   /* Atajos Copérnico (mismo patrón que Anthony; solo red Renfe) */
-  function fechaCoperDdMmYyyy_() {
+  function fechaCoperPartes_() {
     var n = new Date();
     var dd = String(n.getDate()).padStart(2, '0');
     var mm = String(n.getMonth() + 1).padStart(2, '0');
     var yyyy = n.getFullYear();
-    return dd + '/' + mm + '/' + yyyy;
+    return { dd: dd, mm: mm, yyyy: yyyy, slash: dd + '/' + mm + '/' + yyyy };
   }
   function abrirCopernico_(url) {
     try {
@@ -2675,21 +2675,38 @@
       toast('No se pudo abrir Copérnico en este dispositivo.', 'error');
     }
   }
-  var btnFichaVeh = document.getElementById('btn-coper-ficha-vehiculo');
-  if (btnFichaVeh) {
-    btnFichaVeh.addEventListener('click', function () {
-      abrirCopernico_('http://copernico.sir.renfe.es/copernico/SrvController/operaciones/fichaVehiculo/');
-    });
+  function urlCopernicoAtajo_(key) {
+    var f = fechaCoperPartes_();
+    var base = 'http://copernico.sir.renfe.es/copernico/';
+    switch (key) {
+      case 'sitra':
+        return base + 'SrvRenfeSituacion?todo=cambiositra&fechaSitra=' + f.slash;
+      case 'anadir-dt':
+        return base + 'SrvRenfeAsignar_recursos?todo=documento_tren_mensaje';
+      case 'sin-justificar':
+        return base + 'SrvRenfeIncidencias?todo=retsinjustificar&fincidencia=01/' + f.mm + '/' + f.yyyy +
+          '&fechafin=' + f.slash + '&horaIni=0000&horaFin=2359&mercado=90,0,60,62,61,64,65,68,80';
+      case 'transbordados':
+        return base + 'SrvRenfeSituacion?todo=informetrasbordados&fechaDesde=' + f.slash + '&fechaHasta=' + f.slash;
+      case 'matricula-real':
+        return base + 'SrvRenfeAsignarMaterialM?todo=informegannmatriculas&matricula=&fecha=' + f.slash +
+          '&tipo=&origen=&mercado=&serie=&real=1';
+      case 'ficha-vehiculo':
+        return base + 'SrvController/operaciones/fichaVehiculo/';
+      case 'v-vehiculo':
+        return base + 'SrvRenfeAsignarMaterialM?todo=buscarmaterialmatri&desde=MOTOR&fechaOrigen=' + f.slash +
+          '&mercado=&tipo=&serie=&matbusca=';
+      default:
+        return '';
+    }
   }
-  var btnVVeh = document.getElementById('btn-coper-v-vehiculo');
-  if (btnVVeh) {
-    btnVVeh.addEventListener('click', function () {
-      // Misma URL que Anthony (fecha dd/mm/yyyy sin encode).
-      abrirCopernico_(
-        'http://copernico.sir.renfe.es/copernico/SrvRenfeAsignarMaterialM?todo=buscarmaterialmatri&desde=MOTOR&fechaOrigen=' +
-        fechaCoperDdMmYyyy_() +
-        '&mercado=&tipo=&serie=&matbusca='
-      );
+  var circCoper = document.getElementById('circ-coper-links');
+  if (circCoper) {
+    circCoper.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-coper]');
+      if (!btn) return;
+      var url = urlCopernicoAtajo_(btn.getAttribute('data-coper'));
+      if (url) abrirCopernico_(url);
     });
   }
   document.getElementById('btn-mallas-buscar').addEventListener('click', buscarMallaTren);
