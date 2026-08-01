@@ -7,6 +7,11 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
+  var supabaseCfg = window.TURNIO_SUPABASE || {};
+  var supabase = window.supabase && window.supabase.createClient(
+    supabaseCfg.url, supabaseCfg.publishableKey,
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
+  );
   var clientKey = 'turnio_external_client_id';
   var sessionKey = 'turnio_external_session_token';
   var mode = 'TODOS';
@@ -232,9 +237,15 @@
     return id;
   }
   async function call(accion, extra) {
+    var authHeaders = { 'Content-Type': 'application/json' };
+    if (!supabase) throw new Error('No se pudo cargar el acceso seguro.');
+    var sesion = await supabase.auth.getSession();
+    var accessToken = sesion && sesion.data && sesion.data.session && sesion.data.session.access_token;
+    if (!accessToken) throw new Error('Tu sesión ha caducado. Vuelve a entrar.');
+    authHeaders.Authorization = 'Bearer ' + accessToken;
     var r = await fetch(api + '/api/turnio', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders,
       cache: 'no-store',
       body: JSON.stringify(Object.assign({
         accion: accion,
@@ -2691,18 +2702,27 @@
   }
 
   async function init() {
-    if (!api) { setStatus('error', 'Puente externo pendiente de configurar.'); return; }
+    if (!api || !supabase) { setStatus('error', 'Acceso externo pendiente de configurar.'); return; }
     try {
       var r = await fetch(api + '/api/health', { cache: 'no-store' });
       var d = await r.json();
       if (!r.ok || !d.ok || !d.configured) throw 0;
       setStatus('ready', 'Conexión externa preparada.');
-      if (localStorage.getItem(sessionKey)) {
+      var auth = await supabase.auth.getUser();
+      if (auth && auth.data && auth.data.user) {
+        sessionEmail = String(auth.data.user.email || '').trim().toLowerCase();
         try {
           var x = await call('sesion');
           showApp(x.persona);
           return;
-        } catch (_) { localStorage.removeItem(sessionKey); }
+        } catch (_) {
+          localStorage.removeItem(sessionKey);
+          var inicio = await call('iniciar_pruebas', { email: sessionEmail });
+          if (!inicio.token) throw new Error('No se pudo iniciar la sesión TURNIO.');
+          localStorage.setItem(sessionKey, inicio.token);
+          showApp(inicio.persona);
+          return;
+        }
       }
       loginForm.hidden = false;
     } catch (_) {
@@ -2710,14 +2730,34 @@
     }
   }
 
+  document.getElementById('btn-recibir-otp').addEventListener('click', async function () {
+    var email = String(document.getElementById('email').value || '').trim().toLowerCase();
+    if (!email) { setStatus('error', 'Introduce tu correo autorizado.'); return; }
+    setStatus('pending', 'Enviando código...');
+    try {
+      var envio = await supabase.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } });
+      if (envio.error) throw envio.error;
+      document.getElementById('otp-wrap').hidden = false;
+      document.getElementById('otp').focus();
+      setStatus('ready', 'Código enviado. Caduca en 15 minutos.');
+    } catch (err) {
+      setStatus('error', normalizarErrorOtp_(err));
+    }
+  });
+
   loginForm.addEventListener('submit', async function (e) {
     e.preventDefault();
     setStatus('pending', 'Validando acceso...');
     try {
-      var d = await call('iniciar_pruebas', {
-        email: document.getElementById('email').value.trim(),
-        pin: document.getElementById('pin').value
+      var email = String(document.getElementById('email').value || '').trim().toLowerCase();
+      var codigo = String(document.getElementById('otp').value || '').replace(/\D/g, '');
+      var verificado = await supabase.auth.verifyOtp({
+        email: email,
+        token: codigo,
+        type: 'email'
       });
+      if (verificado.error) throw verificado.error;
+      var d = await call('iniciar_pruebas', { email: email });
       if (!d.token) throw new Error('No se ha creado la sesión.');
       localStorage.setItem(sessionKey, d.token);
       setStatus('ready', 'Sesión iniciada.');
@@ -2726,6 +2766,20 @@
       setStatus('error', err.message);
     }
   });
+
+  document.getElementById('btn-cambiar-email').addEventListener('click', function () {
+    document.getElementById('otp-wrap').hidden = true;
+    document.getElementById('otp').value = '';
+    setStatus('ready', 'Introduce el correo autorizado para recibir otro código.');
+    document.getElementById('email').focus();
+  });
+
+  function normalizarErrorOtp_(err) {
+    var texto = String((err && err.message) || err || 'No se pudo completar el acceso.');
+    if (/rate limit|60 seconds|too many/i.test(texto)) return 'Espera un minuto antes de solicitar otro código.';
+    if (/expired|invalid|token/i.test(texto)) return 'El código no es válido o ha caducado. Solicita uno nuevo.';
+    return texto;
+  }
 
   document.querySelectorAll('[data-go]').forEach(function (b) {
     b.addEventListener('click', function () { go(b.dataset.go); });
@@ -2777,6 +2831,7 @@
       intervaloAutoRadar = null;
     }
     localStorage.removeItem(sessionKey);
+    if (supabase) supabase.auth.signOut();
     appShell.hidden = true;
     nav.hidden = true;
     loginShell.hidden = false;
