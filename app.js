@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces11');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces12');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3425,7 +3425,7 @@
     var w = null;
     try { w = window.open(helper, '_blank'); } catch (err) { w = null; }
     if (w) {
-      toast('En la pestaña nueva: pulsa «Descargar Excel (.xls)».', 'success');
+      toast('En la pestaña nueva: Pedir Excel → si baja .htm, guárdalo como .xls.', 'success');
       return;
     }
     toast('Permite ventanas emergentes, o pega el enlace: Ctrl+L → Ctrl+V → Enter.', 'success');

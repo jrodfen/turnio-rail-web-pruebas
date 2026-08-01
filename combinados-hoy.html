@@ -13,37 +13,72 @@
       min-height: 100vh; display: grid; place-items: center; padding: 24px;
     }
     .card {
-      width: min(520px, 100%); background: #fff; border: 1px solid #d7e0ec;
+      width: min(560px, 100%); background: #fff; border: 1px solid #d7e0ec;
       border-radius: 16px; padding: 28px 24px; box-shadow: 0 10px 30px rgba(20, 32, 51, .08);
     }
     h1 { margin: 0 0 8px; font-size: 22px; }
     p { margin: 0 0 14px; line-height: 1.45; color: #405066; font-size: 14px; }
+    .steps { margin: 0 0 16px; padding: 0; list-style: none; }
+    .steps li {
+      margin: 0 0 10px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
+      background: #f8fafc;
+    }
+    .steps b { display: block; margin-bottom: 8px; color: #142033; }
     .btn {
       display: inline-block; margin: 4px 8px 4px 0; padding: 12px 18px; border-radius: 10px;
       background: #0b57d0; color: #fff; text-decoration: none; font-weight: 700; border: 0; cursor: pointer;
       font-size: 15px;
     }
     .btn.secondary { background: #eef3f8; color: #142033; }
+    .btn.ok { background: #0f766e; }
     code {
-      display: block; margin: 12px 0; padding: 12px; border-radius: 10px; background: #f3f6fa;
+      display: block; margin: 12px 0 0; padding: 12px; border-radius: 10px; background: #f3f6fa;
       font-size: 11px; word-break: break-all; border: 1px solid #e2e8f0;
     }
-    .ok { color: #0f766e; font-weight: 700; min-height: 1.2em; }
-    .hint { font-size: 12px; color: #64748b; }
+    .msg { color: #0f766e; font-weight: 700; min-height: 1.2em; margin: 0 0 8px; }
+    .hint { font-size: 12px; color: #64748b; margin: 0; }
+    iframe { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>Trenes Combinados</h1>
-    <p>Pulsa el botón para bajar el Excel (<b>.xls</b>) de Copérnico. Esta ventana se queda abierta a propósito.</p>
-    <p>
-      <a class="btn" id="btn-xls" href="#" target="_blank" rel="noreferrer" referrerpolicy="no-referrer">Descargar Excel (.xls)</a>
-      <button type="button" class="btn secondary" id="btn-copiar">Copiar enlace</button>
-    </p>
-    <p class="ok" id="msg" aria-live="polite"></p>
-    <p class="hint">Si no baja: Ctrl+L en una pestaña nueva, Ctrl+V, Enter (necesitas sesión en Copérnico / red Renfe).</p>
+    <h1>Trenes Combinados → .xls</h1>
+    <p>Copérnico a veces entrega el Excel como HTML y el navegador lo guarda como <b>.htm</b>. Aquí lo pedimos como en Copérnico y, si hace falta, lo renombramos a <b>.xls</b>.</p>
+
+    <ol class="steps">
+      <li>
+        <b>1. Pedir fichero a Copérnico</b>
+        <button type="button" class="btn" id="btn-pedir">Pedir Excel</button>
+        <button type="button" class="btn secondary" id="btn-copiar">Copiar enlace</button>
+      </li>
+      <li>
+        <b>2. Si bajó .htm / .html → guardar como .xls</b>
+        <input type="file" id="file-htm" accept=".htm,.html,text/html,.xls,application/vnd.ms-excel" hidden>
+        <button type="button" class="btn ok" id="btn-a-xls">Elegir archivo y guardar .xls</button>
+      </li>
+    </ol>
+
+    <p class="msg" id="msg" aria-live="polite"></p>
+    <p class="hint">Necesitas sesión en Copérnico (red Renfe). Si el paso 1 no baja nada: pega el enlace en la barra (Ctrl+L → Ctrl+V → Enter) y luego usa el paso 2.</p>
     <code id="url"></code>
   </main>
+
+  <!-- Igual que el botón Excel de Copérnico: POST excel=E -->
+  <form id="form-xls" method="POST" action="http://copernico.sir.renfe.es/copernico/SrvRenfeSeguimiento" target="coper_xls_frame" accept-charset="UTF-8">
+    <input type="hidden" name="todo" value="combinados">
+    <input type="hidden" name="excel" value="E">
+    <input type="hidden" name="codusuario" value="">
+    <input type="hidden" name="hoy" id="f-hoy" value="">
+    <input type="hidden" name="perfil" value="3">
+    <input type="hidden" name="inicio" value="false">
+    <input type="hidden" name="servicio1" value="">
+    <input type="hidden" name="estacion" value="">
+    <input type="hidden" name="orden" value="4">
+    <input type="hidden" name="fechaInicio" id="f-ini" value="">
+    <input type="hidden" name="fechaFin" id="f-fin" value="">
+  </form>
+  <iframe name="coper_xls_frame" id="coper_xls_frame" title="descarga"></iframe>
+
   <script>
     (function () {
       function fechaHoy() {
@@ -60,15 +95,44 @@
           + '&perfil=3&inicio=false&servicio1=&estacion=&orden=4'
           + '&fechaInicio=' + fecha + '&fechaFin=' + fecha;
       }
+      function nombreXls() {
+        var f = fechaHoy().replace(/\//g, '-');
+        return 'TrenesCombinados_' + f + '.xls';
+      }
+      function setMsg(t) {
+        document.getElementById('msg').textContent = t || '';
+      }
+
+      var fecha = fechaHoy();
       var url = urlCombinadosHoy();
-      var code = document.getElementById('url');
-      var btn = document.getElementById('btn-xls');
-      var msg = document.getElementById('msg');
-      code.textContent = url;
-      btn.href = url;
+      document.getElementById('url').textContent = url;
+      document.getElementById('f-hoy').value = fecha;
+      document.getElementById('f-ini').value = fecha;
+      document.getElementById('f-fin').value = fecha;
+
+      document.getElementById('btn-pedir').addEventListener('click', function () {
+        /* 1) POST como el botón Excel de Copérnico */
+        try { document.getElementById('form-xls').submit(); } catch (e1) { /* ignore */ }
+
+        /* 2) GET en pestaña (por si el POST queda bloqueado por mixed content) */
+        try {
+          var a = document.createElement('a');
+          a.href = url;
+          a.target = '_blank';
+          a.rel = 'noreferrer';
+          a.setAttribute('referrerpolicy', 'no-referrer');
+          /* Pista de nombre; en cross-origin el navegador puede ignorarlo */
+          a.setAttribute('download', nombreXls());
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } catch (e2) { /* ignore */ }
+
+        setMsg('Petición enviada. Si baja .htm, usa el paso 2 para guardarlo como .xls.');
+      });
 
       document.getElementById('btn-copiar').addEventListener('click', function () {
-        function ok() { msg.textContent = 'Enlace copiado.'; }
+        function ok() { setMsg('Enlace copiado. Pégalo en la barra si hace falta.'); }
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url).then(ok).catch(function () {
             try {
@@ -79,15 +143,40 @@
               document.execCommand('copy');
               document.body.removeChild(ta);
               ok();
-            } catch (e) { msg.textContent = 'Copia el texto de abajo.'; }
+            } catch (e) { setMsg('Copia el texto de abajo.'); }
           });
         } else {
           ok();
         }
       });
 
-      btn.addEventListener('click', function () {
-        msg.textContent = 'Abriendo descarga… revisa la carpeta Descargas (.xls).';
+      document.getElementById('btn-a-xls').addEventListener('click', function () {
+        document.getElementById('file-htm').click();
+      });
+
+      document.getElementById('file-htm').addEventListener('change', function () {
+        var file = this.files && this.files[0];
+        this.value = '';
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var blob = new Blob([reader.result], { type: 'application/vnd.ms-excel' });
+            var blobUrl = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = nombreXls();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 2000);
+            setMsg('Guardado como ' + nombreXls() + '. Ya puedes cargarlo en Circulación.');
+          } catch (err) {
+            setMsg('No se pudo convertir. Renómbralo a mano a .xls.');
+          }
+        };
+        reader.onerror = function () { setMsg('No se pudo leer el archivo.'); };
+        reader.readAsArrayBuffer(file);
       });
     })();
   </script>
