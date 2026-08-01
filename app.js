@@ -2875,24 +2875,107 @@
     if (card) abrirMarcha(card);
   });
 
-  /* Servicios enlazados (Excel diario → panel TURNIO + botón en Radar) */
+  /* Servicios enlazados (Excel diario → panel estilo SE + botón en Radar) */
   var cxFiltroEstacion_ = '';
   var cxFiltroTren_ = '';
+  var cxFiltroQ_ = '';
+  var cxFiltroTurno_ = 'todos';
+  var cxFiltroRol_ = 'todos';
+  var cxFiltroSort_ = 'hora';
   var cxTrenModal_ = '';
 
-  function htmlTarjetaConexion_(f, numResaltado) {
-    var num = String(numResaltado || '');
-    var rol = num && f.servicio === num ? 'Sale / llega al enlace' : (num && f.servicioEnlazado === num ? 'Enlazado desde otro servicio' : 'Conexión');
-    return '<article class="cx-card">' +
-      '<div class="cx-card-head"><b>&#128279; ' + esc(f.servicio) + ' &#8594; ' + esc(f.servicioEnlazado) +
-      '</b><span>' + esc(f.estacionEnlace || 'Enlace') + '</span></div>' +
-      '<p class="muted">' + esc(rol) + '</p>' +
-      '<p>' + esc(f.origen || '—') + ' (' + esc(f.horaSalidaOrig || '--:--') + ') · llega enlace ' +
-      esc(f.horaLlegadaEnlace || '--:--') + ' · sale ' + esc(f.horaSalidaEnlace || f.horaSalida || '--:--') + '</p>' +
-      '<p>Destino ' + esc(f.destino || '—') + ' (' + esc(f.horaLlegada || '--:--') + ')' +
-      (f.tiempoConexion ? ' · margen ' + esc(String(f.tiempoConexion)) + ' min' : '') +
-      (f.viajeros ? ' · ' + esc(String(f.viajeros)) + ' viajeros' : '') + '</p>' +
-      '</article>';
+  function cxHoraAMinutos_(hStr) {
+    var m = String(hStr || '').match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return -1;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  function htmlTarjetaConexion_(f, opts) {
+    opts = opts || {};
+    var highlight = String(opts.estacion || '');
+    var ahora = new Date();
+    var ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
+    var espera = Number(f.tiempoConexion) || 0;
+    if (!espera) {
+      var hL = cxHoraAMinutos_(f.horaLlegadaEnlace);
+      var hS = cxHoraAMinutos_(f.horaSalidaEnlace);
+      if (hL >= 0 && hS >= 0) {
+        espera = hS - hL;
+        if (espera < 0) espera += 24 * 60;
+      }
+    }
+    var tClass = 'cx-t-ok';
+    if (espera > 60) tClass = 'cx-t-danger';
+    else if (espera > 30) tClass = 'cx-t-warn';
+    var v = Number(f.viajeros) || 0;
+    var vIcon = v >= 10 ? '👥' : v >= 5 ? '👤' : v > 0 ? '·' : '—';
+    var horaEnlaceMin = cxHoraAMinutos_(f.horaSalidaEnlace);
+    var esRealizado = horaEnlaceMin >= 0 && (horaEnlaceMin + 10) < ahoraMin;
+    var proxClass = '';
+    var proxBadge = '';
+    if (!esRealizado && horaEnlaceMin >= 0) {
+      var minRest = horaEnlaceMin - ahoraMin;
+      if (minRest < 15) {
+        proxClass = ' cx-prox-rojo';
+        proxBadge = '<span class="cx-prox-badge cx-prox-badge-rojo">' + (minRest > 0 ? minRest + ' min' : '¡Ahora!') + '</span>';
+      } else if (minRest < 30) {
+        proxClass = ' cx-prox-ambar';
+        proxBadge = '<span class="cx-prox-badge cx-prox-badge-ambar">' + minRest + ' min</span>';
+      } else {
+        proxClass = ' cx-prox-verde';
+        proxBadge = '<span class="cx-prox-badge cx-prox-badge-verde">' + minRest + ' min</span>';
+      }
+    }
+    var esDestaca = !esRealizado && ((espera > 0 && espera < 30) || v > 15);
+    var destacaBadge = esDestaca
+      ? '<span class="cx-destaca-badge">' +
+        ((espera > 0 && espera < 30) ? 'Ajustada' : '') +
+        ((espera > 0 && espera < 30 && v > 15) ? ' · ' : '') +
+        (v > 15 ? 'Alta ocup.' : '') +
+        '</span>'
+      : '';
+    var rolesHtml = (f._roles || []).map(function (r) {
+      var label = r === 'origen' ? 'Como Origen' : r === 'destino' ? 'Como Destino' : 'Como Enlace';
+      return '<span class="cx-role-badge cx-role-' + r + '">' + label + '</span>';
+    }).join('');
+    function hi(nombre) {
+      var a = String(highlight || '').toLowerCase();
+      var b = String(nombre || '').toLowerCase();
+      if (a && b && b.indexOf(a) >= 0) return '<span class="cx-est-highlight">' + esc(nombre) + '</span>';
+      return esc(nombre || '—');
+    }
+    return '<article class="cx-card' + (esRealizado ? ' cx-card-realizado' : '') +
+      (esDestaca ? ' cx-card-destaca' : '') + proxClass + '">' +
+      (esRealizado ? '<span class="cx-realizado-badge">Realizado</span>' : '') +
+      '<div class="cxn-top">' +
+      '<div class="cxn-hora">' + esc(f.horaSalidaEnlace || '—') + '</div>' +
+      '<div class="cxn-top-mid">' +
+      '<div class="cxn-estacion">' + esc(f.estacionEnlace || 'Enlace') + '</div>' +
+      '<div class="cxn-badges">' + proxBadge + destacaBadge + rolesHtml + '</div>' +
+      '</div>' +
+      '<div class="cxn-top-right"><span class="cxn-viajeros">' + vIcon + ' ' + v + ' viaj.</span></div>' +
+      '</div>' +
+      '<div class="cxn-trenes">' +
+      '<div class="cxn-tren-blk">' +
+      '<div class="cxn-tren-id cxn-llega">&#128642; ' + esc(f.servicio || '—') + '</div>' +
+      '<div class="cxn-tren-detail">' +
+      '<span class="cxn-station-nm">' + hi(f.origen) + '</span>' +
+      '<div class="cxn-times-row">' +
+      '<span class="cxn-t">' + esc(f.horaSalidaOrig || '—') + '</span><span class="cxn-t-lbl">sale</span>' +
+      '<span class="cxn-arr">&#8594;</span>' +
+      '<span class="cxn-t cxn-t-hl">' + esc(f.horaLlegadaEnlace || '—') + '</span><span class="cxn-t-lbl">llega</span>' +
+      '</div></div></div>' +
+      '<div class="cxn-espera ' + tClass + '">&#9201;<br><b>' + esc(String(espera)) + '</b><br><small>min</small></div>' +
+      '<div class="cxn-tren-blk cxn-tren-blk-r">' +
+      '<div class="cxn-tren-id cxn-sale">&#128646; ' + esc(f.servicioEnlazado || '—') + '</div>' +
+      '<div class="cxn-tren-detail cxn-tren-detail-r">' +
+      '<div class="cxn-times-row cxn-times-row-r">' +
+      '<span class="cxn-t cxn-t-hl">' + esc(f.horaSalidaEnlace || '—') + '</span><span class="cxn-t-lbl">sale</span>' +
+      '<span class="cxn-arr">&#8594;</span>' +
+      '<span class="cxn-t">' + esc(f.horaLlegada || '—') + '</span><span class="cxn-t-lbl">llega</span>' +
+      '</div>' +
+      '<span class="cxn-station-nm cxn-station-nm-r">' + hi(f.destino) + '</span>' +
+      '</div></div></div></article>';
   }
 
   function refrescarUiConexiones_() {
@@ -2919,8 +3002,8 @@
     if (!wrap || !cx) return;
     wrap.innerHTML = cx.estacionesPreferidasUi().map(function (e) {
       var active = (e.id || '') === (cxFiltroEstacion_ || '');
-      return '<button type="button" class="cx-est-btn' + (active ? ' active' : '') +
-        '" data-cx-est="' + esc(e.id) + '">' + esc(e.label) + '</button>';
+      return '<button type="button" class="cx-est-btn' + (e.all ? ' preferidas-all' : '') +
+        (active ? ' active' : '') + '" data-cx-est="' + esc(e.id) + '">' + esc(e.label) + '</button>';
     }).join('');
   }
 
@@ -2928,31 +3011,76 @@
     var cx = window.TurnioConexiones;
     var box = document.getElementById('cx-resultados');
     var cnt = document.getElementById('cx-contador');
+    var totalLabel = document.getElementById('cx-total-label');
     var input = document.getElementById('cx-buscar-tren');
+    var stats = document.getElementById('cx-stats');
+    var rolRow = document.getElementById('cx-rol-row');
     refrescarUiConexiones_();
     pintarBotonesEstacionCx_();
+    if (rolRow) rolRow.hidden = !cxFiltroEstacion_;
     if (!cx || !box) return;
-    if (input && cxFiltroTren_ && input.value !== cxFiltroTren_) input.value = cxFiltroTren_;
     var st = cx.estado();
     if (!st.cargado) {
-      if (cnt) cnt.textContent = '0';
-      box.innerHTML = '<div class="empty">Carga el Excel/HTML de Trenes Combinados para ver enlaces aquí.</div>';
+      if (cnt) cnt.textContent = '';
+      if (totalLabel) totalLabel.textContent = '0 conexiones';
+      if (stats) stats.hidden = true;
+      box.innerHTML = '<div class="empty">Carga el Excel/HTML de Trenes Combinados para ver el panel.</div>';
       return;
     }
-    var tren = cx.limpiarNumTren((input && input.value) || cxFiltroTren_ || '');
+    var qRaw = (input && input.value) || '';
+    var tren = cx.limpiarNumTren(qRaw);
     cxFiltroTren_ = tren;
+    cxFiltroQ_ = tren ? '' : String(qRaw || '').trim();
     var filas = cx.listar({
       soloPreferidas: true,
       estacion: cxFiltroEstacion_,
       tren: tren,
-      limit: 150
+      q: cxFiltroQ_,
+      turno: cxFiltroTurno_,
+      rol: cxFiltroRol_,
+      sort: cxFiltroSort_,
+      limit: 200
     });
-    if (cnt) cnt.textContent = filas.length + (filas.length >= 150 ? '+' : '');
+    var ahoraMin = new Date().getHours() * 60 + new Date().getMinutes();
+    var pendientes = filas.filter(function (f) {
+      var m = cxHoraAMinutos_(f.horaSalidaEnlace);
+      return m < 0 || (m + 10) >= ahoraMin;
+    });
+    var realizados = filas.filter(function (f) {
+      var m = cxHoraAMinutos_(f.horaSalidaEnlace);
+      return m >= 0 && (m + 10) < ahoraMin;
+    });
+    var viajeros = filas.reduce(function (s, f) { return s + (Number(f.viajeros) || 0); }, 0);
+    var media = filas.length
+      ? Math.round(filas.reduce(function (s, f) { return s + (Number(f.tiempoConexion) || 0); }, 0) / filas.length)
+      : 0;
+    if (stats) {
+      stats.hidden = false;
+      var sn = document.getElementById('cx-stat-n');
+      var sv = document.getElementById('cx-stat-v');
+      var se = document.getElementById('cx-stat-e');
+      var sp = document.getElementById('cx-stat-p');
+      if (sn) sn.textContent = String(filas.length);
+      if (sv) sv.textContent = String(viajeros);
+      if (se) se.textContent = String(media) + "'";
+      if (sp) sp.textContent = String(pendientes.length);
+    }
+    if (totalLabel) totalLabel.textContent = filas.length + ' conexiones';
+    if (cnt) cnt.textContent = pendientes.length + ' pend. · ' + realizados.length + ' hechas';
     if (!filas.length) {
       box.innerHTML = '<div class="empty">No hay conexiones con estos filtros.</div>';
       return;
     }
-    box.innerHTML = filas.map(function (f) { return htmlTarjetaConexion_(f, tren); }).join('');
+    var html = pendientes.map(function (f) {
+      return htmlTarjetaConexion_(f, { estacion: cxFiltroEstacion_ });
+    }).join('');
+    if (pendientes.length && realizados.length) {
+      html += '<div class="cx-sep-realizados">— ' + realizados.length + ' enlaces ya realizados —</div>';
+    }
+    html += realizados.map(function (f) {
+      return htmlTarjetaConexion_(f, { estacion: cxFiltroEstacion_ });
+    }).join('');
+    box.innerHTML = html;
   }
 
   function abrirModalConexiones_(numTren) {
@@ -2968,7 +3096,7 @@
     if (!filas.length) {
       lista.innerHTML = '<div class="empty">No hay enlaces preferidos para este tren en el fichero de hoy.</div>';
     } else {
-      lista.innerHTML = filas.map(function (f) { return htmlTarjetaConexion_(f, num); }).join('');
+      lista.innerHTML = filas.map(function (f) { return htmlTarjetaConexion_(f, {}); }).join('');
     }
     modal.hidden = false;
   }
@@ -2996,7 +3124,21 @@
     if (!confirm('¿Quitar el Excel de conexiones de este dispositivo?')) return;
     cx.limpiar();
     cxFiltroTren_ = '';
+    cxFiltroQ_ = '';
     cxFiltroEstacion_ = '';
+    cxFiltroTurno_ = 'todos';
+    cxFiltroRol_ = 'todos';
+    cxFiltroSort_ = 'hora';
+    var input = document.getElementById('cx-buscar-tren');
+    if (input) input.value = '';
+    var sortSel = document.getElementById('cx-sort');
+    if (sortSel) sortSel.value = 'hora';
+    document.querySelectorAll('.cx-turno-btn').forEach(function (b) {
+      b.classList.toggle('active', (b.getAttribute('data-cx-turno') || '') === 'todos');
+    });
+    document.querySelectorAll('.cx-filter-btn').forEach(function (b) {
+      b.classList.toggle('active', (b.getAttribute('data-cx-rol') || '') === 'todos');
+    });
     refrescarUiConexiones_();
     render();
     pintarPanelConexiones_();
@@ -3028,22 +3170,52 @@
         var b = e.target.closest('[data-cx-est]');
         if (!b) return;
         cxFiltroEstacion_ = b.getAttribute('data-cx-est') || '';
+        cxFiltroRol_ = 'todos';
+        document.querySelectorAll('.cx-filter-btn').forEach(function (btn) {
+          btn.classList.toggle('active', (btn.getAttribute('data-cx-rol') || '') === 'todos');
+        });
+        pintarPanelConexiones_();
+      });
+    }
+    document.querySelectorAll('.cx-turno-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        cxFiltroTurno_ = btn.getAttribute('data-cx-turno') || 'todos';
+        document.querySelectorAll('.cx-turno-btn').forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        pintarPanelConexiones_();
+      });
+    });
+    document.querySelectorAll('.cx-filter-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        cxFiltroRol_ = btn.getAttribute('data-cx-rol') || 'todos';
+        document.querySelectorAll('.cx-filter-btn').forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        pintarPanelConexiones_();
+      });
+    });
+    var sortSel = document.getElementById('cx-sort');
+    if (sortSel) {
+      sortSel.addEventListener('change', function () {
+        cxFiltroSort_ = sortSel.value || 'hora';
         pintarPanelConexiones_();
       });
     }
     var btnBuscar = document.getElementById('btn-cx-buscar');
     var inputTren = document.getElementById('cx-buscar-tren');
-    if (btnBuscar) btnBuscar.addEventListener('click', function () {
-      cxFiltroTren_ = (window.TurnioConexiones && window.TurnioConexiones.limpiarNumTren(inputTren && inputTren.value)) || '';
-      pintarPanelConexiones_();
-    });
+    if (btnBuscar) btnBuscar.addEventListener('click', pintarPanelConexiones_);
     if (inputTren) {
       inputTren.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          cxFiltroTren_ = (window.TurnioConexiones && window.TurnioConexiones.limpiarNumTren(inputTren.value)) || '';
           pintarPanelConexiones_();
         }
+      });
+      var searchTimer = null;
+      inputTren.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(pintarPanelConexiones_, 220);
       });
     }
     ['btn-cerrar-conexiones', 'btn-cerrar-conexiones-2'].forEach(function (id) {
@@ -3053,7 +3225,9 @@
     var btnVerPanel = document.getElementById('btn-cx-ver-panel');
     if (btnVerPanel) {
       btnVerPanel.addEventListener('click', function () {
-        cxFiltroTren_ = cxTrenModal_ || '';
+        var num = cxTrenModal_ || '';
+        cxFiltroTren_ = num;
+        if (inputTren) inputTren.value = num;
         cerrarModalConexiones_();
         go('conexiones');
       });

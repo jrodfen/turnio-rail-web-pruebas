@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-panel1">
+    <link rel="stylesheet" href="./styles.css?v=cx-se2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -347,28 +347,58 @@
       </section>
       <section id="screen-conexiones" class="screen">
         <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
-        <div class="cx-panel">
+        <div class="cx-panel cx-panel--se">
           <div class="cx-panel-head">
             <h3>&#128279; Servicios enlazados</h3>
             <span class="circ-chip circ-chip--green" id="cx-panel-chip">Sin cargar</span>
           </div>
-          <p class="mallas-lead">Consulta dentro de TURNIO. Filtra por estaci&oacute;n preferida o n&uacute;mero de tren (puedes probarlo aunque el Radar est&eacute; vac&iacute;o).</p>
+          <p class="mallas-lead">Prueba UI estilo panel CG. Carga el Excel del d&iacute;a y filtra como en servicios-enlazados.</p>
           <div class="cx-upload-row">
             <input type="file" id="cx-file-input-panel" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
             <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar-panel">Cargar Excel</button>
             <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-limpiar-panel">Quitar</button>
           </div>
           <p class="cx-upload-meta" id="cx-panel-meta">Ning&uacute;n fichero cargado hoy.</p>
-          <div class="cx-filters">
-            <div class="cx-est-row" id="cx-est-btns" role="group" aria-label="Estaciones preferidas"></div>
-            <div class="cx-search-row">
-              <input id="cx-buscar-tren" type="search" inputmode="numeric" placeholder="N&ordm; tren (ej. 13017)" autocomplete="off" aria-label="Buscar tren">
-              <button type="button" class="btn primary" id="btn-cx-buscar">Buscar</button>
+
+          <div class="cx-stats" id="cx-stats" hidden>
+            <div class="cx-stat"><b id="cx-stat-n">0</b><span>Conexiones</span></div>
+            <div class="cx-stat"><b id="cx-stat-v">0</b><span>Viajeros</span></div>
+            <div class="cx-stat"><b id="cx-stat-e">0</b><span>Espera media</span></div>
+            <div class="cx-stat"><b id="cx-stat-p">0</b><span>Pendientes</span></div>
+          </div>
+
+          <div class="cx-ctrl">
+            <div class="cx-ctrl-row">
+              <span class="cx-ctrl-label">Turno</span>
+              <button type="button" class="cx-turno-btn active" data-cx-turno="todos">Todo el d&iacute;a</button>
+              <button type="button" class="cx-turno-btn" data-cx-turno="manana">Ma&ntilde;ana</button>
+              <button type="button" class="cx-turno-btn" data-cx-turno="tarde">Tarde</button>
+            </div>
+            <div class="cx-ctrl-row">
+              <span class="cx-ctrl-label">Estaci&oacute;n</span>
+              <div class="cx-est-row" id="cx-est-btns" role="group" aria-label="Estaciones preferidas"></div>
+            </div>
+            <div class="cx-ctrl-row" id="cx-rol-row" hidden>
+              <span class="cx-ctrl-label">Rol</span>
+              <button type="button" class="cx-filter-btn active" data-cx-rol="todos">Todos</button>
+              <button type="button" class="cx-filter-btn" data-cx-rol="origen">Como Origen</button>
+              <button type="button" class="cx-filter-btn" data-cx-rol="enlace">Como Enlace</button>
+              <button type="button" class="cx-filter-btn" data-cx-rol="destino">Como Destino</button>
+            </div>
+            <div class="cx-ctrl-row cx-ctrl-row--search">
+              <input id="cx-buscar-tren" class="cx-search-input" type="search" placeholder="Buscar tren, origen, enlace o destino&hellip;" autocomplete="off" aria-label="Buscar">
+              <select id="cx-sort" class="cx-sort-sel" aria-label="Ordenar">
+                <option value="hora">Orden: hora enlace</option>
+                <option value="viajeros">Orden: viajeros</option>
+                <option value="conexion">Orden: espera</option>
+              </select>
+              <button type="button" class="btn primary" id="btn-cx-buscar">Filtrar</button>
             </div>
           </div>
+
           <div class="gtfs-results-meta">
-            <span>Solo estaciones preferidas</span>
-            <span id="cx-contador">0</span>
+            <span id="cx-total-label">0 conexiones</span>
+            <span id="cx-contador"></span>
           </div>
           <div id="cx-resultados" class="cx-resultados"></div>
         </div>
@@ -509,9 +539,9 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx3"></script>
+    <script src="./conexiones.js?v=cx-se2"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=cx-panel1"></script>
+    <script src="./app.js?v=cx-se2"></script>
   </body>
 </html>
 

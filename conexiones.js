@@ -252,15 +252,47 @@
     var estacion = normalizarTexto_(opts.estacion || '');
     var tren = limpiarNumTren_(opts.tren || '');
     var q = normalizarTexto_(opts.q || '');
-    var limit = Math.max(1, Math.min(Number(opts.limit) || 120, 400));
+    var turno = String(opts.turno || 'todos');
+    var rol = String(opts.rol || 'todos');
+    var sort = String(opts.sort || 'hora');
+    var limit = Math.max(1, Math.min(Number(opts.limit) || 200, 500));
     var out = [];
+
+    function horaAMinutos(hStr) {
+      var m = String(hStr || '').match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return -1;
+      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    }
+    function coincideEst(nombreFiltro, valor) {
+      var a = normalizarTexto_(nombreFiltro);
+      var b = normalizarTexto_(valor);
+      return !!(a && b && (b.indexOf(a) >= 0 || a.indexOf(b) >= 0));
+    }
+
     for (var i = 0; i < state.filas.length; i++) {
-      var f = state.filas[i];
-      if (soloPref && !f.preferida) continue;
+      var f = Object.assign({}, state.filas[i]);
+      if (soloPref && !f.preferida && !estacion) continue;
       if (tren && f.servicio !== tren && f.servicioEnlazado !== tren) continue;
       if (estacion) {
-        var est = normalizarTexto_(f.estacionEnlace);
-        if (est.indexOf(estacion) < 0) continue;
+        var enOrig = coincideEst(estacion, f.origen);
+        var enEnl = coincideEst(estacion, f.estacionEnlace);
+        var enDest = coincideEst(estacion, f.destino);
+        if (!enOrig && !enEnl && !enDest) continue;
+        f._roles = [];
+        if (enOrig) f._roles.push('origen');
+        if (enEnl) f._roles.push('enlace');
+        if (enDest) f._roles.push('destino');
+        if (rol !== 'todos' && f._roles.indexOf(rol) < 0) continue;
+      } else if (soloPref && !f.preferida) {
+        continue;
+      }
+      if (turno === 'manana' || turno === 'tarde') {
+        var mins = horaAMinutos(f.horaSalidaEnlace);
+        if (mins >= 0) {
+          var mananaMin = 6 * 60, mananaMax = 14 * 60 + 30, tardeMax = 22 * 60 + 30;
+          if (turno === 'manana' && !(mins >= mananaMin && mins < mananaMax)) continue;
+          if (turno === 'tarde' && !(mins >= mananaMax && mins <= tardeMax)) continue;
+        }
       }
       if (q) {
         var blob = normalizarTexto_([
@@ -269,18 +301,24 @@
         if (blob.indexOf(q) < 0) continue;
       }
       out.push(f);
-      if (out.length >= limit) break;
     }
-    return out;
+
+    out.sort(function (a, b) {
+      if (sort === 'viajeros') return (b.viajeros || 0) - (a.viajeros || 0);
+      if (sort === 'conexion') return (a.tiempoConexion || 0) - (b.tiempoConexion || 0);
+      return String(a.horaSalidaEnlace || '').localeCompare(String(b.horaSalidaEnlace || ''));
+    });
+
+    return out.slice(0, limit);
   }
 
   function estacionesPreferidasUi() {
     return [
-      { id: '', label: 'Todas preferidas' },
+      { id: '', label: 'Todas preferidas', all: true },
       { id: 'sevilla s.j', label: 'Sevilla SJ' },
       { id: 'cordoba', label: 'Córdoba' },
-      { id: 'malaga', label: 'Málaga MZ' },
-      { id: 'antequera', label: 'Antequera' },
+      { id: 'malaga maria zambrano', label: 'Málaga MZ' },
+      { id: 'antequera santa ana', label: 'Antequera AV' },
       { id: 'granada', label: 'Granada' },
       { id: 'dos hermanas', label: 'Dos Hermanas' }
     ];
