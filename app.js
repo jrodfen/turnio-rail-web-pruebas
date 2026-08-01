@@ -306,14 +306,14 @@
       .replace(/"/g, '&quot;');
   }
 
-  // Misma URL que el HTML de Anthony.
-  function pantallasAdifUrl_(codigo, modo) {
-    return 'https://info.adif.es/?s=' + encodeURIComponent(codigo) + '&v=' + (modo === 'al' ? 'al' : 'dl');
+  // Vista propia con scroll (Gravita show-all-trains), alojada en TURNIO.
+  function pantallasScrollUrl_(codigo, modo) {
+    return './pantalla-adif.html?station=' + encodeURIComponent(codigo) +
+      '&modo=' + (modo === 'al' ? 'al' : 'dl');
   }
 
   function abrirAdifPantallas_(codigo, modo) {
-    // Igual que Anthony: window.open(url) sin restricciones extra.
-    window.open(pantallasAdifUrl_(codigo, modo));
+    window.open(pantallasScrollUrl_(codigo, modo));
   }
 
   function asegurarEstacionesPantallas_() {

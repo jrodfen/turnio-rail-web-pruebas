@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0053a5">
+    <title>TURNIO · Pantalla ADIF</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0053a5; color: #fff; font-family: Arial, sans-serif; }
+      #wrap { position: relative; width: 100%; height: 100%; }
+      #board { display: block; width: 100%; height: 100%; border: 0; background: #0053a5; }
+      #status {
+        position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 3;
+        display: flex; gap: 8px; align-items: center; justify-content: space-between;
+        padding: 8px 10px; border-radius: 10px;
+        background: rgba(0,0,0,.55); font-size: 12px; font-weight: 700;
+        pointer-events: none;
+      }
+      #status a { pointer-events: auto; color: #9fd0ff; text-decoration: none; }
+      #overlay {
+        position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center;
+        background: #0053a5; text-align: center; padding: 24px;
+      }
+      #overlay[hidden] { display: none !important; }
+      #overlay strong { display: block; font-size: 18px; margin-bottom: 8px; }
+      #overlay span { display: block; font-size: 13px; opacity: .9; line-height: 1.4; max-width: 420px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+  </head>
+  <body>
+    <div id="wrap">
+      <div id="overlay"><div><strong>Conectando con ADIF…</strong><span id="overlay-msg">Estación —</span></div></div>
+      <iframe id="board" title="Pantalla ADIF Gravita" allow="fullscreen"></iframe>
+      <div id="status">
+        <span id="status-text">Conectando…</span>
+        <a id="link-oficial" href="#" target="_blank" rel="noopener">ADIF oficial</a>
+      </div>
+    </div>
+    <script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var station = String(params.get('station') || params.get('s') || '').replace(/\D/g, '');
+  var modo = String(params.get('modo') || params.get('v') || 'dl').toLowerCase();
+  var arrivals = modo === 'al' || modo === 'arrivals' || params.get('interfaz') === 'arrivals';
+  var interfaz = arrivals ? 'adif-gravita-arrivals' : 'adif-gravita-departures';
+  var overlay = document.getElementById('overlay');
+  var overlayMsg = document.getElementById('overlay-msg');
+  var statusText = document.getElementById('status-text');
+  var board = document.getElementById('board');
+  var linkOficial = document.getElementById('link-oficial');
+  var lastRaw = '';
+  var connection = null;
+
+  function setStatus(t) { statusText.textContent = t; }
+  function setOverlay(title, msg) {
+    overlay.hidden = false;
+    overlay.querySelector('strong').textContent = title;
+    overlayMsg.textContent = msg || '';
+  }
+  function hideOverlay() { overlay.hidden = true; }
+
+  if (!station) {
+    setOverlay('Falta estación', 'Abre esta vista desde TURNIO eligiendo Salidas o Llegadas.');
+    setStatus('Sin estación');
+    linkOficial.href = 'https://info.adif.es/';
+    return;
+  }
+
+  document.title = 'TURNIO · ' + station + (arrivals ? ' · Llegadas' : ' · Salidas');
+  overlayMsg.textContent = 'Estación ' + station + (arrivals ? ' · Llegadas' : ' · Salidas') + ' · con scroll';
+  linkOficial.href = 'https://info.adif.es/?s=' + encodeURIComponent(station) + '&v=' + (arrivals ? 'al' : 'dl');
+
+  // Misma idea que pantallas-estaciones: Gravita + show-all-trains (Mostrar con scroll).
+  var g = new URLSearchParams({
+    rutaRecursos: '../../../../recursos',
+    IdEstacion: station,
+    interfaz: interfaz,
+    traffic: 'C,A,L,R,-',
+    languages: 'ESP',
+    'show-header': 'true',
+    'show-access': 'true',
+    'show-platform': 'true',
+    'show-product': 'true',
+    'show-number': 'true',
+    countdown: 'true',
+    'max-show-stops': '-1',
+    'show-all-trains': 'true',
+    'show-alerts': 'true',
+    'estimated-time-traffics': 'C',
+    'countdown-traffics': 'C',
+    'font-size': 'auto',
+    subtitle: 'station-name'
+  });
+  board.src = 'https://info.adif.es/assets/gravita/gravita.html?' + g.toString();
+
+  function pushData(raw) {
+    if (!raw || raw === lastRaw) return;
+    lastRaw = raw;
+    try {
+      var data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      board.contentWindow && board.contentWindow.postMessage(
+        { target: 'grvta.setData', objData: JSON.stringify(data) },
+        '*'
+      );
+      hideOverlay();
+      setStatus('En vivo · ' + station + (arrivals ? ' · Llegadas' : ' · Salidas') + ' · scroll');
+    } catch (e) {
+      console.error(e);
+      setStatus('Error al pintar datos');
+    }
+  }
+
+  board.addEventListener('load', function () {
+    if (lastRaw) setTimeout(function () { var t = lastRaw; lastRaw = ''; pushData(t); }, 250);
+  });
+
+  var hubCode = 'PRE-ECM-' + station;
+  connection = new signalR.HubConnectionBuilder()
+    .withUrl('https://info.adif.es/InfoStation', {
+      skipNegotiation: true,
+      transport: signalR.HttpTransportType.WebSockets
+    })
+    .withAutomaticReconnect()
+    .configureLogging(signalR.LogLevel.Error)
+    .build();
+
+  connection.on('ReceiveMessage', function (msg) { pushData(msg); });
+  connection.on('ReceiveError', function (err) {
+    console.error(err);
+    setStatus('Error ADIF');
+  });
+  connection.onreconnecting(function () {
+    setStatus('Reconectando…');
+  });
+  connection.onreconnected(function () {
+    setStatus('Reconectado');
+    connection.invoke('JoinInfo', hubCode).catch(function () {});
+    connection.invoke('GetLastMessage', hubCode).catch(function () {});
+  });
+
+  connection.start()
+    .then(function () { return connection.invoke('JoinInfo', hubCode); })
+    .then(function () { return connection.invoke('GetLastMessage', hubCode); })
+    .then(function () { setStatus('Conectado · esperando datos…'); })
+    .catch(function (err) {
+      console.error(err);
+      setOverlay(
+        'No se pudo conectar',
+        'ADIF usa WebSocket. En red Renfe/Zscaler suele ir en Chrome; Edge a menudo falla. Prueba Chrome o abre ADIF oficial.'
+      );
+      setStatus('Sin conexión WebSocket');
+    });
+})();
+    </script>
+  </body>
+</html>
