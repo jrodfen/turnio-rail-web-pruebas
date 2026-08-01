@@ -283,11 +283,6 @@
   var pantallasCarga = null;
   var pantallasBuscarTimer = null;
 
-  function pantallasDefault_() {
-    var d = window.TURNIO_PANTALLAS_DEFAULT || { c: '51003', n: 'SEVILLA-SANTA JUSTA' };
-    return { c: String(d.c || '51003'), n: String(d.n || 'SEVILLA-SANTA JUSTA'), cer: 1, feve: 0 };
-  }
-
   function pantallasNorm_(s) {
     return String(s || '')
       .toUpperCase()
