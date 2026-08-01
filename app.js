@@ -2709,6 +2709,59 @@
       toast('No se pudo abrir Copérnico en este dispositivo.', 'error');
     }
   }
+  function abrirEnlaceExterno_(url, label) {
+    try {
+      var w = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!w) toast('Permite ventanas emergentes para abrir ' + (label || 'el enlace') + '.', 'error');
+      else toast('Abriendo ' + (label || 'enlace') + '…', 'success');
+    } catch (err) {
+      toast('No se pudo abrir el enlace en este dispositivo.', 'error');
+    }
+  }
+  /* Accesos rápidos Inicio (URLs del portal Anthony) */
+  function urlAccesoRapido_(key) {
+    switch (String(key || '').toLowerCase()) {
+      case 'copernico':
+        return 'http://copernico.sir.renfe.es';
+      case 'vmt':
+      case 'mt':
+        return 'http://vmt.sir.renfe.es/vmtGestionTrenesWeb/login.do';
+      case 'mol':
+        return 'http://mol.sir.renfe.es/MOLWeb/';
+      case 'sitra':
+        return 'http://ager.circulacion.sso.adif.es/agw/hjagwr15.jsp';
+      case 'siges':
+        return 'https://portal-empresas.operaciones.adif.es/tsw/SvTswat0?Opcion=C';
+      case 'gtrenes':
+        return 'http://gtrenes.operaciones.sso.adif.es/gtw/SvGtw000?opcion=0';
+      case 'gifo':
+        return 'https://portal-empresas.operaciones.adif.es/inc/';
+      case 'mon-r':
+      case 'monr':
+        return 'http://monr.operaciones.sso.adif.es/';
+      case 'interesa':
+        return 'https://interesa.renfe.es/group/intranet/directorio';
+      case 'h24':
+        // H24 Power Apps (Anthony)
+        return 'https://apps.powerapps.com/play/e/default-7ad7404b-12f9-416e-afc5-c548c328a90b/a/deb6633f-196a-48c7-b3c8-1d263442cacb?tenantId=7ad7404b-12f9-416e-afc5-c548c328a90b';
+      case 'sim':
+        return 'https://mitweb.sir.renfe.es/CIMA/index.aspx';
+      default:
+        return '';
+    }
+  }
+  var homeApps = document.getElementById('home-apps');
+  if (homeApps) {
+    homeApps.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-ext]');
+      if (!btn || !homeApps.contains(btn)) return;
+      var key = btn.getAttribute('data-ext');
+      var url = urlAccesoRapido_(key);
+      if (!url) return;
+      var label = (btn.querySelector('b') && btn.querySelector('b').textContent) || key;
+      abrirEnlaceExterno_(url, label);
+    });
+  }
   function urlCopernicoAtajo_(key) {
     var f = fechaCoperPartes_();
     var base = 'http://copernico.sir.renfe.es/copernico/';
