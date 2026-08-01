@@ -281,8 +281,6 @@
 
   var pantallasEstaciones = null;
   var pantallasCarga = null;
-  var pantallasModo = 'dl';
-  var pantallasSel = null;
   var pantallasBuscarTimer = null;
 
   function pantallasDefault_() {
@@ -313,8 +311,14 @@
       .replace(/"/g, '&quot;');
   }
 
+  // Misma URL que el HTML de Anthony.
   function pantallasAdifUrl_(codigo, modo) {
     return 'https://info.adif.es/?s=' + encodeURIComponent(codigo) + '&v=' + (modo === 'al' ? 'al' : 'dl');
+  }
+
+  function abrirAdifPantallas_(codigo, modo) {
+    // Igual que Anthony: window.open(url) sin restricciones extra.
+    window.open(pantallasAdifUrl_(codigo, modo));
   }
 
   function asegurarEstacionesPantallas_() {
@@ -336,47 +340,17 @@
     return pantallasCarga;
   }
 
-  function pintarSeleccionPantallas_() {
-    var st = pantallasSel || pantallasDefault_();
-    var nom = document.getElementById('pantallas-nombre');
-    var cod = document.getElementById('pantallas-codigo');
-    var prev = document.getElementById('pantallas-url-preview');
-    var url = pantallasAdifUrl_(st.c, pantallasModo);
-    if (nom) nom.textContent = pantallasTitulo_(st.n);
-    if (cod) {
-      var tags = [];
-      if (st.cer) tags.push('Cercanías');
-      if (st.feve) tags.push('Feve');
-      cod.textContent = 'Código ' + st.c + (tags.length ? ' · ' + tags.join(' · ') : '');
-    }
-    if (prev) prev.textContent = url.replace(/^https:\/\//, '');
-  }
-
-  function abrirAdifPantallas_() {
-    var st = pantallasSel || pantallasDefault_();
-    window.open(pantallasAdifUrl_(st.c, pantallasModo), '_blank', 'noopener');
-  }
-
-  function seleccionarEstacionPantallas_(st, opts) {
-    opts = opts || {};
-    pantallasSel = st;
-    pintarSeleccionPantallas_();
-    var box = document.getElementById('pantallas-resultados');
-    var inp = document.getElementById('pantallas-buscar');
-    if (box) {
-      box.innerHTML = '';
-      box.hidden = true;
-    }
-    if (inp && !opts.keepQuery) inp.value = '';
-    if (opts.open) abrirAdifPantallas_();
-  }
-
   function filtrarEstacionesPantallas_(q) {
     var raw = String(q || '').trim();
-    if (!raw) return [];
+    var list = pantallasEstaciones || [];
+    if (!raw) {
+      var def = pantallasDefault_();
+      return [def].concat(
+        list.filter(function (st) { return String(st.c) !== def.c; }).slice(0, 11)
+      );
+    }
     var nq = pantallasNorm_(raw);
     var digits = raw.replace(/\D/g, '');
-    var list = pantallasEstaciones || [];
     var out = [];
     for (var i = 0; i < list.length; i++) {
       var st = list[i];
@@ -393,60 +367,53 @@
       if (b.score !== a.score) return b.score - a.score;
       return String(a.st.n).localeCompare(String(b.st.n), 'es');
     });
-    return out.slice(0, 18).map(function (x) { return x.st; });
+    return out.slice(0, 30).map(function (x) { return x.st; });
+  }
+
+  function filaPantallasHtml_(st) {
+    var meta = [];
+    if (st.cer) meta.push('Cerc.');
+    if (st.feve) meta.push('Feve');
+    return '<div class="pantallas-res">' +
+      '<div class="pantallas-res-info">' +
+        '<b>' + pantallasEsc_(pantallasTitulo_(st.n)) + '</b>' +
+        '<span>' + pantallasEsc_(st.c) +
+          (meta.length ? ' · <span class="pantallas-res-meta">' + pantallasEsc_(meta.join(' · ')) + '</span>' : '') +
+        '</span>' +
+      '</div>' +
+      '<div class="pantallas-res-actions">' +
+        '<button type="button" class="pantallas-monit" data-adif-code="' + pantallasEsc_(st.c) + '" data-adif-modo="dl">Salidas</button>' +
+        '<button type="button" class="pantallas-monit pantallas-monit--al" data-adif-code="' + pantallasEsc_(st.c) + '" data-adif-modo="al">Llegadas</button>' +
+      '</div>' +
+    '</div>';
   }
 
   function pintarResultadosPantallas_(q) {
     var box = document.getElementById('pantallas-resultados');
     if (!box) return;
     var hits = filtrarEstacionesPantallas_(q);
-    if (!String(q || '').trim()) {
-      box.innerHTML = '';
-      box.hidden = true;
-      return;
-    }
     if (!hits.length) {
       box.innerHTML = '<div class="pantallas-res-empty">Sin coincidencias.</div>';
-      box.hidden = false;
       return;
     }
-    box.innerHTML = hits.map(function (st) {
-      var meta = [];
-      if (st.cer) meta.push('Cerc.');
-      if (st.feve) meta.push('Feve');
-      return '<button type="button" class="pantallas-res" role="option" data-code="' +
-        pantallasEsc_(st.c) + '">' +
-        '<span><b>' + pantallasEsc_(pantallasTitulo_(st.n)) + '</b><span>' + pantallasEsc_(st.c) + '</span></span>' +
-        (meta.length ? '<span class="pantallas-res-meta">' + pantallasEsc_(meta.join(' · ')) + '</span>' : '') +
-        '</button>';
-    }).join('');
-    box.hidden = false;
+    box.innerHTML = hits.map(filaPantallasHtml_).join('');
   }
 
   function abrirPantallas() {
-    if (!pantallasSel) pantallasSel = pantallasDefault_();
-    pintarSeleccionPantallas_();
-    document.querySelectorAll('[data-pantalla-modo]').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.pantallaModo === pantallasModo);
-    });
     asegurarEstacionesPantallas_()
-      .then(function (arr) {
-        if (!pantallasSel && arr && arr.length) {
-          var found = arr.find(function (x) { return x.c === '51003'; });
-          pantallasSel = found || pantallasDefault_();
-        }
-        pintarSeleccionPantallas_();
+      .then(function () {
+        var inp = document.getElementById('pantallas-buscar');
+        pintarResultadosPantallas_(inp ? inp.value : '');
       })
       .catch(function (err) {
         toast(String(err.message || err), 'error');
-        pintarSeleccionPantallas_();
+        pintarResultadosPantallas_('');
       });
   }
 
   function wirePantallasUi_() {
     var inp = document.getElementById('pantallas-buscar');
     var box = document.getElementById('pantallas-resultados');
-    var btnAbrir = document.getElementById('btn-pantallas-abrir');
     if (inp) {
       inp.addEventListener('input', function () {
         var q = inp.value;
@@ -460,30 +427,16 @@
       inp.addEventListener('keydown', function (ev) {
         if (ev.key === 'Escape') {
           inp.value = '';
-          if (box) { box.innerHTML = ''; box.hidden = true; }
+          pintarResultadosPantallas_('');
         }
       });
     }
     if (box) {
       box.addEventListener('click', function (ev) {
-        var btn = ev.target.closest('[data-code]');
+        var btn = ev.target.closest('[data-adif-code]');
         if (!btn) return;
-        var code = btn.getAttribute('data-code');
-        var st = (pantallasEstaciones || []).find(function (x) { return String(x.c) === code; });
-        if (st) seleccionarEstacionPantallas_(st, { open: true });
+        abrirAdifPantallas_(btn.getAttribute('data-adif-code'), btn.getAttribute('data-adif-modo'));
       });
-    }
-    document.querySelectorAll('[data-pantalla-modo]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        pantallasModo = b.dataset.pantallaModo === 'al' ? 'al' : 'dl';
-        document.querySelectorAll('[data-pantalla-modo]').forEach(function (x) {
-          x.classList.toggle('active', x.dataset.pantallaModo === pantallasModo);
-        });
-        pintarSeleccionPantallas_();
-      });
-    });
-    if (btnAbrir) {
-      btnAbrir.addEventListener('click', abrirAdifPantallas_);
     }
   }
 

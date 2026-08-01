@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=pantallas-adif2">
+    <link rel="stylesheet" href="./styles.css?v=pantallas-adif3">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -239,28 +239,13 @@
         <div class="pantallas-card">
           <div class="pantallas-card-head">
             <h3>&#128421; Pantallas en estaci&oacute;n</h3>
-            <div class="pantallas-modo" role="group" aria-label="Tipo de pantalla">
-              <button type="button" class="pantallas-modo-btn active" data-pantalla-modo="dl">Salidas</button>
-              <button type="button" class="pantallas-modo-btn" data-pantalla-modo="al">Llegadas</button>
-            </div>
           </div>
-          <p class="pantallas-lead">Busca por c&oacute;digo ADIF o nombre. Por defecto: Sevilla Santa Justa (51003).</p>
+          <p class="pantallas-lead">Igual que el buscador de Anthony: elige estaci&oacute;n y abre Salidas o Llegadas en ADIF.</p>
           <label class="search pantallas-search" for="pantallas-buscar">
             <span aria-hidden="true">&#128269;</span>
             <input id="pantallas-buscar" type="search" placeholder="Ej. 51003 o Santa Justa" autocomplete="off" aria-label="Buscar estaci&oacute;n por c&oacute;digo o nombre">
           </label>
-          <div id="pantallas-resultados" class="pantallas-resultados" role="listbox" aria-label="Resultados de estaciones" hidden></div>
-          <div id="pantallas-seleccion" class="pantallas-seleccion">
-            <div>
-              <b id="pantallas-nombre">Sevilla-Santa Justa</b>
-              <span id="pantallas-codigo">C&oacute;digo 51003</span>
-            </div>
-          </div>
-          <div class="pantallas-launch">
-            <p class="pantallas-launch-lead">ADIF no permite embeber pantallas en TURNIO. Se abren en su web oficial.</p>
-            <button type="button" class="btn primary" id="btn-pantallas-abrir">Abrir pantalla ADIF</button>
-            <p class="pantallas-launch-url" id="pantallas-url-preview" aria-live="polite">info.adif.es/?s=51003&amp;v=dl</p>
-          </div>
+          <div id="pantallas-resultados" class="pantallas-resultados" role="listbox" aria-label="Resultados de estaciones"></div>
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
@@ -387,7 +372,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=pantallas-adif2"></script>
+    <script src="./app.js?v=pantallas-adif3"></script>
   </body>
 </html>
 
