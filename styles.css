@@ -295,8 +295,16 @@ body.monitor-mode #screen-mapa{display:none!important}
 .ajustes-chip{display:inline-flex;align-self:flex-start;margin-top:4px;background:rgba(29,78,216,.1);color:#1d4ed8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid rgba(29,78,216,.2)}
 .ajustes-card--admin{border-color:rgba(5,150,105,.4);background:linear-gradient(135deg,rgba(5,150,105,.1),var(--card))}
 
-/* Administración (solo ADMIN) */
+/* Administraci?n (solo ADMIN) */
 #screen-admin{max-width:640px;margin:0 auto}
+.admin-nuevo{background:var(--card);border:1px solid rgba(5,150,105,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.admin-nuevo-title{margin:0 0 4px;font-size:15px}
+.admin-nuevo-help{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.4}
+.admin-nuevo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.admin-nuevo-grid label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted)}
+.admin-nuevo-grid input,.admin-nuevo-grid select{width:100%;border:1px solid #dce3ec;border-radius:10px;padding:10px;font-size:14px;background:var(--card);color:var(--text)}
+.admin-nuevo-exp{grid-column:1 / -1}
+.admin-nuevo-btn{margin-top:4px}
 .admin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px}
 .admin-meta{font-size:12px;font-weight:700;color:var(--muted)}
 .admin-lista{display:flex;flex-direction:column;gap:12px}
@@ -317,8 +325,8 @@ body.monitor-mode #screen-mapa{display:none!important}
 .admin-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .admin-card-meta{font-size:11px;color:var(--muted);line-height:1.35;flex:1;min-width:140px}
 .admin-card-foot .action-btn{width:auto;margin:0}
-@media(max-width:520px){.admin-card-grid{grid-template-columns:1fr}.admin-active-lab{padding-top:0}}
-@media(prefers-color-scheme:dark){.admin-pill{background:#2d2d2d;color:var(--muted)}.admin-pill--ok{background:rgba(52,211,153,.15);color:#34d399;border-color:rgba(52,211,153,.3)}.admin-card-grid select,.admin-card-grid input[type="date"]{background:#2d2d2d;border-color:var(--line)}}
+@media(max-width:520px){.admin-card-grid,.admin-nuevo-grid{grid-template-columns:1fr}.admin-active-lab{padding-top:0}}
+@media(prefers-color-scheme:dark){.admin-pill{background:#2d2d2d;color:var(--muted)}.admin-pill--ok{background:rgba(52,211,153,.15);color:#34d399;border-color:rgba(52,211,153,.3)}.admin-card-grid select,.admin-card-grid input[type="date"],.admin-nuevo-grid input,.admin-nuevo-grid select{background:#2d2d2d;border-color:var(--line)}}
 
 /* Circulaci?n hub */
 #screen-trafico{width:100%;max-width:1180px;margin:0 auto;padding-left:16px;padding-right:16px}

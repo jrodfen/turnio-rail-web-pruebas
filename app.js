@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'roles2');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'roles3');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -391,6 +391,48 @@
       if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
     }
   }
+  function syncAdminNuevoCaduca_() {
+    var rol = document.getElementById('admin-nuevo-rol');
+    var wrap = document.getElementById('admin-nuevo-exp-wrap');
+    if (!rol || !wrap) return;
+    wrap.hidden = String(rol.value || '').toUpperCase() !== 'INVITADO';
+  }
+  async function crearAdminPerfil_(ev) {
+    if (ev) ev.preventDefault();
+    if (!sessionProfile.is_admin) return;
+    var emailEl = document.getElementById('admin-nuevo-email');
+    var nombreEl = document.getElementById('admin-nuevo-nombre');
+    var rolEl = document.getElementById('admin-nuevo-rol');
+    var cadEl = document.getElementById('admin-nuevo-caduca');
+    var btn = document.getElementById('btn-admin-crear');
+    var email = String(emailEl && emailEl.value || '').trim().toLowerCase();
+    var role = String(rolEl && rolEl.value || 'CGO').toUpperCase();
+    if (!email) {
+      toast('Indica un email.', 'error');
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Creando…'; }
+    try {
+      await call('admin_crear_perfil', {
+        email: email,
+        display_name: String(nombreEl && nombreEl.value || '').trim(),
+        role_code: role,
+        active: true,
+        expires_at: role === 'INVITADO' ? (fechaInputAIso_(cadEl && cadEl.value) || null) : null
+      });
+      toast('Usuario añadido. Ya puede entrar con OTP.', 'success');
+      if (emailEl) emailEl.value = '';
+      if (nombreEl) nombreEl.value = '';
+      if (cadEl) cadEl.value = '';
+      if (rolEl) rolEl.value = 'CGO';
+      syncAdminNuevoCaduca_();
+      await cargarAdminPerfiles_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Añadir'; }
+    }
+  }
   function clientId() {
     var id = localStorage.getItem(clientKey) || '';
     if (!/^[A-Za-z0-9_-]{24,128}$/.test(id)) {
@@ -439,7 +481,12 @@
       admin_cannot_demote_self: 'No puedes quitarte el rol ADMIN a ti mismo.',
       admin_last_admin_protected: 'Debe quedar al menos un ADMIN activo.',
       admin_profile_not_found: 'Perfil no encontrado.',
-      admin_unavailable: 'Administración no disponible ahora.'
+      admin_unavailable: 'Administración no disponible ahora.',
+      admin_invalid_email: 'Email no válido.',
+      admin_email_exists: 'Ya existe un perfil con ese email.',
+      admin_auth_user_failed: 'No se pudo crear el acceso Auth del usuario.',
+      admin_auth_unavailable: 'Auth de Supabase no disponible.',
+      admin_create_failed: 'No se pudo crear el perfil.'
     };
     var base = mapa[code] || code;
     if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
@@ -3101,6 +3148,13 @@
   });
   var btnAdminRef = document.getElementById('btn-admin-refrescar');
   if (btnAdminRef) btnAdminRef.addEventListener('click', function () { cargarAdminPerfiles_(); });
+  var adminFormNuevo = document.getElementById('admin-form-nuevo');
+  if (adminFormNuevo) adminFormNuevo.addEventListener('submit', crearAdminPerfil_);
+  var adminNuevoRol = document.getElementById('admin-nuevo-rol');
+  if (adminNuevoRol) {
+    adminNuevoRol.addEventListener('change', syncAdminNuevoCaduca_);
+    syncAdminNuevoCaduca_();
+  }
   var adminListaEl = document.getElementById('admin-lista');
   if (adminListaEl) {
     adminListaEl.addEventListener('change', function (ev) {
