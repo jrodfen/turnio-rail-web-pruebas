@@ -2967,8 +2967,27 @@
   var cxFiltroTurno_ = 'todos';
   var cxFiltroRol_ = 'enlace';
   var cxFiltroSort_ = 'hora';
+  var cxSoloCirculando_ = false;
   var cxTrenModal_ = '';
   var CX_REALIZADOS_KEY_ = 'turnio-cx-realizados-v1';
+
+  function cxTrenEnCirculacion_(cod) {
+    var api = window.TurnioCxRetrasos;
+    if (!api || !cod) return false;
+    var info = api.detalle(cod);
+    return !!(info && info.encontrado);
+  }
+
+  function cxFilaEnCirculacion_(f) {
+    return cxTrenEnCirculacion_(f && f.servicio) || cxTrenEnCirculacion_(f && f.servicioEnlazado);
+  }
+
+  function syncCirculandoBtnCx_() {
+    var btn = document.getElementById('btn-cx-circulando');
+    if (!btn) return;
+    btn.classList.toggle('active', !!cxSoloCirculando_);
+    btn.setAttribute('aria-pressed', cxSoloCirculando_ ? 'true' : 'false');
+  }
 
   function cxHoyIso_() {
     var n = new Date();
@@ -3267,8 +3286,12 @@
       turno: cxFiltroTurno_,
       rol: estActiva ? cxFiltroRol_ : 'todos',
       sort: cxFiltroSort_,
-      limit: estActiva || !cxSoloPreferidas_ ? 400 : 250
+      limit: cxSoloCirculando_ ? 800 : (estActiva || !cxSoloPreferidas_ ? 400 : 250)
     });
+    if (cxSoloCirculando_) {
+      filas = filas.filter(cxFilaEnCirculacion_);
+    }
+    syncCirculandoBtnCx_();
     var realizadosMap = cxObtenerRealizadosManual_();
     var pendientes = [];
     var realizados = [];
@@ -3291,10 +3314,15 @@
       if (se) se.textContent = String(media) + "'";
       if (sp) sp.textContent = String(pendientes.length);
     }
-    if (totalLabel) totalLabel.textContent = filas.length + ' conexiones';
+    if (totalLabel) {
+      totalLabel.textContent = filas.length + ' conexiones' +
+        (cxSoloCirculando_ ? ' · en circulación' : '');
+    }
     if (cnt) cnt.textContent = pendientes.length + ' pend. · ' + realizados.length + ' hechas';
     if (!filas.length) {
-      box.innerHTML = '<div class="empty">No hay conexiones con estos filtros.</div>';
+      box.innerHTML = '<div class="empty">' + (cxSoloCirculando_
+        ? 'Ninguna conexión de este filtro tiene trenes en circulación ahora.'
+        : 'No hay conexiones con estos filtros.') + '</div>';
       return;
     }
     var cardOpts = { estacion: estActiva, realizadosMap: realizadosMap };
@@ -3429,6 +3457,8 @@
     cxFiltroTurno_ = 'todos';
     cxFiltroRol_ = 'enlace';
     cxFiltroSort_ = 'hora';
+    cxSoloCirculando_ = false;
+    syncCirculandoBtnCx_();
     var input = document.getElementById('cx-buscar-tren');
     if (input) input.value = '';
     var estLibre = document.getElementById('cx-est-libre');
@@ -3534,6 +3564,14 @@
         pintarPanelConexiones_();
       });
     });
+    var btnCirc = document.getElementById('btn-cx-circulando');
+    if (btnCirc) {
+      btnCirc.addEventListener('click', function () {
+        cxSoloCirculando_ = !cxSoloCirculando_;
+        syncCirculandoBtnCx_();
+        pintarPanelConexiones_();
+      });
+    }
     document.querySelectorAll('.cx-filter-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         cxFiltroRol_ = btn.getAttribute('data-cx-rol') || 'enlace';
