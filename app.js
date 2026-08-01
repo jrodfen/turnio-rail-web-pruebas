@@ -316,14 +316,14 @@
       .replace(/"/g, '&quot;');
   }
 
-  // Vista propia con scroll (Gravita show-all-trains), alojada en TURNIO.
-  function pantallasScrollUrl_(codigo, modo) {
-    return './pantalla-adif.html?station=' + encodeURIComponent(codigo) +
-      '&modo=' + (modo === 'al' ? 'al' : 'dl');
+  // Pantallas ADIF oficiales (info.adif.es). Evita WebSocket propio, que falla en Renfe/Zscaler/Edge.
+  function pantallasOficialUrl_(codigo, modo) {
+    return 'https://info.adif.es/?s=' + encodeURIComponent(codigo) +
+      '&v=' + (modo === 'al' ? 'al' : 'dl');
   }
 
   function abrirAdifPantallas_(codigo, modo) {
-    window.open(pantallasScrollUrl_(codigo, modo));
+    window.open(pantallasOficialUrl_(codigo, modo), '_blank', 'noopener');
   }
 
   function asegurarEstacionesPantallas_() {
