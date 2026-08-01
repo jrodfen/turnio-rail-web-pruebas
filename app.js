@@ -2730,6 +2730,9 @@
       case 'v-vehiculo':
         return base + 'SrvRenfeAsignarMaterialM?todo=buscarmaterialmatri&desde=MOTOR&fechaOrigen=' + f.slash +
           '&mercado=&tipo=&serie=&matbusca=';
+      case 'historico-kms':
+        // Mismo atajo que Anthony: informe histórico de kms en Copérnico.
+        return base + 'SrvRenfeTablas?todo=buscarinformekms&inicio=S';
       default:
         return '';
     }
