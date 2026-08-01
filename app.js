@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'roles4');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces1');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3347,9 +3347,17 @@
       case 'historico-kms':
         // Mismo atajo que Anthony: informe histórico de kms en Copérnico.
         return base + 'SrvRenfeTablas?todo=buscarinformekms&inicio=S';
+      case 'combinados':
+        return (window.TurnioConexiones && window.TurnioConexiones.urlCombinadosHoy)
+          ? window.TurnioConexiones.urlCombinadosHoy()
+          : (base + 'SrvRenfeSeguimiento?todo=combinados&excel=&fechaInicio=' + f.slash + '&fechaFin=' + f.slash + '&hoy=' + f.slash + '&orden=4&perfil=3&inicio=false');
       default:
         return '';
     }
+  }
+  function abrirCopernicoCombinadosHoy_() {
+    var url = urlCopernicoAtajo_('combinados');
+    if (url) abrirCopernico_(url);
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
@@ -4023,6 +4031,38 @@
     };
   }
 
+  function htmlTarjetaConexionRadarModal_(f, trenActual) {
+    var cx = window.TurnioConexiones;
+    var rol = cx && cx.rolTrenEnFila ? cx.rolTrenEnFila(f, trenActual) : '';
+    var rolLbl = rol === 'llega' ? 'Llega a enlace' : rol === 'sale' ? 'Sale del enlace' : rol === 'ambos' ? 'Ambos trenes' : 'Enlace';
+    var otro = '';
+    if (rol === 'llega') otro = f.servicioEnlazado || '—';
+    else if (rol === 'sale') otro = f.servicio || '—';
+    else otro = (f.servicio || '—') + ' ↔ ' + (f.servicioEnlazado || '—');
+    var margen = f.tiempoConexion != null ? String(f.tiempoConexion) : '—';
+    var viaj = f.viajeros != null ? String(f.viajeros) : '—';
+    return (
+      '<article class="cx-radar-card">' +
+        '<div class="cx-radar-card-head">' +
+          '<b>' + esc(f.estacionEnlace || 'Estación enlace') + '</b>' +
+          '<span class="cx-radar-rol">' + esc(rolLbl) + '</span>' +
+        '</div>' +
+        '<p class="cx-radar-line"><span class="muted">Tren enlace</span> <b>' + esc(String(otro)) + '</b></p>' +
+        '<p class="cx-radar-line">' +
+          '<span>' + esc(f.servicio || '—') + ' llega ' + esc(f.horaLlegadaEnlace || '—') + '</span>' +
+          '<span class="cx-radar-arrow">→</span>' +
+          '<span>' + esc(f.servicioEnlazado || '—') + ' sale ' + esc(f.horaSalidaEnlace || '—') + '</span>' +
+        '</p>' +
+        '<p class="cx-radar-meta">' +
+          'Margen <b>' + esc(margen) + ' min</b>' +
+          (viaj !== '—' && viaj !== '0' ? ' · ' + esc(viaj) + ' viaj.' : '') +
+          (f.origen || f.destino
+            ? ' · ' + esc(f.origen || '—') + ' → ' + esc(f.destino || '—')
+            : '') +
+        '</p>' +
+      '</article>'
+    );
+  }
   function abrirModalConexiones_(numTren) {
     var cx = window.TurnioConexiones;
     var modal = document.getElementById('modal-conexiones');
@@ -4032,11 +4072,21 @@
     var num = cx.limpiarNumTren(numTren);
     cxTrenModal_ = num;
     var filas = cx.conexionesDeTren(num, true);
-    if (sub) sub.textContent = 'Tren ' + num + ' · ' + filas.length + ' enlace(s) en estaciones preferidas.';
+    if (sub) {
+      sub.textContent = !cx.estado().cargado
+        ? 'Carga primero el Excel de Combinados del día en Circulación.'
+        : ('Tren ' + num + ' · ' + filas.length + ' enlace(s) en estaciones preferidas (Sevilla SJ, Córdoba, Málaga, Antequera, Granada, Dos Hermanas).');
+    }
     if (!filas.length) {
-      lista.innerHTML = '<div class="empty">No hay enlaces preferidos para este tren en el fichero de hoy.</div>';
+      lista.innerHTML = '<div class="empty">' +
+        (cx.estado().cargado
+          ? 'No hay enlaces preferidos para este tren en el fichero de hoy.'
+          : 'Sin fichero de conexiones cargado hoy.') +
+        '</div>';
     } else {
-      lista.innerHTML = filas.map(function (f) { return htmlTarjetaConexion_(f, {}); }).join('');
+      lista.innerHTML = filas.map(function (f) {
+        return htmlTarjetaConexionRadarModal_(f, num);
+      }).join('');
     }
     modal.hidden = false;
   }
@@ -4109,6 +4159,10 @@
     if (btnClearP) btnClearP.addEventListener('click', limpiarConexionesUi_);
     var btnAbrir = document.getElementById('btn-cx-abrir-panel');
     if (btnAbrir) btnAbrir.addEventListener('click', function () { go('conexiones'); });
+    ['btn-cx-abrir-coper', 'btn-cx-abrir-coper-panel', 'btn-cx-modal-coper'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', abrirCopernicoCombinadosHoy_);
+    });
     function abrirAyudaCx_() {
       var ov = document.getElementById('cx-help-overlay');
       if (ov) ov.hidden = false;

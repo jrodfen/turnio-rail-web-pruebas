@@ -39,8 +39,12 @@
   }
 
   function limpiarNumTren_(s) {
+    /* Unifica "02100", "2100 ", "2100 (AVE)" → "2100" para casar Radar ↔ Excel. */
     var m = String(s == null ? '' : s).match(/(\d{3,5})/);
-    return m ? String(parseInt(m[1], 10)) : '';
+    if (!m) return '';
+    var n = parseInt(m[1], 10);
+    if (!isFinite(n) || n < 100) return '';
+    return String(n);
   }
 
   function celdaTexto_(td) {
@@ -124,14 +128,27 @@
       }
       return -1;
     };
-    var iServ = idxOf(['servicio'], true);
+    /* "servicio enlazado" antes que "servicio" para no pillarlo por fuzzy. */
+    var iServEnl = idxOf(['servicio enlazado'], true);
+    if (iServEnl < 0) iServEnl = idxOf(['servicio enlazado']);
+    var iServ = -1;
+    for (var hs = 0; hs < headers.length; hs++) {
+      if (headers[hs] === 'servicio') { iServ = hs; break; }
+    }
+    if (iServ < 0) {
+      for (hs = 0; hs < headers.length; hs++) {
+        if (headers[hs].indexOf('servicio') >= 0 && headers[hs].indexOf('enlaz') < 0) {
+          iServ = hs;
+          break;
+        }
+      }
+    }
     var iOrig = idxOf(['origen'], true);
     var iHSalOrig = idxOf(['hora salida orig'], true);
     var iHLlegEnl = idxOf(['hora llegada enlace'], true);
     var iEstEnl = idxOf(['estacion enlace'], true);
     var iHSalEnl = idxOf(['hora salida enlace'], true);
     var iTiempo = idxOf(['tiempo conexion'], true);
-    var iServEnl = idxOf(['servicio enlazado'], true);
     var iHSal = idxOf(['hora salida'], true);
     var iHLleg = idxOf(['hora llegada'], true);
     var iDest = idxOf(['destino'], true);
@@ -142,6 +159,7 @@
       iServ = 0; iOrig = 2; iHSalOrig = 3; iHLlegEnl = 4; iEstEnl = 5;
       iHSalEnl = 6; iTiempo = 7; iServEnl = 9; iHSal = 10; iHLleg = 11; iDest = 12; iViaj = 14;
     }
+    if (iServEnl < 0) iServEnl = 9;
 
     var out = [];
     var trs = table.querySelectorAll('tbody tr');
@@ -238,7 +256,33 @@
   }
 
   function tieneEnlaces(numTren) {
+    if (!estado().cargado) return false;
     return conexionesDeTren(numTren, true).length > 0;
+  }
+
+  /** Rol del tren en la fila: llega (servicio), sale (enlazado) o ambos. */
+  function rolTrenEnFila(fila, numTren) {
+    var num = limpiarNumTren_(numTren);
+    if (!num || !fila) return '';
+    var llega = fila.servicio === num;
+    var sale = fila.servicioEnlazado === num;
+    if (llega && sale) return 'ambos';
+    if (llega) return 'llega';
+    if (sale) return 'sale';
+    return '';
+  }
+
+  /** Listado Copérnico Trenes Combinados del día (GET; red Renfe + sesión). */
+  function urlCombinadosHoy() {
+    var n = new Date();
+    var dd = String(n.getDate()).padStart(2, '0');
+    var mm = String(n.getMonth() + 1).padStart(2, '0');
+    var yyyy = n.getFullYear();
+    var slash = dd + '/' + mm + '/' + yyyy;
+    return 'http://copernico.sir.renfe.es/copernico/SrvRenfeSeguimiento'
+      + '?todo=combinados&excel=&codusuario=&hoy=' + slash
+      + '&perfil=3&inicio=false&servicio1=&estacion=&orden=4'
+      + '&fechaInicio=' + slash + '&fechaFin=' + slash;
   }
 
   function limpiar() {
@@ -339,6 +383,8 @@
     listar: listar,
     estacionesPreferidasUi: estacionesPreferidasUi,
     tieneEnlaces: tieneEnlaces,
+    rolTrenEnFila: rolTrenEnFila,
+    urlCombinadosHoy: urlCombinadosHoy,
     limpiar: limpiar,
     limpiarNumTren: limpiarNumTren_
   };
