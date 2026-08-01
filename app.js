@@ -1548,6 +1548,9 @@
         (tieneGps
           ? '<button class="map-btn" type="button" data-map-tren="' + esc(tren) + '">&#128506; Mapa</button>'
           : '<button class="map-btn disabled" type="button" disabled title="Sin coordenadas GPS">&#128506; Mapa</button>') +
+        (window.TurnioConexiones && window.TurnioConexiones.tieneEnlaces(tren)
+          ? '<button class="cx-btn" type="button" data-cx-tren="' + esc(tren) + '" title="Ver servicios enlazados">&#128279; Enlace</button>'
+          : '') +
         '<button class="generate" type="button" data-aviso-tren="' + esc(tren) + '" data-aviso-trip="' + esc(trip) + '">&#128172; Generar Aviso</button>' +
         '</div></div>' +
         '<div class="marcha-panel" hidden></div></article>';
@@ -2850,6 +2853,12 @@
       abrirMapaTren(mapBtn.getAttribute('data-map-tren'));
       return;
     }
+    var cxBtn = e.target.closest('.cx-btn');
+    if (cxBtn) {
+      e.stopPropagation();
+      abrirModalConexiones_(cxBtn.getAttribute('data-cx-tren'));
+      return;
+    }
     var generate = e.target.closest('.generate');
     if (generate) {
       e.stopPropagation();
@@ -2862,6 +2871,100 @@
     var card = e.target.closest('.alert');
     if (card) abrirMarcha(card);
   });
+
+  /* Servicios enlazados (Excel diario → botón verde en Radar) */
+  function refrescarUiConexiones_() {
+    var cx = window.TurnioConexiones;
+    var st = cx ? cx.estado() : { cargado: false, total: 0, meta: {} };
+    var chip = document.getElementById('cx-status-chip');
+    var meta = document.getElementById('cx-upload-meta');
+    if (chip) {
+      chip.textContent = st.cargado ? (st.total + ' filas') : 'Sin cargar';
+      chip.classList.toggle('circ-chip--green', !!st.cargado);
+    }
+    if (meta) {
+      meta.textContent = st.cargado
+        ? ('Cargado hoy · ' + (st.meta.nombre || 'fichero') + ' · ' + st.total + ' conexiones')
+        : 'Ningún fichero cargado hoy. Caduca al cambiar de día.';
+    }
+  }
+  function abrirModalConexiones_(numTren) {
+    var cx = window.TurnioConexiones;
+    var modal = document.getElementById('modal-conexiones');
+    var lista = document.getElementById('cx-modal-lista');
+    var sub = document.getElementById('cx-modal-sub');
+    var link = document.getElementById('btn-abrir-servicios-enlazados');
+    if (!cx || !modal || !lista) return;
+    var num = cx.limpiarNumTren(numTren);
+    var filas = cx.conexionesDeTren(num, true);
+    if (sub) sub.textContent = 'Tren ' + num + ' · ' + filas.length + ' enlace(s) en estaciones preferidas.';
+    if (link) link.href = cx.URL_SERVICIOS_ENLAZADOS;
+    if (!filas.length) {
+      lista.innerHTML = '<div class="empty">No hay enlaces preferidos para este tren en el fichero de hoy.</div>';
+    } else {
+      lista.innerHTML = filas.map(function (f) {
+        var rol = f.servicio === num ? 'Sale / llega al enlace' : 'Enlazado desde otro servicio';
+        return '<article class="cx-card">' +
+          '<div class="cx-card-head"><b>&#128279; ' + esc(f.servicio) + ' &#8594; ' + esc(f.servicioEnlazado) +
+          '</b><span>' + esc(f.estacionEnlace || 'Enlace') + '</span></div>' +
+          '<p class="muted">' + esc(rol) + '</p>' +
+          '<p>' + esc(f.origen || '—') + ' (' + esc(f.horaSalidaOrig || '--:--') + ') · llega enlace ' +
+          esc(f.horaLlegadaEnlace || '--:--') + ' · sale ' + esc(f.horaSalidaEnlace || f.horaSalida || '--:--') + '</p>' +
+          '<p>Destino ' + esc(f.destino || '—') + ' (' + esc(f.horaLlegada || '--:--') + ')' +
+          (f.tiempoConexion ? ' · margen ' + esc(String(f.tiempoConexion)) + ' min' : '') +
+          (f.viajeros ? ' · ' + esc(String(f.viajeros)) + ' viajeros' : '') + '</p>' +
+          '</article>';
+      }).join('');
+    }
+    modal.hidden = false;
+  }
+  function cerrarModalConexiones_() {
+    var modal = document.getElementById('modal-conexiones');
+    if (modal) modal.hidden = true;
+  }
+  (function cablearConexionesUi_() {
+    var cx = window.TurnioConexiones;
+    var input = document.getElementById('cx-file-input');
+    var btnLoad = document.getElementById('btn-cx-cargar');
+    var btnClear = document.getElementById('btn-cx-limpiar');
+    if (btnLoad && input) {
+      btnLoad.addEventListener('click', function () { input.click(); });
+      input.addEventListener('change', function () {
+        var file = input.files && input.files[0];
+        input.value = '';
+        if (!file || !cx) return;
+        toast('Leyendo conexiones…', 'success');
+        cx.cargarArchivo(file).then(function (st) {
+          refrescarUiConexiones_();
+          render();
+          toast('Conexiones cargadas: ' + st.total + ' filas', 'success');
+        }).catch(function (err) {
+          toast(String(err.message || err), 'error');
+        });
+      });
+    }
+    if (btnClear && cx) {
+      btnClear.addEventListener('click', function () {
+        if (!cx.estado().cargado) { toast('No hay fichero cargado.'); return; }
+        if (!confirm('¿Quitar el Excel de conexiones de este dispositivo?')) return;
+        cx.limpiar();
+        refrescarUiConexiones_();
+        render();
+        toast('Conexiones eliminadas.');
+      });
+    }
+    ['btn-cerrar-conexiones', 'btn-cerrar-conexiones-2'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', cerrarModalConexiones_);
+    });
+    var modal = document.getElementById('modal-conexiones');
+    if (modal) {
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) cerrarModalConexiones_();
+      });
+    }
+    refrescarUiConexiones_();
+  })();
   // Los popups de Leaflet a veces no delegan bien solo en #mapa-container.
   document.addEventListener('click', function (e) {
     var scr = document.getElementById('screen-mapa');

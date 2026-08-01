@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=circ-coper1">
+    <link rel="stylesheet" href="./styles.css?v=cx-radar1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -308,6 +308,21 @@
           </div>
         </div>
 
+        <div class="circ-group circ-group--conex">
+          <div class="circ-group-head">
+            <h3 class="circ-group-title">Servicios enlazados</h3>
+            <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
+          </div>
+          <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados de Cop&eacute;rnico. Se guarda en este dispositivo y caduca al cambiar de d&iacute;a. En Radar, el bot&oacute;n se pone verde si el tren tiene enlace en estaciones preferidas (Sevilla SJ, C&oacute;rdoba, M&aacute;laga, Antequera, Granada, Dos Hermanas).</p>
+          <div class="cx-upload-row">
+            <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
+            <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar">Cargar Excel del d&iacute;a</button>
+            <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-limpiar">Quitar</button>
+          </div>
+          <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
+          <a class="cx-external-link" id="link-servicios-enlazados" href="https://jrodfen.github.io/servicios-enlazados/" target="_blank" rel="noopener noreferrer">Abrir panel Servicios enlazados &#8599;</a>
+        </div>
+
         <div class="circ-group circ-group--coper">
           <div class="circ-group-head">
             <h3 class="circ-group-title">Cop&eacute;rnico</h3>
@@ -437,6 +452,20 @@
         </div>
       </div>
     </div>
+    <div id="modal-conexiones" class="vig-modal" hidden>
+      <div class="vig-modal-card cx-modal-card" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-conexiones">
+        <div class="aviso-modal-head">
+          <h2 id="titulo-modal-conexiones">Servicios enlazados</h2>
+          <button type="button" class="aviso-close" id="btn-cerrar-conexiones" aria-label="Cerrar">&times;</button>
+        </div>
+        <p class="aviso-help" id="cx-modal-sub">Conexiones del tren en estaciones preferidas.</p>
+        <div id="cx-modal-lista" class="cx-modal-lista"></div>
+        <div class="vig-modal-actions">
+          <button type="button" class="btn secondary" id="btn-cerrar-conexiones-2">Cerrar</button>
+          <a class="btn primary" id="btn-abrir-servicios-enlazados" href="https://jrodfen.github.io/servicios-enlazados/" target="_blank" rel="noopener noreferrer">Abrir panel completo</a>
+        </div>
+      </div>
+    </div>
     <div id="modal-exito-animado" class="exito-modal" hidden>
       <div class="exito-card">
         <svg class="check-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" aria-hidden="true">
@@ -447,8 +476,9 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
+    <script src="./conexiones.js?v=cx1"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=circ-coper1"></script>
+    <script src="./app.js?v=cx-radar1"></script>
   </body>
 </html>
 

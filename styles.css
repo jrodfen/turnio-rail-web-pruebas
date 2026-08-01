@@ -103,7 +103,7 @@ body.monitor-mode #screen-mapa{display:none!important}
 .vig-modal-card--red .vig-modal-list{background:rgba(217,48,37,.06);border:1px solid rgba(217,48,37,.25)}
 .vig-modal-card--amber .vig-modal-list{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.35)}
 .vig-modal-actions{display:flex;gap:10px}
-.vig-modal-actions .btn{margin:0;flex:1;padding:12px}
+.vig-modal-actions .btn{margin:0;flex:1;padding:12px;text-align:center;text-decoration:none;box-sizing:border-box}
 .vig-btn-red{background:var(--red)!important}
 .vig-btn-amber{background:#f59e0b!important;color:#111!important}
 .vig-item{margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(0,0,0,.12)}
@@ -174,10 +174,28 @@ body.monitor-mode #screen-mapa{display:none!important}
 .circ-lead{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.4}
 .circ-group{margin:0 0 14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
 .circ-group--coper{border-top:3px solid #1d4ed8}
+.circ-group--conex{border-top:3px solid #059669}
 .circ-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px}
 .circ-group-title{margin:0 0 8px;font-size:14px;font-weight:800;color:var(--primary-dark)}
 .circ-group-head .circ-group-title{margin:0}
 .circ-chip{flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#1d4ed8;background:rgba(29,78,216,.1);border:1px solid rgba(29,78,216,.22);border-radius:999px;padding:3px 8px}
+.circ-chip--green{color:#047857;background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3)}
+.cx-upload-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+.cx-upload-btn{margin:0;width:auto;flex:1;min-width:120px;padding:12px 14px;font-size:13px}
+.cx-upload-meta{margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.4;font-weight:600}
+.cx-external-link{display:inline-block;font-size:13px;font-weight:800;color:var(--primary-dark);text-decoration:none}
+.cx-external-link:active{opacity:.8}
+.cx-btn{border:1px solid #86efac;background:#ecfdf5;color:#047857;border-radius:8px;padding:6px 10px;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}
+.cx-btn:active{transform:scale(.97)}
+.cx-modal-card{max-width:520px;width:min(96vw,520px)}
+.cx-modal-lista{max-height:min(50vh,360px);overflow:auto;margin:0 0 12px;display:grid;gap:8px}
+.cx-card{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.cx-card-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:0 0 6px}
+.cx-card-head b{font-size:13px;color:var(--primary-dark)}
+.cx-card-head span{font-size:11px;font-weight:800;color:#047857;background:rgba(5,150,105,.12);padding:2px 7px;border-radius:999px}
+.cx-card p{margin:0 0 4px;font-size:12px;color:var(--text);line-height:1.35}
+.cx-card p:last-child{margin-bottom:0}
+.cx-card .muted{color:var(--muted);font-weight:600}
 .circ-note{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.4}
 .circ-grid{display:grid;gap:8px}
 .circ-grid--turnio{grid-template-columns:1fr 1fr}
