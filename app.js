@@ -3004,6 +3004,15 @@
         '</span>'
       : '';
     var riesgoBadge = (!esRealizado && retApi) ? retApi.riesgoHtml(f, esc) : '';
+    var encApi = window.TurnioCxEncaminar;
+    var encAnalisis = (!esRealizado && encApi) ? encApi.analizarEnlace(f) : null;
+    var encBtn = '';
+    if (encAnalisis && (encAnalisis.nivel === 'riesgo' || encAnalisis.nivel === 'perdido')) {
+      var encLabel = encAnalisis.nivel === 'perdido' ? 'Encaminar' : 'Sugerir encaminamiento';
+      encBtn = '<button type="button" class="cx-enc-btn' +
+        (encAnalisis.nivel === 'perdido' ? ' cx-enc-btn--lost' : '') +
+        '" data-cx-enc="' + esc(cxCardKey_(f)) + '">' + encLabel + '</button>';
+    }
     var rolesHtml = (f._roles || []).map(function (r) {
       var label = r === 'origen' ? 'Como Origen' : r === 'destino' ? 'Como Destino' : 'Como Enlace';
       return '<span class="cx-role-badge cx-role-' + r + '">' + label + '</span>';
@@ -3020,13 +3029,20 @@
       ? retApi.esperaBubbleHtml(espera, f.servicio)
       : '<div class="cxn-espera cx-t-ok">&#9201;<br><b>' + esc(String(espera)) + '</b><br><small>min</small></div>';
     return '<article class="cx-card' + (esRealizado ? ' cx-card-realizado' : '') +
-      (esDestaca ? ' cx-card-destaca' : '') + proxClass + '" data-cx-key="' + esc(cardKey) + '">' +
+      (esDestaca ? ' cx-card-destaca' : '') + proxClass + '" data-cx-key="' + esc(cardKey) + '"' +
+      ' data-cx-serv="' + esc(f.servicio || '') + '"' +
+      ' data-cx-serv-enl="' + esc(f.servicioEnlazado || '') + '"' +
+      ' data-cx-est="' + esc(f.estacionEnlace || '') + '"' +
+      ' data-cx-dest="' + esc(f.destino || '') + '"' +
+      ' data-cx-hlleg="' + esc(f.horaLlegadaEnlace || '') + '"' +
+      ' data-cx-hsal="' + esc(f.horaSalidaEnlace || '') + '"' +
+      ' data-cx-hlleg-dest="' + esc(f.horaLlegada || '') + '">' +
       (esRealizado ? '<span class="cx-realizado-badge">Realizado</span>' : '') +
       '<div class="cxn-top">' +
       '<div class="cxn-hora">' + esc(f.horaSalidaEnlace || '—') + '</div>' +
       '<div class="cxn-top-mid">' +
       '<div class="cxn-estacion">' + esc(f.estacionEnlace || 'Enlace') + '</div>' +
-      '<div class="cxn-badges">' + proxBadge + destacaBadge + riesgoBadge + rolesHtml + '</div>' +
+      '<div class="cxn-badges">' + proxBadge + destacaBadge + riesgoBadge + rolesHtml + encBtn + '</div>' +
       '</div>' +
       '<div class="cxn-top-right">' +
       '<span class="cxn-viajeros">' + vIcon + ' ' + v + ' viaj.</span>' +
@@ -3214,6 +3230,78 @@
       return htmlTarjetaConexion_(f, cardOpts);
     }).join('');
     box.innerHTML = html;
+  }
+
+  function abrirModalEncaminar_(fila) {
+    var enc = window.TurnioCxEncaminar;
+    var modal = document.getElementById('modal-cx-encaminar');
+    var sub = document.getElementById('cx-enc-sub');
+    var aviso = document.getElementById('cx-enc-aviso');
+    var lista = document.getElementById('cx-enc-lista');
+    var btnMallas = document.getElementById('btn-cx-enc-mallas');
+    if (!enc || !modal || !lista) return;
+    var res = enc.sugerir(fila);
+    var a = res.analisis || {};
+    var nivelTxt = a.nivel === 'perdido' ? 'Enlace perdido' : 'Enlace en riesgo';
+    if (sub) {
+      sub.textContent = nivelTxt + ' · Tren ' + (a.trenLlega || '—') + ' (+' + (a.retraso || 0) +
+        ' min) llega ~' + enc.fmtHora(a.llegadaEfectiva) + ' a ' + (a.estacionEnlace || 'enlace') +
+        ' · destino ' + (a.destino || '—') +
+        ' · margen ' + (a.margen != null ? a.margen + ' min' : '—');
+    }
+    if (aviso) {
+      if (res.avisoMalla) {
+        aviso.hidden = false;
+        aviso.textContent = res.avisoMalla;
+      } else {
+        aviso.hidden = true;
+        aviso.textContent = '';
+      }
+    }
+    if (btnMallas) {
+      btnMallas.hidden = !res.avisoMalla || !/Malla GTFS no cargada/i.test(res.avisoMalla || '');
+    }
+    if (!res.alternativas.length) {
+      lista.innerHTML = '<div class="cx-enc-empty">No hay alternativas claras el resto del día desde esta estación hacia ese destino' +
+        (res.avisoMalla ? ' con los datos disponibles.' : '.') +
+        ' Prueba abrir Mallas o ampliar el filtro de estaciones.</div>';
+    } else {
+      lista.innerHTML = res.alternativas.map(function (alt) {
+        var badge = alt.match === 'paso'
+          ? '<span class="help-badge hb-purple">Pasa por destino</span>'
+          : '<span class="help-badge hb-green">Mismo destino</span>';
+        var fuente = alt.fuente === 'gtfs'
+          ? '<span class="help-badge hb-blue">Malla</span>'
+          : '<span class="help-badge hb-amber">Excel</span>';
+        return '<article class="cx-enc-alt' + (alt.match === 'paso' ? ' paso' : '') + '">' +
+          '<div class="cx-enc-alt-top"><b>&#128646; ' + esc(String(alt.tren || '—')) +
+          '</b><span class="cx-enc-alt-meta">' + esc(alt.horaSalida || '—') + ' · +' +
+          esc(String(alt.esperaDesdeLlegada != null ? alt.esperaDesdeLlegada : '—')) + ' min</span></div>' +
+          '<p>' + badge + ' ' + fuente +
+          (alt.producto ? ' · ' + esc(alt.producto) : '') + '</p>' +
+          '<p>Sale de enlace ' + esc(alt.horaSalida || '—') +
+          ' · llega destino ' + esc(alt.horaLlegadaDestino || '—') +
+          (alt.destinoFinalNombre ? ' (' + esc(alt.destinoFinalNombre) + ')' : '') + '</p>' +
+          '</article>';
+      }).join('');
+    }
+    modal.hidden = false;
+  }
+  function cerrarModalEncaminar_() {
+    var modal = document.getElementById('modal-cx-encaminar');
+    if (modal) modal.hidden = true;
+  }
+  function filaDesdeCardEnc_(card) {
+    if (!card) return null;
+    return {
+      servicio: card.getAttribute('data-cx-serv') || '',
+      servicioEnlazado: card.getAttribute('data-cx-serv-enl') || '',
+      estacionEnlace: card.getAttribute('data-cx-est') || '',
+      destino: card.getAttribute('data-cx-dest') || '',
+      horaLlegadaEnlace: card.getAttribute('data-cx-hlleg') || '',
+      horaSalidaEnlace: card.getAttribute('data-cx-hsal') || '',
+      horaLlegada: card.getAttribute('data-cx-hlleg-dest') || ''
+    };
   }
 
   function abrirModalConexiones_(numTren) {
@@ -3406,6 +3494,14 @@
         cxToggleRealizadoManual_(key, !!chk.checked);
         pintarPanelConexiones_();
       });
+      boxRes.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-cx-enc]');
+        if (!btn) return;
+        e.preventDefault();
+        var card = btn.closest('.cx-card');
+        var fila = filaDesdeCardEnc_(card);
+        if (fila) abrirModalEncaminar_(fila);
+      });
     }
     var modalLista = document.getElementById('cx-modal-lista');
     if (modalLista) {
@@ -3418,6 +3514,31 @@
         if (cxTrenModal_) abrirModalConexiones_(cxTrenModal_);
         var scr = document.getElementById('screen-conexiones');
         if (scr && scr.classList.contains('active')) pintarPanelConexiones_();
+      });
+      modalLista.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-cx-enc]');
+        if (!btn) return;
+        e.preventDefault();
+        var card = btn.closest('.cx-card');
+        var fila = filaDesdeCardEnc_(card);
+        if (fila) abrirModalEncaminar_(fila);
+      });
+    }
+    ['btn-cerrar-cx-encaminar', 'btn-cerrar-cx-encaminar-2'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', cerrarModalEncaminar_);
+    });
+    var encModal = document.getElementById('modal-cx-encaminar');
+    if (encModal) {
+      encModal.addEventListener('click', function (e) {
+        if (e.target === encModal) cerrarModalEncaminar_();
+      });
+    }
+    var btnEncMallas = document.getElementById('btn-cx-enc-mallas');
+    if (btnEncMallas) {
+      btnEncMallas.addEventListener('click', function () {
+        cerrarModalEncaminar_();
+        go('mallas');
       });
     }
     ['btn-cerrar-conexiones', 'btn-cerrar-conexiones-2'].forEach(function (id) {

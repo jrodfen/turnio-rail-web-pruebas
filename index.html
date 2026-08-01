@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se7">
+    <link rel="stylesheet" href="./styles.css?v=cx-se8">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -538,7 +538,22 @@
       </div>
     </div>
 
-    <div id="cx-help-overlay" class="cx-help-overlay" hidden>
+    <div id="modal-cx-encaminar" class="vig-modal" hidden>
+      <div class="vig-modal-card cx-enc-modal" role="dialog" aria-modal="true" aria-labelledby="titulo-cx-encaminar">
+        <div class="aviso-modal-head">
+          <h2 id="titulo-cx-encaminar">Encaminamiento</h2>
+          <button type="button" class="aviso-close" id="btn-cerrar-cx-encaminar" aria-label="Cerrar">&times;</button>
+        </div>
+        <p class="aviso-help" id="cx-enc-sub">Alternativas desde la estaci&oacute;n de enlace.</p>
+        <div id="cx-enc-aviso" class="cx-enc-aviso" hidden></div>
+        <div id="cx-enc-lista" class="cx-enc-lista"></div>
+        <div class="vig-modal-actions">
+          <button type="button" class="btn secondary" id="btn-cerrar-cx-encaminar-2">Cerrar</button>
+          <button type="button" class="btn primary" id="btn-cx-enc-mallas" hidden>Abrir Mallas</button>
+        </div>
+      </div>
+    </div>
+
       <div class="cx-help-modal" role="dialog" aria-modal="true" aria-labelledby="cx-help-title">
         <div class="cx-help-header">
           <div>
@@ -643,6 +658,16 @@
                 <div class="cx-hi-desc">Usa el checkbox <strong>Realizado</strong> en la tarjeta. Tambi&eacute;n se marca solo cuando pasa la hora del enlace (+ retraso + 10 min). Las hechas bajan al final, atenuadas. El marcado manual se guarda hoy en este dispositivo.</div>
               </div>
             </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128260;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Encaminamiento</div>
+                <div class="cx-hi-desc">
+                  Si el retraso del tren que llega pone el enlace <span class="help-badge hb-amber">en riesgo</span> o <span class="help-badge hb-red">perdido</span>, aparece el bot&oacute;n <strong>Sugerir encaminamiento</strong>.
+                  Propone otros trenes desde la <em>estaci&oacute;n de enlace</em> el resto del d&iacute;a hacia el mismo destino (o que pasen por &eacute;l): primero del Excel, y si la malla GTFS est&aacute; cargada, tambi&eacute;n de Mallas. Si la malla no est&aacute; cargada, se avisa y se limita al Excel.
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="cx-help-section">
@@ -688,10 +713,11 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx-se7"></script>
-    <script src="./cx-retrasos.js?v=cx-se7"></script>
-    <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=cx-se7"></script>
+    <script src="./conexiones.js?v=cx-se8"></script>
+    <script src="./cx-retrasos.js?v=cx-se8"></script>
+    <script src="./cx-encaminar.js?v=cx-se8"></script>
+    <script src="./mallas-gtfs.js?v=mallas4"></script>
+    <script src="./app.js?v=cx-se8"></script>
   </body>
 </html>
 

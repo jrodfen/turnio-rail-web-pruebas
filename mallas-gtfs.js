@@ -529,8 +529,137 @@
     cont.innerHTML = html;
   }
 
+  function operativaCargada() {
+    return !!(global.horarios && global.horarios.length && global.viajes && Object.keys(global.viajes).length);
+  }
+
+  function normalizarNombreEst_(s) {
+    return String(s == null ? '' : s)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\./g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function resolverStopIdsPorNombre_(nombre) {
+    var q = normalizarNombreEst_(nombre);
+    if (!q || !global.mapaEstacionesGlobal) return [];
+    var exact = [];
+    var parcial = [];
+    Object.keys(global.mapaEstacionesGlobal).forEach(function (key) {
+      var nk = normalizarNombreEst_(key);
+      if (!nk) return;
+      if (nk === q) exact = exact.concat(global.mapaEstacionesGlobal[key] || []);
+      else if (nk.indexOf(q) >= 0 || q.indexOf(nk) >= 0) {
+        parcial = parcial.concat(global.mapaEstacionesGlobal[key] || []);
+      }
+    });
+    var ids = exact.length ? exact : parcial;
+    var uniq = {};
+    ids.forEach(function (id) { if (id) uniq[id] = true; });
+    return Object.keys(uniq);
+  }
+
+  /**
+   * Salidas desde una estación hacia un destino (final o paso), resto del día.
+   * opts: { estacion, destino, desdeMinutos, margenMin, excluirTren, fecha, limit }
+   */
+  function buscarSalidasHaciaDestino(opts) {
+    opts = opts || {};
+    if (!operativaCargada()) {
+      return { ok: false, motivo: 'sin_malla', alternativas: [] };
+    }
+    var stopOrigen = resolverStopIdsPorNombre_(opts.estacion);
+    var stopDest = resolverStopIdsPorNombre_(opts.destino);
+    if (!stopOrigen.length) {
+      return { ok: false, motivo: 'estacion_origen', alternativas: [], detalle: opts.estacion };
+    }
+    if (!stopDest.length) {
+      return { ok: false, motivo: 'estacion_destino', alternativas: [], detalle: opts.destino };
+    }
+    if (!global._gtfsIdxParadasTrip) actualizarIndiceParadasPorTripGTFS();
+    var idxParadas = global._gtfsIdxParadasTrip || {};
+    var desde = Math.max(0, Number(opts.desdeMinutos) || 0);
+    var margen = Math.max(0, Number(opts.margenMin) || 8);
+    var corte = desde + margen;
+    var excluir = String(opts.excluirTren || '').replace(/^0+/, '');
+    var fecha = opts.fecha || new Date();
+    var limit = Math.max(1, Math.min(Number(opts.limit) || 8, 20));
+    var destSet = {};
+    stopDest.forEach(function (id) { destSet[id] = true; });
+    var origSet = {};
+    stopOrigen.forEach(function (id) { origSet[id] = true; });
+
+    var candidatos = [];
+    (global.horarios || []).forEach(function (h) {
+      if (!origSet[h.stop_id] || !h.departure_time) return;
+      var mins = minutosGTFSExtendido_(h.departure_time);
+      if (mins < corte || mins >= 24 * 60 + 30) return;
+      var dv = global.viajes[h.trip_id];
+      if (!dv) return;
+      if (!turnioServicioCirculaEnFecha_(dv.service_id, fecha)) return;
+      var lim = global.limitesViajes[h.trip_id];
+      if (!lim) return;
+      var sq = parseInt(h.stop_sequence, 10);
+      if (sq === lim.max) return;
+      var num = limpiarNumeroTren(dv.numero_tren || h.trip_id);
+      if (excluir && String(num).replace(/^0+/, '') === excluir) return;
+
+      var paradas = idxParadas[h.trip_id] || [];
+      var destFinal = false;
+      var pasaPor = false;
+      var horaLlegDest = '';
+      var i;
+      for (i = 0; i < paradas.length; i++) {
+        var p = paradas[i];
+        var psq = parseInt(p.stop_sequence, 10);
+        if (psq <= sq) continue;
+        if (destSet[p.stop_id]) {
+          pasaPor = true;
+          horaLlegDest = formatTime(p.arrival_time || p.departure_time);
+          if (psq === lim.max) destFinal = true;
+          break;
+        }
+      }
+      if (!pasaPor) return;
+      var extremos = nombresExtremosViajeDesdeParadas(paradas);
+      candidatos.push({
+        fuente: 'gtfs',
+        tren: num,
+        tripId: h.trip_id,
+        producto: dv.productoFiltro || dv.nombreVisualFrontal || '',
+        horaSalida: formatTime(h.departure_time),
+        minutosSalida: mins,
+        horaLlegadaDestino: horaLlegDest || formatTime(lim.hora_llegada_destino) || '—',
+        destinoFinalNombre: extremos ? extremos.dest : (global.estaciones[lim.destino] || ''),
+        match: destFinal ? 'destino' : 'paso',
+        esperaDesdeLlegada: mins - desde
+      });
+    });
+
+    candidatos.sort(function (a, b) {
+      if (a.match !== b.match) return a.match === 'destino' ? -1 : 1;
+      return a.minutosSalida - b.minutosSalida;
+    });
+    var vistos = {};
+    var out = [];
+    for (var j = 0; j < candidatos.length; j++) {
+      var c = candidatos[j];
+      var key = c.tren + '|' + c.horaSalida;
+      if (vistos[key]) continue;
+      vistos[key] = true;
+      out.push(c);
+      if (out.length >= limit) break;
+    }
+    return { ok: true, motivo: '', alternativas: out, malla: true };
+  }
+
   global.TurnioMallasGtfs = {
     asegurarOperativaGtfs: asegurarOperativaGtfs,
+    operativaCargada: operativaCargada,
+    buscarSalidasHaciaDestino: buscarSalidasHaciaDestino,
     filtrarListaEstaciones: filtrarListaEstaciones,
     mostrarListaEstaciones: mostrarListaEstaciones,
     seleccionarEstacion: seleccionarEstacion,
