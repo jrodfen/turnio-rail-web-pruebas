@@ -255,7 +255,7 @@
     var turno = String(opts.turno || 'todos');
     var rol = String(opts.rol || 'todos');
     var sort = String(opts.sort || 'hora');
-    var limit = Math.max(1, Math.min(Number(opts.limit) || 200, 500));
+    var limit = Math.max(1, Math.min(Number(opts.limit) || 200, 800));
     var out = [];
 
     function horaAMinutos(hStr) {

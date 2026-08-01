@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se17">
+    <link rel="stylesheet" href="./styles.css?v=cx-se18">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -418,6 +418,7 @@
               <button type="button" class="cx-turno-btn" data-cx-turno="manana">Ma&ntilde;ana</button>
               <button type="button" class="cx-turno-btn" data-cx-turno="tarde">Tarde</button>
               <button type="button" class="cx-circ-btn" id="btn-cx-circulando" aria-pressed="false" title="Solo conexiones con al menos un tren en flota Renfe ahora">En circulaci&oacute;n</button>
+              <button type="button" class="cx-delay-btn" id="btn-cx-retraso" aria-pressed="false" title="Solo conexiones con demora en tiempo real (ordenadas de mayor a menor)">Con retraso</button>
             </div>
             <div class="cx-ctrl-row">
               <span class="cx-ctrl-label">Estaci&oacute;n</span>
@@ -438,6 +439,7 @@
               <input id="cx-buscar-tren" class="cx-search-input" type="search" placeholder="Buscar tren, origen, enlace o destino&hellip;" autocomplete="off" aria-label="Buscar">
               <select id="cx-sort" class="cx-sort-sel" aria-label="Ordenar">
                 <option value="hora">Orden: hora enlace</option>
+                <option value="retraso">Orden: m&aacute;s retraso</option>
                 <option value="viajeros">Orden: viajeros</option>
                 <option value="conexion">Orden: espera</option>
               </select>
@@ -755,11 +757,11 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx-se11"></script>
+    <script src="./conexiones.js?v=cx-se18"></script>
     <script src="./cx-retrasos.js?v=cx-se16"></script>
     <script src="./cx-encaminar.js?v=cx-se11"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=cx-se17"></script>
+    <script src="./app.js?v=cx-se18"></script>
   </body>
 </html>
 

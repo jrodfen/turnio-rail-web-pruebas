@@ -2968,6 +2968,7 @@
   var cxFiltroRol_ = 'enlace';
   var cxFiltroSort_ = 'hora';
   var cxSoloCirculando_ = false;
+  var cxSoloRetraso_ = false;
   var cxTrenModal_ = '';
   var CX_REALIZADOS_KEY_ = 'turnio-cx-realizados-v1';
 
@@ -2982,11 +2983,30 @@
     return cxTrenEnCirculacion_(f && f.servicio) || cxTrenEnCirculacion_(f && f.servicioEnlazado);
   }
 
+  /** Mayor demora positiva de los trenes de la conexión (0 si no hay dato / puntual). */
+  function cxMaxRetrasoFila_(f) {
+    var api = window.TurnioCxRetrasos;
+    if (!api || !f) return 0;
+    var max = 0;
+    [f.servicio, f.servicioEnlazado].forEach(function (cod) {
+      var r = api.minutos(cod);
+      if (r != null && r > max) max = r;
+    });
+    return max;
+  }
+
   function syncCirculandoBtnCx_() {
     var btn = document.getElementById('btn-cx-circulando');
     if (!btn) return;
     btn.classList.toggle('active', !!cxSoloCirculando_);
     btn.setAttribute('aria-pressed', cxSoloCirculando_ ? 'true' : 'false');
+  }
+
+  function syncRetrasoBtnCx_() {
+    var btn = document.getElementById('btn-cx-retraso');
+    if (!btn) return;
+    btn.classList.toggle('active', !!cxSoloRetraso_);
+    btn.setAttribute('aria-pressed', cxSoloRetraso_ ? 'true' : 'false');
   }
 
   function cxHoyIso_() {
@@ -3278,6 +3298,8 @@
     var tren = cx.limpiarNumTren(qRaw);
     cxFiltroTren_ = tren;
     cxFiltroQ_ = tren ? '' : String(qRaw || '').trim();
+    var sortEfectivo = cxFiltroSort_;
+    if (cxSoloRetraso_ && sortEfectivo === 'hora') sortEfectivo = 'retraso';
     var filas = cx.listar({
       soloPreferidas: !estActiva && !!cxSoloPreferidas_,
       estacion: estActiva,
@@ -3285,13 +3307,24 @@
       q: cxFiltroQ_,
       turno: cxFiltroTurno_,
       rol: estActiva ? cxFiltroRol_ : 'todos',
-      sort: cxFiltroSort_,
-      limit: cxSoloCirculando_ ? 800 : (estActiva || !cxSoloPreferidas_ ? 400 : 250)
+      sort: sortEfectivo === 'retraso' ? 'hora' : sortEfectivo,
+      limit: (cxSoloCirculando_ || cxSoloRetraso_) ? 800 : (estActiva || !cxSoloPreferidas_ ? 400 : 250)
     });
     if (cxSoloCirculando_) {
       filas = filas.filter(cxFilaEnCirculacion_);
     }
+    if (cxSoloRetraso_) {
+      filas = filas.filter(function (f) { return cxMaxRetrasoFila_(f) > 0; });
+    }
+    if (sortEfectivo === 'retraso') {
+      filas = filas.slice().sort(function (a, b) {
+        var d = cxMaxRetrasoFila_(b) - cxMaxRetrasoFila_(a);
+        if (d) return d;
+        return String(a.horaSalidaEnlace || '').localeCompare(String(b.horaSalidaEnlace || ''));
+      });
+    }
     syncCirculandoBtnCx_();
+    syncRetrasoBtnCx_();
     var realizadosMap = cxObtenerRealizadosManual_();
     var pendientes = [];
     var realizados = [];
@@ -3315,14 +3348,23 @@
       if (sp) sp.textContent = String(pendientes.length);
     }
     if (totalLabel) {
+      var extras = [];
+      if (cxSoloCirculando_) extras.push('en circulación');
+      if (cxSoloRetraso_) extras.push('con retraso');
       totalLabel.textContent = filas.length + ' conexiones' +
-        (cxSoloCirculando_ ? ' · en circulación' : '');
+        (extras.length ? ' · ' + extras.join(' · ') : '');
     }
     if (cnt) cnt.textContent = pendientes.length + ' pend. · ' + realizados.length + ' hechas';
     if (!filas.length) {
-      box.innerHTML = '<div class="empty">' + (cxSoloCirculando_
-        ? 'Ninguna conexión de este filtro tiene trenes en circulación ahora.'
-        : 'No hay conexiones con estos filtros.') + '</div>';
+      var emptyMsg = 'No hay conexiones con estos filtros.';
+      if (cxSoloRetraso_ && cxSoloCirculando_) {
+        emptyMsg = 'Ninguna conexión en circulación tiene demora ahora.';
+      } else if (cxSoloRetraso_) {
+        emptyMsg = 'Ninguna conexión de este filtro tiene demora en tiempo real.';
+      } else if (cxSoloCirculando_) {
+        emptyMsg = 'Ninguna conexión de este filtro tiene trenes en circulación ahora.';
+      }
+      box.innerHTML = '<div class="empty">' + emptyMsg + '</div>';
       return;
     }
     var cardOpts = { estacion: estActiva, realizadosMap: realizadosMap };
@@ -3458,7 +3500,9 @@
     cxFiltroRol_ = 'enlace';
     cxFiltroSort_ = 'hora';
     cxSoloCirculando_ = false;
+    cxSoloRetraso_ = false;
     syncCirculandoBtnCx_();
+    syncRetrasoBtnCx_();
     var input = document.getElementById('cx-buscar-tren');
     if (input) input.value = '';
     var estLibre = document.getElementById('cx-est-libre');
@@ -3569,6 +3613,20 @@
       btnCirc.addEventListener('click', function () {
         cxSoloCirculando_ = !cxSoloCirculando_;
         syncCirculandoBtnCx_();
+        pintarPanelConexiones_();
+      });
+    }
+    var btnRet = document.getElementById('btn-cx-retraso');
+    if (btnRet) {
+      btnRet.addEventListener('click', function () {
+        cxSoloRetraso_ = !cxSoloRetraso_;
+        if (cxSoloRetraso_) {
+          // Al activar, ordenar por mayor demora para ver primero los peores.
+          cxFiltroSort_ = 'retraso';
+          var sortSelOn = document.getElementById('cx-sort');
+          if (sortSelOn) sortSelOn.value = 'retraso';
+        }
+        syncRetrasoBtnCx_();
         pintarPanelConexiones_();
       });
     }
