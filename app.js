@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces15');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces16');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3366,20 +3366,15 @@
     return urlCopernicoAtajo_('combinados') || '';
   }
   function pintarUrlCombinadosUi_(url) {
-    ['cx-coper-url', 'cx-coper-url-panel'].forEach(function (id) {
-      var inp = document.getElementById(id);
-      if (inp) inp.value = url || '';
-    });
-    ['cx-coper-link', 'cx-coper-link-panel'].forEach(function (id) {
-      var a = document.getElementById(id);
-      if (!a) return;
+    var inp = document.getElementById('cx-coper-url');
+    if (inp) inp.value = url || '';
+    var a = document.getElementById('cx-coper-link');
+    if (a) {
       a.hidden = true;
       a.removeAttribute('href');
-    });
-    ['cx-coper-url-wrap', 'cx-coper-url-wrap-panel'].forEach(function (id) {
-      var wrap = document.getElementById(id);
-      if (wrap) wrap.hidden = !url;
-    });
+    }
+    var wrap = document.getElementById('cx-coper-url-wrap');
+    if (wrap) wrap.hidden = !url;
   }
   function copiarTextoClipboard_(texto) {
     if (!texto) return Promise.reject(new Error('vacío'));
@@ -4222,7 +4217,7 @@
     if (btnClearP) btnClearP.addEventListener('click', limpiarConexionesUi_);
     var btnAbrir = document.getElementById('btn-cx-abrir-panel');
     if (btnAbrir) btnAbrir.addEventListener('click', function () { go('conexiones'); });
-    ['btn-cx-abrir-coper', 'btn-cx-abrir-coper-panel', 'btn-cx-modal-coper'].forEach(function (id) {
+    ['btn-cx-abrir-coper', 'btn-cx-modal-coper'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('click', abrirCopernicoCombinadosHoy_);
     });
