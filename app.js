@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces4');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces5');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3357,20 +3357,74 @@
         return '';
     }
   }
-  /** Abre la URL de descarga Combinados (GET excel=E) en ventana nueva — red Renfe + sesión. */
+  /**
+   * Desde TURNIO (otro dominio) window.open no manda bien la sesión de Copérnico.
+   * Pegar la URL en la barra sí funciona → copiamos el enlace y lo mostramos.
+   */
+  function urlExcelCombinadosHoy_() {
+    return urlCopernicoAtajo_('combinados') || '';
+  }
+  function pintarUrlCombinadosUi_(url) {
+    ['cx-coper-url', 'cx-coper-url-panel'].forEach(function (id) {
+      var inp = document.getElementById(id);
+      if (inp) inp.value = url || '';
+    });
+    ['cx-coper-link', 'cx-coper-link-panel'].forEach(function (id) {
+      var a = document.getElementById(id);
+      if (!a) return;
+      if (url) {
+        a.href = url;
+        a.hidden = false;
+      } else {
+        a.removeAttribute('href');
+        a.hidden = true;
+      }
+    });
+    ['cx-coper-url-wrap', 'cx-coper-url-wrap-panel'].forEach(function (id) {
+      var wrap = document.getElementById(id);
+      if (wrap) wrap.hidden = !url;
+    });
+  }
+  function copiarTextoClipboard_(texto) {
+    if (!texto) return Promise.reject(new Error('vacío'));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(texto);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = texto;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        if (!document.execCommand('copy')) reject(new Error('copy'));
+        else resolve();
+      } catch (err) {
+        reject(err);
+      } finally {
+        document.body.removeChild(ta);
+      }
+    });
+  }
   function abrirCopernicoCombinadosHoy_() {
-    var url = urlCopernicoAtajo_('combinados');
+    var url = urlExcelCombinadosHoy_();
     if (!url) {
       toast('No se pudo montar la URL de Combinados.', 'error');
       return;
     }
-    try {
-      var w = window.open(url, '_blank');
-      if (!w) toast('Permite ventanas emergentes para descargar el Excel.', 'error');
-      else toast('Abriendo descarga Combinados…', 'success');
-    } catch (err) {
-      toast('No se pudo abrir la descarga de Combinados.', 'error');
-    }
+    pintarUrlCombinadosUi_(url);
+    copiarTextoClipboard_(url).then(function () {
+      toast('Enlace copiado. Pégalo en la barra de una pestaña (Ctrl+L → Ctrl+V → Enter).', 'success');
+    }).catch(function () {
+      var inp = document.getElementById('cx-coper-url') || document.getElementById('cx-coper-url-panel');
+      if (inp) {
+        inp.focus();
+        inp.select();
+      }
+      toast('Copia el enlace del cuadro y pégalo en la barra del navegador.', 'success');
+    });
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
