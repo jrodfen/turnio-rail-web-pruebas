@@ -227,8 +227,18 @@ body.monitor-mode #screen-mapa{display:none!important}
 .cx-search-input{flex:1;min-width:140px;margin:0;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--card);color:var(--text)}
 .cx-sort-sel{margin:0;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;background:var(--card);color:var(--text)}
 .cx-ctrl-row--search .btn{margin:0;width:auto;padding:8px 14px;font-size:13px}
-.cx-resultados{display:grid;gap:10px;margin-top:8px}
-.cx-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-left:4px solid var(--primary);position:relative}
+#screen-conexiones{max-width:1600px;margin:0 auto;width:100%}
+.cx-panel--se{max-width:100%}
+.cx-resultados{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  align-items:start;
+  margin-top:8px;
+}
+.cx-resultados>.empty,.cx-resultados>.cx-sep-realizados{grid-column:1/-1}
+.cx-modal-lista{display:grid;grid-template-columns:1fr;gap:10px}
+.cx-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-left:4px solid var(--primary);position:relative;min-width:0}
 .cx-card.cx-card-realizado{opacity:.42;filter:grayscale(.55)}
 .cx-card.cx-card-destaca{border:2px solid #F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,.12);background:#FFFBEB}
 .cx-prox-rojo .cxn-hora{color:#EF4444}
@@ -274,6 +284,14 @@ body.monitor-mode #screen-mapa{display:none!important}
 .cx-est-highlight{background:#DBEAFE;color:#1E40AF;border-radius:4px;padding:1px 4px;font-weight:700}
 .cx-realizado-badge{position:absolute;top:6px;right:6px;background:#6b7280;color:#fff;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:10px}
 .cx-sep-realizados{grid-column:1/-1;text-align:center;color:#94A3B8;font-size:11px;padding:6px 0;letter-spacing:1px;border-top:1px dashed #CBD5E1;margin-bottom:4px}
+@media (max-width:1100px){
+  .cx-resultados{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:700px){
+  .cx-resultados{grid-template-columns:1fr}
+  .cxn-hora{font-size:1.45rem;min-width:56px}
+  .cxn-trenes{grid-template-columns:1fr 40px 1fr}
+}
 @media (max-width:420px){
   .cxn-hora{font-size:1.35rem;min-width:52px}
   .cxn-trenes{grid-template-columns:1fr 36px 1fr}
