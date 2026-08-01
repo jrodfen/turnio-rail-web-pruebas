@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces14');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces15');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3373,15 +3373,8 @@
     ['cx-coper-link', 'cx-coper-link-panel'].forEach(function (id) {
       var a = document.getElementById(id);
       if (!a) return;
-      if (url) {
-        a.href = url;
-        a.setAttribute('referrerpolicy', 'no-referrer');
-        a.rel = 'noreferrer';
-        a.hidden = false;
-      } else {
-        a.removeAttribute('href');
-        a.hidden = true;
-      }
+      a.hidden = true;
+      a.removeAttribute('href');
     });
     ['cx-coper-url-wrap', 'cx-coper-url-wrap-panel'].forEach(function (id) {
       var wrap = document.getElementById(id);
@@ -3418,18 +3411,11 @@
       return;
     }
     pintarUrlCombinadosUi_(url);
-    copiarTextoClipboard_(url).catch(function () { /* ignore */ });
-
-    /* Nunca descargar HTML disfrazado de .xls (Excel lo marca como dañado).
-       Solo abrir la página TURNIO, que pide el fichero real a Copérnico. */
-    var helper = './combinados-hoy.html?v=' + encodeURIComponent(FRONT_BUILD);
-    var w = null;
-    try { w = window.open(helper, '_blank'); } catch (err) { w = null; }
-    if (w) {
-      toast('Pestaña Combinados abierta: espera la descarga del Excel.', 'success');
-      return;
-    }
-    toast('Permite ventanas emergentes, o pega el enlace: Ctrl+L → Ctrl+V → Enter.', 'success');
+    copiarTextoClipboard_(url).then(function () {
+      toast('Enlace copiado. Pégalo en la barra del navegador (Ctrl+V) y Enter.', 'success');
+    }).catch(function () {
+      toast('Copia el enlace del cuadro y pégalo en la barra del navegador.', 'error');
+    });
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
