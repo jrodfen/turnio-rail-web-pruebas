@@ -1,0 +1,17 @@
+/*
+  X-Turnio-Front-Build: health1
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/turnio-config.js
+  Cache-Control: no-cache
+
+/supabase-auth-config.js
+  Cache-Control: no-cache
+
+/app.js
+  Cache-Control: no-cache

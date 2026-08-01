@@ -7,6 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'health1');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -2702,12 +2703,46 @@
   }
 
   async function init() {
-    if (!api || !supabase) { setStatus('error', 'Acceso externo pendiente de configurar.'); return; }
+    if (!api) {
+      setStatus('error', 'Falta TURNIO_EXTERNAL_API (turnio-config.js). Build ' + FRONT_BUILD + '.');
+      return;
+    }
+    if (!supabase) {
+      setStatus('error',
+        'Supabase no cargó (¿caché antigua o CDN bloqueada?). Build ' + FRONT_BUILD +
+        '. En Ajustes → Obtener nueva actualización.');
+      return;
+    }
+
+    var healthUrl = api + '/api/health';
     try {
-      var r = await fetch(api + '/api/health', { cache: 'no-store' });
-      var d = await r.json();
-      if (!r.ok || !d.ok || !d.configured) throw 0;
-      setStatus('ready', 'Conexión externa preparada.');
+      var r = await fetch(healthUrl, { cache: 'no-store', mode: 'cors', credentials: 'omit' });
+      var raw = await r.text();
+      var d = null;
+      try { d = JSON.parse(raw); } catch (_) {
+        setStatus('error',
+          'Health HTTP ' + r.status + ' · respuesta no JSON · ' + truncDiag_(raw) +
+          ' · ' + healthUrl + ' · build ' + FRONT_BUILD);
+        return;
+      }
+      if (!r.ok || !d || !d.ok || !d.configured) {
+        setStatus('error',
+          'Health HTTP ' + r.status +
+          ' · ok=' + String(d && d.ok) +
+          ' · configured=' + String(d && d.configured) +
+          ' · ' + truncDiag_(raw) +
+          ' · ' + healthUrl + ' · build ' + FRONT_BUILD);
+        return;
+      }
+    } catch (err) {
+      setStatus('error',
+        'Health falló: ' + String((err && err.message) || err) +
+        ' · ' + healthUrl + ' · build ' + FRONT_BUILD);
+      return;
+    }
+
+    setStatus('ready', 'Conexión externa preparada. · build ' + FRONT_BUILD);
+    try {
       var auth = await supabase.auth.getUser();
       if (auth && auth.data && auth.data.user) {
         sessionEmail = String(auth.data.user.email || '').trim().toLowerCase();
@@ -2725,9 +2760,22 @@
         }
       }
       loginForm.hidden = false;
-    } catch (_) {
-      setStatus('error', 'No se ha podido conectar con el entorno externo.');
+    } catch (err) {
+      loginForm.hidden = false;
+      setStatus('error',
+        'API lista, pero la sesión falló: ' + String((err && err.message) || err) +
+        ' · build ' + FRONT_BUILD);
     }
+  }
+
+  function truncDiag_(texto) {
+    var t = String(texto || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '(vacío)';
+    // Nunca volcar tokens/secretos aunque el backend se equivoque.
+    t = t.replace(/Bearer\s+[A-Za-z0-9._\-]+/gi, 'Bearer ***')
+      .replace(/sb_publishable_[A-Za-z0-9_]+/gi, 'sb_publishable_***')
+      .replace(/eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+/g, 'jwt***');
+    return t.length > 140 ? (t.slice(0, 140) + '…') : t;
   }
 
   document.getElementById('btn-recibir-otp').addEventListener('click', async function () {
@@ -2842,17 +2890,35 @@
     if (!confirm('¿Descargar la última versión y reiniciar la app?\n\nTu sesión se mantiene; no hace falta volver a entrar.')) return;
     toast('Obteniendo nueva versión…', 'success');
     document.body.style.opacity = '0.55';
-    try {
-      var url = new URL(window.location.href);
-      url.searchParams.set('_v', String(Date.now()));
-      // Evita que un ?t= viejo confunda la caché del acceso directo.
-      url.searchParams.delete('t');
-      setTimeout(function () {
-        window.location.replace(url.toString());
-      }, 350);
-    } catch (err) {
-      window.location.reload(true);
-    }
+    Promise.resolve()
+      .then(function () {
+        if (!navigator.serviceWorker || !navigator.serviceWorker.getRegistrations) return;
+        return navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+        });
+      })
+      .then(function () {
+        if (!window.caches || !caches.keys) return;
+        return caches.keys().then(function (keys) {
+          // Conserva caches de mallas/GTFS; borra el resto (posible SW/PWA antigua).
+          return Promise.all(keys.map(function (k) {
+            if (/mallas|gtfs|operativa/i.test(k)) return null;
+            return caches.delete(k);
+          }));
+        });
+      })
+      .catch(function () { /* seguir con reload igual */ })
+      .then(function () {
+        try {
+          var url = new URL(window.location.href);
+          url.searchParams.set('_v', String(Date.now()));
+          url.searchParams.set('build', FRONT_BUILD);
+          url.searchParams.delete('t');
+          window.location.replace(url.toString());
+        } catch (err) {
+          window.location.reload(true);
+        }
+      });
   });
 
   /* Atajos Copérnico (mismo patrón que Anthony; solo red Renfe) */
