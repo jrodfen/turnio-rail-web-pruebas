@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>TURNIO · Combinados del día</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0; font-family: "Segoe UI", sans-serif; color: #142033;
+      background: linear-gradient(160deg, #e8f1ff 0%, #f7fafc 45%, #eef6f1 100%);
+      min-height: 100vh; display: grid; place-items: center; padding: 24px;
+    }
+    .card {
+      width: min(520px, 100%); background: #fff; border: 1px solid #d7e0ec;
+      border-radius: 16px; padding: 28px 24px; box-shadow: 0 10px 30px rgba(20, 32, 51, .08);
+    }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    p { margin: 0 0 14px; line-height: 1.45; color: #405066; font-size: 14px; }
+    .btn {
+      display: inline-block; margin: 4px 8px 4px 0; padding: 12px 18px; border-radius: 10px;
+      background: #0b57d0; color: #fff; text-decoration: none; font-weight: 700; border: 0; cursor: pointer;
+      font-size: 15px;
+    }
+    .btn.secondary { background: #eef3f8; color: #142033; }
+    code {
+      display: block; margin: 12px 0; padding: 12px; border-radius: 10px; background: #f3f6fa;
+      font-size: 11px; word-break: break-all; border: 1px solid #e2e8f0;
+    }
+    .ok { color: #0f766e; font-weight: 700; min-height: 1.2em; }
+    .hint { font-size: 12px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Trenes Combinados</h1>
+    <p>Pulsa el botón para bajar el Excel (<b>.xls</b>) de Copérnico. Esta ventana se queda abierta a propósito.</p>
+    <p>
+      <a class="btn" id="btn-xls" href="#" target="_blank" rel="noreferrer" referrerpolicy="no-referrer">Descargar Excel (.xls)</a>
+      <button type="button" class="btn secondary" id="btn-copiar">Copiar enlace</button>
+    </p>
+    <p class="ok" id="msg" aria-live="polite"></p>
+    <p class="hint">Si no baja: Ctrl+L en una pestaña nueva, Ctrl+V, Enter (necesitas sesión en Copérnico / red Renfe).</p>
+    <code id="url"></code>
+  </main>
+  <script>
+    (function () {
+      function fechaHoy() {
+        var n = new Date();
+        var dd = String(n.getDate()).padStart(2, '0');
+        var mm = String(n.getMonth() + 1).padStart(2, '0');
+        var yyyy = n.getFullYear();
+        return dd + '/' + mm + '/' + yyyy;
+      }
+      function urlCombinadosHoy() {
+        var fecha = encodeURIComponent(fechaHoy());
+        return 'http://copernico.sir.renfe.es/copernico/SrvRenfeSeguimiento'
+          + '?todo=combinados&excel=E&codusuario=&hoy=' + fecha
+          + '&perfil=3&inicio=false&servicio1=&estacion=&orden=4'
+          + '&fechaInicio=' + fecha + '&fechaFin=' + fecha;
+      }
+      var url = urlCombinadosHoy();
+      var code = document.getElementById('url');
+      var btn = document.getElementById('btn-xls');
+      var msg = document.getElementById('msg');
+      code.textContent = url;
+      btn.href = url;
+
+      document.getElementById('btn-copiar').addEventListener('click', function () {
+        function ok() { msg.textContent = 'Enlace copiado.'; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(ok).catch(function () {
+            try {
+              var ta = document.createElement('textarea');
+              ta.value = url;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              ok();
+            } catch (e) { msg.textContent = 'Copia el texto de abajo.'; }
+          });
+        } else {
+          ok();
+        }
+      });
+
+      btn.addEventListener('click', function () {
+        msg.textContent = 'Abriendo descarga… revisa la carpeta Descargas (.xls).';
+      });
+    })();
+  </script>
+</body>
+</html>
