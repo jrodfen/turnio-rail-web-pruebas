@@ -223,8 +223,7 @@
       cargado: !!(state.filas && state.filas.length && state.fecha === hoyIsoLocal_()),
       fecha: state.fecha,
       total: state.filas.length,
-      meta: state.meta,
-      urlServiciosEnlazados: URL_SERVICIOS_ENLAZADOS
+      meta: state.meta
     };
   }
 
