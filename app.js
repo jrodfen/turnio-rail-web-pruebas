@@ -3298,6 +3298,24 @@
     if (btnClearP) btnClearP.addEventListener('click', limpiarConexionesUi_);
     var btnAbrir = document.getElementById('btn-cx-abrir-panel');
     if (btnAbrir) btnAbrir.addEventListener('click', function () { go('conexiones'); });
+    function abrirAyudaCx_() {
+      var ov = document.getElementById('cx-help-overlay');
+      if (ov) ov.hidden = false;
+    }
+    function cerrarAyudaCx_() {
+      var ov = document.getElementById('cx-help-overlay');
+      if (ov) ov.hidden = true;
+    }
+    var btnAyuda = document.getElementById('btn-cx-ayuda');
+    if (btnAyuda) btnAyuda.addEventListener('click', abrirAyudaCx_);
+    var btnAyudaCerrar = document.getElementById('btn-cx-ayuda-cerrar');
+    if (btnAyudaCerrar) btnAyudaCerrar.addEventListener('click', cerrarAyudaCx_);
+    var ayudaOv = document.getElementById('cx-help-overlay');
+    if (ayudaOv) {
+      ayudaOv.addEventListener('click', function (e) {
+        if (e.target === ayudaOv) cerrarAyudaCx_();
+      });
+    }
     var estWrap = document.getElementById('cx-est-btns');
     if (estWrap) {
       estWrap.addEventListener('click', function (e) {

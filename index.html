@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se6">
+    <link rel="stylesheet" href="./styles.css?v=cx-se7">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -350,9 +350,12 @@
         <div class="cx-panel cx-panel--se">
           <div class="cx-panel-head">
             <h3>&#128279; Servicios enlazados</h3>
-            <span class="circ-chip circ-chip--green" id="cx-panel-chip">Sin cargar</span>
+            <div class="cx-panel-head-actions">
+              <button type="button" class="cx-help-btn" id="btn-cx-ayuda" title="Manual de uso">&#10067; Ayuda</button>
+              <span class="circ-chip circ-chip--green" id="cx-panel-chip">Sin cargar</span>
+            </div>
           </div>
-          <p class="mallas-lead">Panel de conexiones con retrasos de la flota TURNIO (misma fuente que el mapa).</p>
+          <p class="mallas-lead">Panel de conexiones con retrasos de la flota TURNIO. Pulsa Ayuda para el manual.</p>
           <div class="cx-upload-row" id="cx-upload-panel">
             <input type="file" id="cx-file-input-panel" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
             <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar-panel" data-cx-label-idle="Cargar Excel" data-cx-label-ready="Recargar">Cargar Excel</button>
@@ -534,6 +537,147 @@
         </div>
       </div>
     </div>
+
+    <div id="cx-help-overlay" class="cx-help-overlay" hidden>
+      <div class="cx-help-modal" role="dialog" aria-modal="true" aria-labelledby="cx-help-title">
+        <div class="cx-help-header">
+          <div>
+            <h2 id="cx-help-title">Manual de uso</h2>
+            <p>TURNIO RAIL &middot; Servicios enlazados</p>
+          </div>
+          <button type="button" class="cx-help-close" id="btn-cx-ayuda-cerrar" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="cx-help-body">
+
+          <div class="cx-help-section">
+            <h3>Carga de datos</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128202;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Cargar Excel del d&iacute;a</div>
+                <div class="cx-hi-desc">Desde <strong>Circulaci&oacute;n</strong> o desde este panel, carga el fichero HTML/Excel de <em>Trenes Combinados</em> (Cop&eacute;rnico). Se guarda solo en este dispositivo y <strong>caduca al cambiar de d&iacute;a</strong>. Tras cargar, los botones pasan a estilo m&iacute;nimo: <span class="help-badge hb-blue">Recargar</span> / <span class="help-badge hb-red">Quitar</span>.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128225;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Tiempo real TURNIO</div>
+                <div class="cx-hi-desc">Los retrasos salen de la <strong>flota TURNIO</strong> (la misma del mapa) y se completan con el <strong>Radar</strong>. La l&iacute;nea verde bajo la carga indica cu&aacute;ntos trenes hay; pulsa para forzar recarga. En cada tren ver&aacute;s badges <span class="help-badge hb-green">Puntual</span> o <span class="help-badge hb-red">+X min</span>.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128642;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Bot&oacute;n Enlace en Radar</div>
+                <div class="cx-hi-desc">Si un tren del Radar tiene conexiones en el Excel de hoy (estaciones preferidas), aparece el bot&oacute;n verde <span class="help-badge hb-green">Enlace</span>. Abre el detalle y desde ah&iacute; puedes ir al panel completo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Panel de conexiones</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#127961;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Filtro de estaci&oacute;n</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-blue">Todas</span> — Todo el fichero del d&iacute;a.<br>
+                  <span class="help-badge hb-amber">Todas preferidas</span> — Solo enlaces en Sevilla SJ, C&oacute;rdoba, M&aacute;laga MZ, Antequera AV, Granada y Dos Hermanas.<br>
+                  Chips de estaci&oacute;n — Filtra por esa parada como origen, enlace o destino.<br>
+                  Campo <strong>Otra</strong> — Escribe cualquier estaci&oacute;n del Excel.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#127917;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Filtro por rol de la estaci&oacute;n</div>
+                <div class="cx-hi-desc">
+                  Visible al elegir una estaci&oacute;n concreta.<br>
+                  <span class="help-badge hb-green">Como Origen</span> — La estaci&oacute;n es salida del tren principal.<br>
+                  <span class="help-badge hb-yellow">Como Enlace</span> — Es donde se produce el transbordo. <em>Activo por defecto.</em><br>
+                  <span class="help-badge hb-purple">Como Destino</span> — Es el destino final del viajero.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128269;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Buscador y orden</div>
+                <div class="cx-hi-desc">Busca por n&uacute;mero de tren, origen, enlace o destino. Ordena por <strong>hora de enlace</strong>, <strong>viajeros</strong> o <strong>espera</strong>.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Tarjetas de conexi&oacute;n</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128678;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Sem&aacute;foro de proximidad</div>
+                <div class="cx-hi-desc">
+                  Seg&uacute;n minutos hasta la salida del enlace <em>(hora programada + retraso TURNIO)</em>:<br><br>
+                  <span class="help-badge hb-green">M&aacute;s de 30 min</span> Tiempo suficiente.<br>
+                  <span class="help-badge hb-yellow">15&ndash;30 min</span> Se acerca la hora.<br>
+                  <span class="help-badge hb-red">Menos de 15 min</span> Acci&oacute;n inmediata.<br>
+                  <span class="help-badge hb-gray">Gris</span> Enlace ya realizado / atenuado abajo.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#9889;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Destacadas y riesgo</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-amber">Ajustada</span> — Espera planificada &lt; 30 min.<br>
+                  <span class="help-badge hb-amber">Alta ocup.</span> — M&aacute;s de 15 viajeros.<br>
+                  <span class="help-badge hb-red">Enlace en riesgo</span> — El retraso del tren que llega se come el margen.<br>
+                  Burbuja central: espera <strong>plan</strong> vs <strong>real</strong> si hay demora.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#10003;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Marcar como realizado</div>
+                <div class="cx-hi-desc">Usa el checkbox <strong>Realizado</strong> en la tarjeta. Tambi&eacute;n se marca solo cuando pasa la hora del enlace (+ retraso + 10 min). Las hechas bajan al final, atenuadas. El marcado manual se guarda hoy en este dispositivo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Selector de turno</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#9728;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Franja horaria</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-blue">Todo el d&iacute;a</span> — Todas las conexiones.<br>
+                  <span class="help-badge hb-yellow">Ma&ntilde;ana</span> — Salida enlace entre <strong>06:00 y 14:30</strong>.<br>
+                  <span class="help-badge hb-purple">Tarde</span> — Entre <strong>14:30 y 22:30</strong>.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Estad&iacute;sticas</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128200;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Contadores</div>
+                <div class="cx-hi-desc">Arriba del listado: <strong>conexiones</strong>, <strong>viajeros</strong>, <strong>espera media</strong> y <strong>pendientes</strong>. Se actualizan con cada filtro.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="cx-help-footer">
+          <span>TURNIO RAIL &middot; pruebas</span>
+          <span>Servicios enlazados</span>
+        </div>
+      </div>
+    </div>
     <div id="modal-exito-animado" class="exito-modal" hidden>
       <div class="exito-card">
         <svg class="check-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" aria-hidden="true">
@@ -544,10 +688,10 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx-se6"></script>
-    <script src="./cx-retrasos.js?v=cx-se6"></script>
+    <script src="./conexiones.js?v=cx-se7"></script>
+    <script src="./cx-retrasos.js?v=cx-se7"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=cx-se6"></script>
+    <script src="./app.js?v=cx-se7"></script>
   </body>
 </html>
 
