@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'health1');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'roles2');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -20,7 +20,7 @@
   var sessionEmail = '';
   // El Worker entrega este perfil tras validar Supabase. Nunca se toma el rol
   // de un dato que haya enviado el navegador por su cuenta.
-  var sessionProfile = { role_code: 'LECTURA', can_write: false };
+  var sessionProfile = { role_code: 'LECTURA', can_write: false, is_admin: false, id: '' };
   var puedeEscribir = false;
   var cacheClavero = [];
   var cargandoClavero = false;
@@ -235,15 +235,19 @@
     var p = persona || {};
     var role = String(p.role_code || p.roleCode || p.rol || 'LECTURA').toUpperCase();
     if (['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].indexOf(role) < 0) role = 'LECTURA';
+    var isAdmin = p.is_admin === true || p.isAdmin === true || role === 'ADMIN';
     return {
+      id: p.id || '',
       role_code: role,
       can_write: p.can_write === true || p.canWrite === true || role === 'ADMIN' || role === 'CGO',
+      is_admin: isAdmin,
       active: p.active !== false,
       expires_at: p.expires_at || p.expiresAt || '',
       display_name: p.display_name || p.displayName || p.nombre || ''
     };
   }
   function textoPermisoPerfil_(perfil) {
+    if (perfil.role_code === 'ADMIN') return 'Administración: puedes gestionar usuarios y usar todas las funciones operativas.';
     if (perfil.can_write) return 'Permiso operativo: puedes generar avisos y usar el Vigilante.';
     if (perfil.role_code === 'INVITADO') return 'Modo invitado: consulta de datos. No puedes generar avisos ni usar el Vigilante.';
     return 'Modo lectura: puedes consultar datos, sin generar avisos ni usar el Vigilante.';
@@ -252,9 +256,14 @@
     sessionProfile = perfilSesion_(persona);
     puedeEscribir = !!sessionProfile.can_write;
     document.documentElement.classList.toggle('turnio-solo-lectura', !puedeEscribir);
+    document.documentElement.classList.toggle('turnio-es-admin', !!sessionProfile.is_admin);
     document.querySelectorAll('[data-requiere-escritura]').forEach(function (el) {
       el.hidden = !puedeEscribir;
       el.disabled = !puedeEscribir;
+    });
+    document.querySelectorAll('[data-requiere-admin]').forEach(function (el) {
+      el.hidden = !sessionProfile.is_admin;
+      if ('disabled' in el) el.disabled = !sessionProfile.is_admin;
     });
     var roleText = 'Rol: ' + sessionProfile.role_code;
     var badge = document.getElementById('user-role');
@@ -268,6 +277,119 @@
     if (puedeEscribir) return true;
     toast((accion || 'Esta acción') + ' no está disponible con tu rol de ' + sessionProfile.role_code + '.', 'error');
     return false;
+  }
+
+  var adminCargando_ = false;
+  function fmtFechaCorta_(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    try {
+      return d.toLocaleString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (_) {
+      return d.toISOString().slice(0, 16).replace('T', ' ');
+    }
+  }
+  function isoAFechaInput_(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function fechaInputAIso_(val) {
+    var s = String(val || '').trim();
+    if (!s) return '';
+    var d = new Date(s + 'T23:59:59');
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString();
+  }
+  async function cargarAdminPerfiles_() {
+    var lista = document.getElementById('admin-lista');
+    var meta = document.getElementById('admin-meta');
+    if (!lista) return;
+    if (!sessionProfile.is_admin) {
+      lista.innerHTML = '<p class="empty">Solo ADMIN.</p>';
+      return;
+    }
+    if (adminCargando_) return;
+    adminCargando_ = true;
+    lista.innerHTML = '<p class="empty">Cargando perfiles…</p>';
+    if (meta) meta.textContent = '…';
+    try {
+      var d = await call('admin_listar_perfiles');
+      var filas = Array.isArray(d.perfiles) ? d.perfiles : [];
+      if (meta) meta.textContent = filas.length + ' perfil' + (filas.length === 1 ? '' : 'es');
+      if (!filas.length) {
+        lista.innerHTML = '<p class="empty">No hay perfiles en Supabase.</p>';
+        return;
+      }
+      lista.innerHTML = filas.map(function (p) {
+        var id = esc(p.id);
+        var role = String(p.role_code || 'LECTURA').toUpperCase();
+        var esYo = sessionProfile.id && String(sessionProfile.id) === String(p.id);
+        var opts = ['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].map(function (r) {
+          return '<option value="' + r + '"' + (r === role ? ' selected' : '') + '>' + r + '</option>';
+        }).join('');
+        return (
+          '<article class="admin-card' + (p.active ? '' : ' admin-card--off') + '" data-admin-id="' + id + '">' +
+            '<div class="admin-card-head">' +
+              '<div class="admin-card-who">' +
+                '<b>' + esc(p.display_name || p.email || 'Sin nombre') + '</b>' +
+                '<span>' + esc(p.email || '') + (esYo ? ' · tú' : '') + '</span>' +
+              '</div>' +
+              '<span class="admin-pill' + (p.linked ? ' admin-pill--ok' : '') + '">' +
+                (p.linked ? 'Vinculado' : 'Sin Auth') +
+              '</span>' +
+            '</div>' +
+            '<div class="admin-card-grid">' +
+              '<label>Rol<select class="admin-role" data-f="role">' + opts + '</select></label>' +
+              '<label class="admin-active-lab"><input type="checkbox" class="admin-active" data-f="active"' +
+                (p.active ? ' checked' : '') + (esYo ? ' disabled' : '') + '> Activo</label>' +
+              '<label class="admin-exp-lab">Caduca (INVITADO)<input type="date" class="admin-expires" data-f="expires" value="' +
+                esc(isoAFechaInput_(p.expires_at)) + '"' + (role === 'INVITADO' ? '' : ' disabled') + '></label>' +
+            '</div>' +
+            '<div class="admin-card-foot">' +
+              '<span class="admin-card-meta">Actualizado: ' + esc(fmtFechaCorta_(p.updated_at)) +
+                (p.expires_at && role === 'INVITADO' ? ' · Fin: ' + esc(fmtFechaCorta_(p.expires_at)) : '') +
+              '</span>' +
+              '<button type="button" class="action-btn admin-save" data-admin-save="' + id + '">Guardar</button>' +
+            '</div>' +
+          '</article>'
+        );
+      }).join('');
+    } catch (err) {
+      lista.innerHTML = '<p class="empty error-text">' + esc(err.message || err) + '</p>';
+      if (meta) meta.textContent = 'error';
+    } finally {
+      adminCargando_ = false;
+    }
+  }
+  async function guardarAdminPerfil_(card) {
+    if (!card || !sessionProfile.is_admin) return;
+    var id = card.getAttribute('data-admin-id');
+    var roleSel = card.querySelector('.admin-role');
+    var activeEl = card.querySelector('.admin-active');
+    var expEl = card.querySelector('.admin-expires');
+    var btn = card.querySelector('.admin-save');
+    if (!id || !roleSel) return;
+    var role = String(roleSel.value || '').toUpperCase();
+    var active = !!(activeEl && activeEl.checked);
+    var expiresAt = role === 'INVITADO' ? fechaInputAIso_(expEl && expEl.value) : '';
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+      await call('admin_actualizar_perfil', {
+        profile_id: id,
+        role_code: role,
+        active: active,
+        expires_at: expiresAt || null
+      });
+      toast('Perfil actualizado.', 'success');
+      await cargarAdminPerfiles_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+    }
   }
   function clientId() {
     var id = localStorage.getItem(clientKey) || '';
@@ -298,8 +420,30 @@
     });
     var d;
     try { d = await r.json(); } catch (_) { throw new Error('Respuesta no válida del servicio.'); }
-    if (!r.ok || d.ok === false || d.exito === false) throw new Error(d.error || 'No se pudo completar la operación.');
+    if (!r.ok || d.ok === false || d.exito === false) {
+      throw new Error(mensajeErrorApi_(d) || 'No se pudo completar la operación.');
+    }
     return d;
+  }
+  function mensajeErrorApi_(d) {
+    if (!d || typeof d !== 'object') return '';
+    var code = String(d.error || '');
+    var mapa = {
+      role_admin_required: 'Solo un ADMIN puede hacer esto.',
+      role_read_only: 'Tu rol no permite esta acción.',
+      admin_service_not_configured: 'Falta configurar el secreto de administración en el Worker.',
+      admin_invalid_role: 'Rol no válido.',
+      admin_invalid_profile_id: 'Perfil no válido.',
+      admin_invalid_expires_at: 'Fecha de caducidad no válida.',
+      admin_cannot_deactivate_self: 'No puedes desactivar tu propia cuenta.',
+      admin_cannot_demote_self: 'No puedes quitarte el rol ADMIN a ti mismo.',
+      admin_last_admin_protected: 'Debe quedar al menos un ADMIN activo.',
+      admin_profile_not_found: 'Perfil no encontrado.',
+      admin_unavailable: 'Administración no disponible ahora.'
+    };
+    var base = mapa[code] || code;
+    if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
+    return base;
   }
   function setStatus(kind, text) {
     status.className = 'status ' + kind;
@@ -803,6 +947,14 @@
       asegurarRutasMallas().catch(function (err) {
         setMallasStatus(String(err.message || err), true);
       });
+    }
+    if (screen === 'admin') {
+      if (!sessionProfile.is_admin) {
+        toast('Solo ADMIN puede entrar en Administración.', 'error');
+        go('ajustes');
+        return;
+      }
+      cargarAdminPerfiles_();
     }
     gestionarAutoRadar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2947,6 +3099,25 @@
     loginForm.hidden = false;
     toast('Sesión de pruebas cerrada.');
   });
+  var btnAdminRef = document.getElementById('btn-admin-refrescar');
+  if (btnAdminRef) btnAdminRef.addEventListener('click', function () { cargarAdminPerfiles_(); });
+  var adminListaEl = document.getElementById('admin-lista');
+  if (adminListaEl) {
+    adminListaEl.addEventListener('change', function (ev) {
+      var t = ev.target;
+      if (!t || !t.classList.contains('admin-role')) return;
+      var card = t.closest('.admin-card');
+      if (!card) return;
+      var exp = card.querySelector('.admin-expires');
+      if (exp) exp.disabled = String(t.value).toUpperCase() !== 'INVITADO';
+    });
+    adminListaEl.addEventListener('click', function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-admin-save]') : null;
+      if (!btn) return;
+      var card = btn.closest('.admin-card');
+      if (card) guardarAdminPerfil_(card);
+    });
+  }
   document.getElementById('btn-obtener-actualizacion').addEventListener('click', function () {
     if (!confirm('¿Descargar la última versión y reiniciar la app?\n\nTu sesión se mantiene; no hace falta volver a entrar.')) return;
     toast('Obteniendo nueva versión…', 'success');
