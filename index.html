@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=enlaces7">
+    <link rel="stylesheet" href="./styles.css?v=enlaces8">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces7</span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces8</span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -378,7 +378,7 @@
                 <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
               </div>
             </div>
-            <p class="circ-note">Carga cada d&iacute;a el Excel/HTML de Trenes Combinados. <b>Descargar Excel</b> intenta abrir Cop&eacute;rnico; si el navegador bloquea la sesi&oacute;n, abre el archivo <b>TURNIO-combinados.htm</b> de Descargas (o pega el enlace en la barra).</p>
+            <p class="circ-note">Carga cada d&iacute;a el Excel de Trenes Combinados. En <b>Edge</b>, Cop&eacute;rnico (http) no se puede abrir desde TURNIO (https). <b>Descargar Excel</b> genera <b>TURNIO-combinados.htm</b>: &aacute;brelo desde Descargas, o pega el enlace en la barra.</p>
             <div class="cx-upload-row" id="cx-upload-circ">
               <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
               <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar" data-cx-label-idle="Cargar Excel del d&iacute;a" data-cx-label-ready="Recargar">Cargar Excel del d&iacute;a</button>
@@ -386,7 +386,7 @@
             </div>
             <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
             <div class="cx-actions-row">
-              <button type="button" class="btn secondary" id="btn-cx-abrir-coper" title="Abre la descarga del Excel de hoy en Cop&eacute;rnico">Descargar Excel</button>
+              <button type="button" class="btn secondary" id="btn-cx-abrir-coper" title="Genera TURNIO-combinados.htm y copia el enlace (Edge)">Descargar Excel</button>
               <button type="button" class="btn secondary" id="btn-cx-abrir-panel">Panel de enlaces</button>
             </div>
             <div class="cx-coper-url-wrap" id="cx-coper-url-wrap" hidden>
@@ -848,12 +848,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=enlaces7"></script>
-    <script src="./conexiones.js?v=enlaces7"></script>
+    <script src="./turnio-config.js?v=enlaces8"></script>
+    <script src="./conexiones.js?v=enlaces8"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=enlaces7"></script>
+    <script src="./app.js?v=enlaces8"></script>
   </body>
 </html>
 
