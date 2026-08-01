@@ -3247,7 +3247,7 @@
         '" data-cx-enc="' + esc(cxCardKey_(f)) + '">' + encLabel + '</button>';
     }
     var rolesHtml = (f._roles || []).map(function (r) {
-      var label = r === 'origen' ? 'Como Origen' : r === 'destino' ? 'Como Destino' : 'Como Enlace';
+      var label = r === 'origen' ? 'Origen' : r === 'destino' ? 'Destino' : 'Enlace';
       return '<span class="cx-role-badge cx-role-' + r + '">' + label + '</span>';
     }).join('');
     function hi(nombre) {
@@ -3260,7 +3260,8 @@
     var badgeEnl = retApi ? retApi.badgeHtml(f.servicioEnlazado, esc) : '';
     var esperaHtml = retApi
       ? retApi.esperaBubbleHtml(espera, f.servicio)
-      : '<div class="cxn-espera cx-t-ok">&#9201;<br><b>' + esc(String(espera)) + '</b><br><small>min</small></div>';
+      : '<div class="cxn-espera cx-t-ok"><span class="cxn-espera-ico" aria-hidden="true">&#9201;</span><b>' +
+        esc(String(espera)) + '</b><small>min</small></div>';
     return '<article class="cx-card' + (esRealizado ? ' cx-card-realizado' : '') +
       (esDestaca ? ' cx-card-destaca' : '') + proxClass + '" data-cx-key="' + esc(cardKey) + '"' +
       ' data-cx-serv="' + esc(f.servicio || '') + '"' +
@@ -3285,7 +3286,8 @@
       '</div></div>' +
       '<div class="cxn-trenes">' +
       '<div class="cxn-tren-blk">' +
-      '<div class="cxn-tren-id cxn-llega">&#128642; ' + esc(f.servicio || '—') + badgeOrig + '</div>' +
+      '<div class="cxn-tren-id cxn-llega"><span class="cxn-tren-num">&#128642; ' + esc(f.servicio || '—') +
+      '</span>' + badgeOrig + '</div>' +
       '<div class="cxn-tren-detail">' +
       '<span class="cxn-station-nm">' + hi(f.origen) + '</span>' +
       '<div class="cxn-times-row">' +
@@ -3295,15 +3297,15 @@
       '</div></div></div>' +
       esperaHtml +
       '<div class="cxn-tren-blk cxn-tren-blk-r">' +
-      '<div class="cxn-tren-id cxn-sale">&#128646; ' + esc(f.servicioEnlazado || '—') + badgeEnl + '</div>' +
+      '<div class="cxn-tren-id cxn-sale"><span class="cxn-tren-num">&#128646; ' + esc(f.servicioEnlazado || '—') +
+      '</span>' + badgeEnl + '</div>' +
       '<div class="cxn-tren-detail cxn-tren-detail-r">' +
+      '<span class="cxn-station-nm cxn-station-nm-r">' + hi(f.destino) + '</span>' +
       '<div class="cxn-times-row cxn-times-row-r">' +
       '<span class="cxn-t cxn-t-hl">' + esc(f.horaSalidaEnlace || '—') + '</span><span class="cxn-t-lbl">sale</span>' +
       '<span class="cxn-arr">&#8594;</span>' +
       '<span class="cxn-t">' + esc(f.horaLlegada || '—') + '</span><span class="cxn-t-lbl">llega</span>' +
-      '</div>' +
-      '<span class="cxn-station-nm cxn-station-nm-r">' + hi(f.destino) + '</span>' +
-      '</div></div></div></article>';
+      '</div></div></div></div></article>';
   }
 
   function refrescarLiveIndCx_() {

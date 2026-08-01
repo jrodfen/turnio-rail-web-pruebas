@@ -105,10 +105,9 @@
     if (!info || !info.encontrado) return '';
     var r = Number(info.retraso);
     if (!isFinite(r)) r = 0;
-    // Renfe usa negativos = adelanto; en tarjeta lo tratamos como puntual.
-    var ret = r <= 0 ? 'Puntual' : '+' + r + ' min';
-    var eq = info.tipo === 'equivalencia' ? ' · ' + info.codigoExcel + '→' + info.codigoJson : '';
-    return ret + eq;
+    var ret = r <= 0 ? 'Puntual' : ('+' + r + '′');
+    // Equivalencia solo en title del badge (en móvil el texto · excel→json desborda).
+    return ret;
   }
 
   function badgeHtml(codigoExcel, escFn) {
@@ -157,7 +156,8 @@
     else if (espera > 30) tClass = 'cx-t-warn';
     var ret = minutos(codigoOrigen);
     if (ret === undefined || ret <= 0) {
-      return '<div class="cxn-espera ' + tClass + '">&#9201;<br><b>' + espera + '</b><br><small>min</small></div>';
+      return '<div class="cxn-espera ' + tClass + '"><span class="cxn-espera-ico" aria-hidden="true">&#9201;</span><b>' +
+        espera + '</b><small>min</small></div>';
     }
     var eReal = espera - ret;
     var col = eReal <= 0 ? '#dc2626' : eReal < 10 ? '#f97316' : eReal < 20 ? '#d97706' : '#16a34a';
@@ -165,10 +165,11 @@
     var txt = eReal <= 0 ? ('⚠ ' + eReal) : String(eReal);
     return '<div class="cxn-espera-wrap">' +
       '<div class="cxn-espera ' + tClass + '" title="Espera planificada: ' + espera + ' min">' +
-      '<small>&#9201;</small><br><b>' + espera + '</b><br><small class="cxn-espera-sub">plan</small></div>' +
+      '<span class="cxn-espera-ico" aria-hidden="true">&#9201;</span><b>' + espera +
+      '</b><small class="cxn-espera-sub">plan</small></div>' +
       '<div class="cxn-espera-real" title="Espera real (+' + ret + ' min retraso)" style="border-color:' + col +
-      ';background:' + bg + ';color:' + col + '"><small>⚡</small><br><b>' + txt +
-      '</b><br><small class="cxn-espera-sub">real</small></div></div>';
+      ';background:' + bg + ';color:' + col + '"><span class="cxn-espera-ico" aria-hidden="true">⚡</span><b>' +
+      txt + '</b><small class="cxn-espera-sub">real</small></div></div>';
   }
 
   function stampMeta_(fuente) {
