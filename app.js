@@ -340,6 +340,8 @@
     var st = pantallasSel || pantallasDefault_();
     var nom = document.getElementById('pantallas-nombre');
     var cod = document.getElementById('pantallas-codigo');
+    var prev = document.getElementById('pantallas-url-preview');
+    var url = pantallasAdifUrl_(st.c, pantallasModo);
     if (nom) nom.textContent = pantallasTitulo_(st.n);
     if (cod) {
       var tags = [];
@@ -347,21 +349,18 @@
       if (st.feve) tags.push('Feve');
       cod.textContent = 'Código ' + st.c + (tags.length ? ' · ' + tags.join(' · ') : '');
     }
+    if (prev) prev.textContent = url.replace(/^https:\/\//, '');
   }
 
-  function cargarIframePantallas_() {
+  function abrirAdifPantallas_() {
     var st = pantallasSel || pantallasDefault_();
-    var iframe = document.getElementById('iframe-pantallas-adif');
-    if (!iframe) return;
-    var url = pantallasAdifUrl_(st.c, pantallasModo);
-    if (iframe.getAttribute('src') !== url) iframe.setAttribute('src', url);
+    window.open(pantallasAdifUrl_(st.c, pantallasModo), '_blank', 'noopener');
   }
 
   function seleccionarEstacionPantallas_(st, opts) {
     opts = opts || {};
     pantallasSel = st;
     pintarSeleccionPantallas_();
-    cargarIframePantallas_();
     var box = document.getElementById('pantallas-resultados');
     var inp = document.getElementById('pantallas-buscar');
     if (box) {
@@ -369,6 +368,7 @@
       box.hidden = true;
     }
     if (inp && !opts.keepQuery) inp.value = '';
+    if (opts.open) abrirAdifPantallas_();
   }
 
   function filtrarEstacionesPantallas_(q) {
@@ -436,11 +436,10 @@
           pantallasSel = found || pantallasDefault_();
         }
         pintarSeleccionPantallas_();
-        cargarIframePantallas_();
       })
       .catch(function (err) {
         toast(String(err.message || err), 'error');
-        cargarIframePantallas_();
+        pintarSeleccionPantallas_();
       });
   }
 
@@ -471,7 +470,7 @@
         if (!btn) return;
         var code = btn.getAttribute('data-code');
         var st = (pantallasEstaciones || []).find(function (x) { return String(x.c) === code; });
-        if (st) seleccionarEstacionPantallas_(st);
+        if (st) seleccionarEstacionPantallas_(st, { open: true });
       });
     }
     document.querySelectorAll('[data-pantalla-modo]').forEach(function (b) {
@@ -480,14 +479,11 @@
         document.querySelectorAll('[data-pantalla-modo]').forEach(function (x) {
           x.classList.toggle('active', x.dataset.pantallaModo === pantallasModo);
         });
-        cargarIframePantallas_();
+        pintarSeleccionPantallas_();
       });
     });
     if (btnAbrir) {
-      btnAbrir.addEventListener('click', function () {
-        var st = pantallasSel || pantallasDefault_();
-        window.open(pantallasAdifUrl_(st.c, pantallasModo), '_blank', 'noopener');
-      });
+      btnAbrir.addEventListener('click', abrirAdifPantallas_);
     }
   }
 

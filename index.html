@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=pantallas-adif1">
+    <link rel="stylesheet" href="./styles.css?v=pantallas-adif2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -255,14 +255,12 @@
               <b id="pantallas-nombre">Sevilla-Santa Justa</b>
               <span id="pantallas-codigo">C&oacute;digo 51003</span>
             </div>
-            <div class="pantallas-seleccion-actions">
-              <button type="button" class="btn primary" id="btn-pantallas-abrir" title="Abrir panel oficial ADIF">Abrir ADIF</button>
-            </div>
           </div>
-          <div class="pantallas-adif-wrap">
-            <iframe id="iframe-pantallas-adif" title="Pantalla estaci&oacute;n ADIF" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allow="clipboard-write; fullscreen"></iframe>
+          <div class="pantallas-launch">
+            <p class="pantallas-launch-lead">ADIF no permite embeber pantallas en TURNIO. Se abren en su web oficial.</p>
+            <button type="button" class="btn primary" id="btn-pantallas-abrir">Abrir pantalla ADIF</button>
+            <p class="pantallas-launch-url" id="pantallas-url-preview" aria-live="polite">info.adif.es/?s=51003&amp;v=dl</p>
           </div>
-          <p class="pantallas-note">Panel oficial ADIF (<code>info.adif.es</code>). Si el navegador bloquea el iframe, usa <b>Abrir ADIF</b>.</p>
         </div>
       </section>
       <section id="screen-trafico" class="screen coming-screen"><h2>Circulaci&oacute;n</h2><p>Estamos trasladando esta pantalla conservando la experiencia de TURNIO.</p><button class="btn primary" type="button" data-go="radar">Abrir Radar</button></section>
@@ -389,7 +387,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=pantallas-adif1"></script>
+    <script src="./app.js?v=pantallas-adif2"></script>
   </body>
 </html>
 
