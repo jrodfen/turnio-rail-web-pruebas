@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=kms1">
+    <link rel="stylesheet" href="./styles.css?v=adif-wms1">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -96,7 +96,7 @@
           <h3>&#128506; Mapa flota</h3>
           <span id="mapa-region-label" class="mapa-region">Renfe en vivo</span>
           <div id="orm-wrapper" class="orm-wrapper">
-            <button type="button" id="btn-toggle-vias" class="mapa-tool" title="Capa ferroviaria">&#128739; V&iacute;as</button>
+            <button type="button" id="btn-toggle-vias" class="mapa-tool" title="Capa OpenRailwayMap">&#128739; V&iacute;as</button>
             <div id="orm-dropdown" class="orm-dropdown">
               <button type="button" class="orm-option selected" data-orm="standard">&#128739; V&iacute;as (infraestructura)<span class="orm-check">&#10003;</span></button>
               <button type="button" class="orm-option" data-orm="maxspeed">&#9889; Velocidades m&aacute;ximas<span class="orm-check">&#10003;</span></button>
@@ -104,6 +104,7 @@
               <button type="button" class="orm-option orm-off" data-orm="off">&#10005; Desactivar<span class="orm-check">&#10003;</span></button>
             </div>
           </div>
+          <button type="button" id="btn-toggle-adif" class="mapa-tool" title="Capa oficial ADIF (IDEADIF WMS). Independiente de ORM." aria-pressed="false">ADIF</button>
           <button type="button" class="mapa-tool primary" id="btn-refrescar-mapa" title="Actualizar flota">&#8635;</button>
         </div>
         <div class="mapa-filtros" id="mapa-filtros" role="group" aria-label="Filtros del mapa">
@@ -410,7 +411,7 @@
     </div>
     <script src="./turnio-config.js"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=kms1"></script>
+    <script src="./app.js?v=adif-wms1"></script>
   </body>
 </html>
 

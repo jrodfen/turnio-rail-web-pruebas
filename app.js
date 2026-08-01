@@ -1988,7 +1988,7 @@
       L.DomEvent.disableClickPropagation(filtros);
     }
 
-    // Capas OpenRailwayMap (como en TURNIO GAS)
+    // Capas OpenRailwayMap (como en TURNIO GAS) — independientes de ADIF.
     window._capasORM = {
       standard: L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', { attribution: '', opacity: 0.75, maxZoom: 19 }),
       maxspeed: L.tileLayer('https://{s}.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png', { attribution: '', opacity: 0.80, maxZoom: 19 }),
@@ -1997,6 +1997,19 @@
     window._ormEstado = 'standard';
     aplicarCapaORM(map, 'standard');
     map.on('zoomend', actualizarBtnORM);
+
+    // Capa oficial ADIF (IDEADIF WMS). Toggle aparte; no sustituye ORM.
+    window._capaAdif = L.tileLayer.wms('https://ideadif.adif.es/services/wms', {
+      layers: 'TN.RailTransportNetwork.RailwayLink',
+      format: 'image/png',
+      transparent: true,
+      version: '1.3.0',
+      opacity: 0.65,
+      attribution: 'ADIF IDEADIF',
+      maxZoom: 19
+    });
+    window._adifActivo = false;
+    actualizarBtnAdif_();
 
     var leyenda = L.control({ position: 'bottomleft' });
     leyenda.onAdd = function () {
@@ -2067,6 +2080,46 @@
     if (!map) return;
     aplicarCapaORM(map, estado);
   }
+
+  function actualizarBtnAdif_() {
+    var btn = document.getElementById('btn-toggle-adif');
+    if (!btn) return;
+    var on = !!window._adifActivo;
+    btn.classList.toggle('activo', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.title = on
+      ? 'Ocultar capa oficial ADIF (IDEADIF). ORM no se ve afectado.'
+      : 'Mostrar capa oficial ADIF (IDEADIF). Independiente de ORM.';
+  }
+
+  function toggleCapaAdif_() {
+    var map = window._mapaLeaflet;
+    var capa = window._capaAdif;
+    if (!map || !capa) {
+      toast('Abre el mapa primero.', 'error');
+      return;
+    }
+    if (window._adifActivo) {
+      if (map.hasLayer(capa)) map.removeLayer(capa);
+      window._adifActivo = false;
+      actualizarBtnAdif_();
+      return;
+    }
+    try {
+      capa.addTo(map);
+      // Mantener marcadores de trenes por encima de la WMS.
+      mapMarkers.forEach(function (m) {
+        if (m && m.bringToFront) m.bringToFront();
+      });
+      window._adifActivo = true;
+      actualizarBtnAdif_();
+    } catch (err) {
+      window._adifActivo = false;
+      actualizarBtnAdif_();
+      toast('No se pudo cargar la capa ADIF.', 'error');
+    }
+  }
+
   function pintarMarcadores(hacerFit) {
     var map = window._mapaLeaflet;
     if (!map) return;
@@ -2690,6 +2743,8 @@
     if (e.key === 'Enter') { e.preventDefault(); ejecutarBusquedaManual(); }
   });
   document.getElementById('btn-toggle-vias').addEventListener('click', toggleOrmDropdown);
+  var btnAdif = document.getElementById('btn-toggle-adif');
+  if (btnAdif) btnAdif.addEventListener('click', toggleCapaAdif_);
   document.querySelectorAll('.orm-option').forEach(function (el) {
     el.addEventListener('click', function (e) {
       e.stopPropagation();
