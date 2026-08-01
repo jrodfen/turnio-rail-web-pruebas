@@ -96,13 +96,17 @@
 
   function minutos(codigo) {
     var info = detalle(codigo);
-    return info.encontrado ? Number(info.retraso || 0) : undefined;
+    if (!info.encontrado) return undefined;
+    var r = Number(info.retraso);
+    return isFinite(r) ? r : 0;
   }
 
   function textoBadge(info) {
     if (!info || !info.encontrado) return '';
-    var r = Number(info.retraso || 0);
-    var ret = r === 0 ? 'Puntual' : '+' + r + ' min';
+    var r = Number(info.retraso);
+    if (!isFinite(r)) r = 0;
+    // Renfe usa negativos = adelanto; en tarjeta lo tratamos como puntual.
+    var ret = r <= 0 ? 'Puntual' : '+' + r + ' min';
     var eq = info.tipo === 'equivalencia' ? ' · ' + info.codigoExcel + '→' + info.codigoJson : '';
     return ret + eq;
   }
@@ -111,12 +115,13 @@
     var esc = typeof escFn === 'function' ? escFn : function (s) { return String(s == null ? '' : s); };
     var info = detalle(codigoExcel);
     if (!info.encontrado) return '';
-    var r = Number(info.retraso || 0);
-    var clases = 'cx-retraso-badge' + (r === 0 ? ' cx-retraso-ok' : '') +
+    var r = Number(info.retraso);
+    if (!isFinite(r)) r = 0;
+    var clases = 'cx-retraso-badge' + (r <= 0 ? ' cx-retraso-ok' : '') +
       (info.tipo === 'equivalencia' ? ' cx-retraso-eq' : '');
     var title = info.tipo === 'equivalencia'
       ? 'Cruce venta/circulación: ' + info.codigoExcel + ' → ' + info.codigoJson
-      : 'Tiempo real TURNIO: ' + info.codigoJson;
+      : 'Tiempo real flota Renfe: ' + info.codigoJson + (r < 0 ? ' (adelanto ' + Math.abs(r) + ' min)' : '');
     return ' <span class="' + clases + '" title="' + esc(title) + '">' + esc(textoBadge(info)) + '</span>';
   }
 
@@ -129,7 +134,8 @@
   function riesgoHtml(fila, escFn) {
     var esc = typeof escFn === 'function' ? escFn : function (s) { return String(s == null ? '' : s); };
     var ret = minutos(fila && fila.servicio);
-    if (ret === undefined || ret <= 0) return '';
+    // Solo demora positiva real; ignorar 0 / adelantos / ruido ±1 del radar.
+    if (ret === undefined || ret < 1) return '';
     var hL = horaAMinutos(fila.horaLlegadaEnlace);
     var hS = horaAMinutos(fila.horaSalidaEnlace);
     if (hL < 0 || hS < 0) return '';
@@ -180,16 +186,28 @@
     return limpiarCod(t && (t.codTren || t.codComercial || t.tren || t.servicio || t.numTren));
   }
 
-  function retrasoDesdeTren_(t) {
-    if (!t) return 0;
-    if (t.retrasoNum != null && t.retrasoNum !== '') return parseInt(t.retrasoNum, 10) || 0;
-    if (t.ultRetraso != null && t.ultRetraso !== '') return parseInt(t.ultRetraso, 10) || 0;
-    if (t.retraso != null && t.retraso !== '') return parseInt(t.retraso, 10) || 0;
-    if (t.delayMin != null && t.delayMin !== '') return parseInt(t.delayMin, 10) || 0;
-    return 0;
+  /** Parsea minutos de demora sin convertir -1 (adelanto) en 0 por el `||`. */
+  function parseRetrasoMin_(v) {
+    if (v == null || v === '') return null;
+    var n = parseInt(v, 10);
+    if (!isFinite(n)) n = Number(v);
+    if (!isFinite(n)) return null;
+    return n;
   }
 
-  /** Sustituye el índice con la flota viva de TURNIO (mapa). */
+  function retrasoDesdeTren_(t) {
+    if (!t) return 0;
+    var n = parseRetrasoMin_(t.retrasoNum);
+    if (n == null) n = parseRetrasoMin_(t.ultRetraso);
+    if (n == null) n = parseRetrasoMin_(t.delayMin);
+    // "retraso" en alertas Radar a veces es texto; solo aceptar numérico puro.
+    if (n == null && t.retraso != null && t.retraso !== '' && isFinite(Number(t.retraso))) {
+      n = parseRetrasoMin_(t.retraso);
+    }
+    return n == null ? 0 : n;
+  }
+
+  /** Sustituye el índice con la flota viva de TURNIO (mapa / Renfe visor). */
   function aplicarDesdeFlota(trenes, fuente) {
     var next = Object.create(null);
     (trenes || []).forEach(function (t) {
@@ -203,15 +221,32 @@
     return estado();
   }
 
-  /** Fusiona demoras del Radar TURNIO (no borra el resto de la flota). */
+  /**
+   * Fusiona demoras del Radar sin pisar la flota Renfe.
+   * El TripUpdate GTFS a menudo redondea ruido de 30–90 s a "+1 min" y
+   * dejaba todas las tarjetas de enlaces en +1 aunque la flota dijera otra cosa.
+   */
   function aplicarDesdeRadar(alertas, fuente) {
     var hubo = false;
     (alertas || []).forEach(function (a) {
       var cod = codDesdeTren_(a);
       if (!cod) return;
-      if (a.retrasoNum == null && a.ultRetraso == null && a.retraso == null) return;
-      data[cod] = retrasoDesdeTren_(a);
-      hubo = true;
+      if (a.retrasoNum == null && a.ultRetraso == null && a.delayMin == null) return;
+      var rRadar = retrasoDesdeTren_(a);
+      if (!Object.prototype.hasOwnProperty.call(data, cod)) {
+        // Solo huecos: tren visto en Radar pero aún no en flota mapa.
+        data[cod] = rRadar;
+        hubo = true;
+        return;
+      }
+      var rPrev = Number(data[cod]);
+      if (!isFinite(rPrev)) rPrev = 0;
+      // Si ya hay flota, solo subir si el Radar aporta claramente más demora
+      // (evita ruido ±1 min del TripUpdate).
+      if (rRadar >= 3 && rRadar > rPrev + 1) {
+        data[cod] = rRadar;
+        hubo = true;
+      }
     });
     if (hubo) {
       stampMeta_(fuente || (meta.fuente ? meta.fuente + '+radar' : 'turnio-radar'));
