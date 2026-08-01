@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se5">
+    <link rel="stylesheet" href="./styles.css?v=cx-se6">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -377,13 +377,17 @@
             </div>
             <div class="cx-ctrl-row">
               <span class="cx-ctrl-label">Estaci&oacute;n</span>
-              <div class="cx-est-row" id="cx-est-btns" role="group" aria-label="Estaciones preferidas"></div>
+              <div class="cx-est-row" id="cx-est-btns" role="group" aria-label="Estaciones"></div>
+            </div>
+            <div class="cx-ctrl-row">
+              <span class="cx-ctrl-label">Otra</span>
+              <input id="cx-est-libre" class="cx-search-input cx-est-libre" type="search" placeholder="Escribe una estaci&oacute;n&hellip;" autocomplete="off" aria-label="Filtrar por estaci&oacute;n">
             </div>
             <div class="cx-ctrl-row" id="cx-rol-row" hidden>
               <span class="cx-ctrl-label">Rol</span>
-              <button type="button" class="cx-filter-btn active" data-cx-rol="todos">Todos</button>
+              <button type="button" class="cx-filter-btn" data-cx-rol="todos">Todos</button>
               <button type="button" class="cx-filter-btn" data-cx-rol="origen">Como Origen</button>
-              <button type="button" class="cx-filter-btn" data-cx-rol="enlace">Como Enlace</button>
+              <button type="button" class="cx-filter-btn active" data-cx-rol="enlace">Como Enlace</button>
               <button type="button" class="cx-filter-btn" data-cx-rol="destino">Como Destino</button>
             </div>
             <div class="cx-ctrl-row cx-ctrl-row--search">
@@ -540,10 +544,10 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx-se5"></script>
-    <script src="./cx-retrasos.js?v=cx-se5"></script>
+    <script src="./conexiones.js?v=cx-se6"></script>
+    <script src="./cx-retrasos.js?v=cx-se6"></script>
     <script src="./mallas-gtfs.js?v=mallas3"></script>
-    <script src="./app.js?v=cx-se5"></script>
+    <script src="./app.js?v=cx-se6"></script>
   </body>
 </html>
 

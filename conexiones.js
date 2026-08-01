@@ -248,7 +248,7 @@
 
   function listar(opts) {
     opts = opts || {};
-    var soloPref = opts.soloPreferidas !== false;
+    var soloPref = opts.soloPreferidas === true;
     var estacion = normalizarTexto_(opts.estacion || '');
     var tren = limpiarNumTren_(opts.tren || '');
     var q = normalizarTexto_(opts.q || '');
@@ -271,8 +271,8 @@
 
     for (var i = 0; i < state.filas.length; i++) {
       var f = Object.assign({}, state.filas[i]);
-      if (soloPref && !f.preferida && !estacion) continue;
       if (tren && f.servicio !== tren && f.servicioEnlazado !== tren) continue;
+
       if (estacion) {
         var enOrig = coincideEst(estacion, f.origen);
         var enEnl = coincideEst(estacion, f.estacionEnlace);
@@ -283,9 +283,14 @@
         if (enEnl) f._roles.push('enlace');
         if (enDest) f._roles.push('destino');
         if (rol !== 'todos' && f._roles.indexOf(rol) < 0) continue;
-      } else if (soloPref && !f.preferida) {
-        continue;
+      } else if (soloPref) {
+        if (!f.preferida) continue;
+        f._roles = ['enlace'];
+        if (rol !== 'todos' && rol !== 'enlace') continue;
+      } else {
+        f._roles = [];
       }
+
       if (turno === 'manana' || turno === 'tarde') {
         var mins = horaAMinutos(f.horaSalidaEnlace);
         if (mins >= 0) {
@@ -314,6 +319,7 @@
 
   function estacionesPreferidasUi() {
     return [
+      { id: '__todas__', label: 'Todas', todas: true },
       { id: '', label: 'Todas preferidas', all: true },
       { id: 'sevilla s.j', label: 'Sevilla SJ' },
       { id: 'cordoba', label: 'Córdoba' },
