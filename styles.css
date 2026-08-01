@@ -392,6 +392,8 @@ body.monitor-mode #screen-mapa{display:none!important}
 .circ-tile span{font-size:11px;color:var(--muted);line-height:1.3;font-weight:600}
 .circ-tile--radar{border-color:rgba(230,0,0,.28);background:linear-gradient(160deg,rgba(230,0,0,.06),var(--bg))}
 .circ-tile--mapa{border-color:rgba(234,88,12,.35);background:linear-gradient(160deg,rgba(234,88,12,.07),var(--bg))}
+.circ-tile--mallas{border-color:rgba(5,150,105,.35);background:linear-gradient(160deg,rgba(5,150,105,.07),var(--bg))}
+.circ-tile--kms{border-color:rgba(15,118,110,.35);background:linear-gradient(160deg,rgba(15,118,110,.07),var(--bg))}
 .circ-tile:active,.circ-link:active{transform:scale(.98)}
 .circ-link{margin:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:12px 10px;font-size:12px;font-weight:800;cursor:pointer;text-align:center;line-height:1.25;min-height:46px}
 @media (max-width:380px){

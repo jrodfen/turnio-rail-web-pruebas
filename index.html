@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se9">
+    <link rel="stylesheet" href="./styles.css?v=cx-se10">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -31,14 +31,8 @@
         <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
         <article class="welcome-card" data-go="avisos"><h3><span>&#128226; Red / avisos</span><button type="button" class="text-btn">Ver avisos</button></h3><div id="home-avisos" class="welcome-muted">Cargando avisos de red...</div></article>
         <div class="cards-grid">
-          <button class="home-card home-card--purple" data-go="radar" type="button"><b>&#128225; Radar de circulaci&oacute;n</b><span>Retrasos e incidencias por regi&oacute;n</span></button>
-          <button class="home-card home-card--green" data-go="mallas" type="button"><b>&#128646; Mallas y horarios</b><span>Salidas, llegadas y d&iacute;as de circulaci&oacute;n</span></button>
-          <button class="home-card home-card--orange" data-go="mapa" type="button"><b>&#128506; Mapa en tiempo real</b><span>Flota Renfe completa (Cercan&iacute;as + LD)</span></button>
-          <button class="home-card home-card--red" data-go="avisos" type="button"><b>&#127758; Red / avisos</b><span>Avisos oficiales de infraestructura Renfe</span></button>
           <button class="home-card home-card--blue" data-go="pantallas" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Busca por c&oacute;digo o nombre &middot; salidas/llegadas ADIF</span></button>
-          <button class="home-card home-card--teal" data-go="kms" type="button"><b>&#128207; Calcular kms</b><span>Distancia entre estaciones comerciales Renfe</span></button>
-          <button class="home-card home-card--conex" data-go="conexiones" type="button"><b>&#128279; Servicios enlazados</b><span>Carga el Excel del d&iacute;a y consulta enlaces</span></button>
-        </div><p class="foot-note">Pruebas externas: esta pantalla se sirve fuera de GAS. La producci&oacute;n actual sigue independiente.</p>
+        </div><p class="foot-note">Circulaci&oacute;n (Radar, mapa, mallas, kms y enlaces) est&aacute; en la pesta&ntilde;a Circulaci&oacute;n. Esta pantalla es de resumen y atajos.</p>
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
@@ -151,7 +145,7 @@
         </div>
       </section>
       <section id="screen-mallas" class="screen">
-        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
         <div id="gtfs-carga" class="mallas-card mallas-card--cuadro">
           <div class="gtfs-carga-ico" aria-hidden="true">&#128646;</div>
           <h3>Sincronizando operativa&hellip;</h3>
@@ -256,7 +250,7 @@
         </div>
       </section>
       <section id="screen-kms" class="screen">
-        <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
+        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
         <div class="kms-card">
           <div class="kms-card-head">
             <h3>&#128207; Calcular kms</h3>
@@ -293,7 +287,7 @@
       </section>
       <section id="screen-trafico" class="screen">
         <h2 class="circ-title">Circulaci&oacute;n</h2>
-        <p class="circ-lead">Radar y mapa en TURNIO, m&aacute;s atajos operativos de Cop&eacute;rnico.</p>
+        <p class="circ-lead">Herramientas TURNIO y atajos operativos de Cop&eacute;rnico.</p>
 
         <div class="circ-group">
           <h3 class="circ-group-title">En TURNIO</h3>
@@ -305,6 +299,14 @@
             <button type="button" class="circ-tile circ-tile--mapa" data-go="mapa">
               <b>&#128506; Mapa</b>
               <span>Flota en vivo</span>
+            </button>
+            <button type="button" class="circ-tile circ-tile--mallas" data-go="mallas">
+              <b>&#128646; Mallas</b>
+              <span>Horarios y d&iacute;as</span>
+            </button>
+            <button type="button" class="circ-tile circ-tile--kms" data-go="kms">
+              <b>&#128207; Kms</b>
+              <span>Distancia entre estaciones</span>
             </button>
             <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
               <b>&#128279; Enlazados</b>
@@ -718,7 +720,7 @@
     <script src="./cx-retrasos.js?v=cx-se9"></script>
     <script src="./cx-encaminar.js?v=cx-se9"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=cx-se9"></script>
+    <script src="./app.js?v=cx-se10"></script>
   </body>
 </html>
 
