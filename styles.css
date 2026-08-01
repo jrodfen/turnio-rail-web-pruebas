@@ -132,33 +132,95 @@ body.monitor-mode #modal-aviso-manual{z-index:31000}
 .mapa-popup-msg{font-size:12px;color:#475569;line-height:1.4;margin-bottom:8px}
 body.monitor-mode #screen-mapa{display:none!important}
 
-/* Vigilante modals */
-.vig-modal{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(3px)}
+/* Vigilante modals — opacos estilo TURNIO (legibles sobre radar/mapa) */
+.vig-modal{
+  position:fixed;inset:0;z-index:40000;
+  display:flex;align-items:center;justify-content:center;
+  padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background:rgba(15,23,42,.92);
+  /* sin backdrop-filter: en algunos móviles deja el modal “fantasma” */
+}
+#screen-mapa:fullscreen .vig-modal,
+#screen-mapa:-webkit-full-screen .vig-modal{
+  z-index:50000;
+}
 .vig-modal[hidden]{display:none!important}
-.vig-modal-card{width:100%;max-width:360px;background:var(--card);border-radius:16px;padding:18px 16px;box-shadow:0 16px 40px rgba(0,0,0,.35);text-align:center}
-.vig-modal-card--red{border-top:6px solid var(--red)}
-.vig-modal-card--amber{border-top:6px solid #f59e0b}
+.vig-modal-card{
+  width:100%;max-width:400px;
+  background:#ffffff;
+  color:#1c2430;
+  border:1px solid #e8edf3;
+  border-radius:18px;
+  padding:20px 18px;
+  box-shadow:0 20px 48px rgba(15,23,42,.45);
+  text-align:center;
+}
+.vig-modal-card--red{
+  border-top:6px solid #d93025;
+  background:linear-gradient(180deg,#fff5f4 0%,#ffffff 42%);
+}
+.vig-modal-card--amber{
+  border-top:6px solid #f59e0b;
+  background:linear-gradient(180deg,#fffbeb 0%,#ffffff 42%);
+}
 .vig-modal-ico{font-size:42px;line-height:1;margin-bottom:8px}
-.vig-modal-card h2{margin:0 0 6px;font-size:20px}
-.vig-modal-card--red h2{color:var(--red)}
-.vig-modal-card--amber h2{color:#b45309}
-.vig-modal-card>p{margin:0 0 12px;color:var(--muted);font-size:13px}
-.vig-modal-list{text-align:left;max-height:220px;overflow:auto;border-radius:10px;padding:10px;margin-bottom:14px}
-.vig-modal-card--red .vig-modal-list{background:rgba(217,48,37,.06);border:1px solid rgba(217,48,37,.25)}
-.vig-modal-card--amber .vig-modal-list{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.35)}
+.vig-modal-card h2{margin:0 0 6px;font-size:20px;color:#1c2430;font-weight:900}
+.vig-modal-card--red h2{color:#b42318}
+.vig-modal-card--amber h2{color:#92400e}
+.vig-modal-card>p{margin:0 0 12px;color:#6f7b8a;font-size:13px;line-height:1.4}
+.vig-modal-list{
+  text-align:left;max-height:min(42vh,260px);overflow:auto;
+  border-radius:12px;padding:10px 12px;margin:0 0 14px;
+  background:#f8fafc;border:1px solid #e8edf3;
+}
+.vig-modal-card--red .vig-modal-list{
+  background:#fff1f0;border-color:#fecaca;
+}
+.vig-modal-card--amber .vig-modal-list{
+  background:#fff7ed;border-color:#fed7aa;
+}
 .vig-modal-actions{display:flex;gap:10px}
-.vig-modal-actions .btn{margin:0;flex:1;padding:12px;text-align:center;text-decoration:none;box-sizing:border-box}
-.vig-btn-red{background:var(--red)!important}
+.vig-modal-actions .btn{margin:0;flex:1;padding:12px;text-align:center;text-decoration:none;box-sizing:border-box;font-weight:800}
+.vig-btn-red{background:#d93025!important;color:#fff!important}
 .vig-btn-amber{background:#f59e0b!important;color:#111!important}
-.vig-item{margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(0,0,0,.12)}
-.vig-item:last-child{margin-bottom:0;border-bottom:0;padding-bottom:0}
-.vig-item-linea{font-weight:800;font-size:13px;color:var(--text)}
-.vig-item-tag{font-weight:900;font-size:15px;margin-top:2px}
-.vig-item--red .vig-item-tag{color:var(--red)}
+.vig-item{
+  margin:0 0 10px;padding:10px 10px 10px;
+  border-radius:10px;background:#ffffff;
+  border:1px solid #e8edf3;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+.vig-item:last-child{margin-bottom:0}
+.vig-item--red{border-color:#fecaca;background:#fffafa}
+.vig-item--amber{border-color:#fed7aa;background:#fffdf7}
+.vig-item-linea{font-weight:800;font-size:13px;color:#1c2430;line-height:1.35}
+.vig-item-tag{font-weight:900;font-size:16px;margin-top:4px}
+.vig-item--red .vig-item-tag{color:#d93025}
 .vig-item--amber .vig-item-tag{color:#b45309}
-.vig-item-lugar{font-size:12px;color:#92400e;margin-top:3px;font-weight:600}
-.vig-item-msg{font-size:12px;font-style:italic;margin-top:4px;color:var(--muted);line-height:1.35}
+.vig-item-lugar{font-size:12px;color:#92400e;margin-top:4px;font-weight:700}
+.vig-item-msg{font-size:12px;font-style:normal;margin-top:6px;color:#6f7b8a;line-height:1.4}
 .vigilante-btn.scanning i{background:#fff!important;box-shadow:0 0 16px #fff!important}
+@media (prefers-color-scheme:dark){
+  .vig-modal{background:rgba(0,0,0,.88)}
+  .vig-modal-card{
+    background:#1e1e1e;color:#f3f4f6;border-color:#374151;
+    box-shadow:0 20px 48px rgba(0,0,0,.65);
+  }
+  .vig-modal-card--red{background:linear-gradient(180deg,#3f1515 0%,#1e1e1e 48%)}
+  .vig-modal-card--amber{background:linear-gradient(180deg,#3b2a0a 0%,#1e1e1e 48%)}
+  .vig-modal-card h2{color:#f3f4f6}
+  .vig-modal-card--red h2{color:#f87171}
+  .vig-modal-card--amber h2{color:#fbbf24}
+  .vig-modal-card>p{color:#9ca3af}
+  .vig-modal-list{background:#161616;border-color:#374151}
+  .vig-modal-card--red .vig-modal-list{background:#2a1515;border-color:#7f1d1d}
+  .vig-modal-card--amber .vig-modal-list{background:#2a210f;border-color:#92400e}
+  .vig-item{background:#252525;border-color:#374151}
+  .vig-item--red{background:#2c1818;border-color:#7f1d1d}
+  .vig-item--amber{background:#2c2414;border-color:#92400e}
+  .vig-item-linea{color:#f3f4f6}
+  .vig-item-msg{color:#9ca3af}
+  .vig-item-lugar{color:#fbbf24}
+}
 
 /* Generar aviso */
 .aviso-modal-card{max-width:420px;text-align:left}
@@ -660,8 +722,19 @@ body.monitor-mode #screen-mapa{display:none!important}
 .avisos-fecha{font-size:11px;color:var(--muted);margin:0 0 4px}
 .avisos-texto{font-size:13px;color:var(--text);line-height:1.5}
 
-/* Popup mapa: marcha + aviso */
+/* Popup mapa: marcha + aviso — fondo opaco estilo TURNIO */
+.leaflet-popup.mapa-popup-wrap .leaflet-popup-content-wrapper{
+  background:#ffffff;
+  color:#1c2430;
+  border-radius:14px;
+  border:1px solid #e8edf3;
+  box-shadow:0 12px 28px rgba(15,23,42,.28);
+  opacity:1;
+}
+.leaflet-popup.mapa-popup-wrap .leaflet-popup-tip{background:#ffffff;opacity:1}
+.leaflet-popup.mapa-popup-wrap .leaflet-popup-content{margin:12px 14px;color:#1c2430}
 .mapa-popup{min-width:210px}
+.mapa-popup-linea{color:#1c2430}
 .mapa-popup-actions{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .mapa-popup-btn--aviso{background:#0f766e}
 .mapa-popup-prox,.mapa-popup-delay{font-size:11px;margin:0 0 6px;color:#334155}

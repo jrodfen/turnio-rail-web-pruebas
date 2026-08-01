@@ -1048,6 +1048,19 @@
     return String((c && (c.linea || c.codTren || c.mensaje)) || '');
   }
 
+  /** Si el mapa está en fullscreen nativo, el modal debe vivir dentro de #screen-mapa. */
+  function montarModalVigilante_(modal) {
+    if (!modal) return;
+    var scr = document.getElementById('screen-mapa');
+    var fs = typeof mapaFullscreenEl_ === 'function' ? mapaFullscreenEl_() : (document.fullscreenElement || null);
+    var host = document.getElementById('vig-modals-host') || document.body;
+    if (scr && fs === scr) {
+      if (modal.parentElement !== scr) scr.appendChild(modal);
+      return;
+    }
+    if (modal.parentElement !== host) host.appendChild(modal);
+  }
+
   function mostrarModalRetrasos(items) {
     var lista = document.getElementById('lista-retrasos-graves');
     var modal = document.getElementById('modal-retraso-grave');
@@ -1058,12 +1071,14 @@
       var etiqueta = c.etiquetaModal != null && c.etiquetaModal !== ''
         ? plainText(c.etiquetaModal)
         : ('+' + Number(c.retrasoNum || 0) + ' min');
+      var lineaTxt = plainText(c.linea || c.codTren || 'Tren');
       return '<div class="vig-item vig-item--red">' +
-        '<div class="vig-item-linea">' + String(c.linea || '') + '</div>' +
+        '<div class="vig-item-linea">' + esc(lineaTxt) + '</div>' +
         '<div class="vig-item-tag">' + esc(etiqueta) + '</div>' +
         '<div class="vig-item-msg">' + esc(plainText(c.mensaje)) + '</div>' +
         '</div>';
     }).join('');
+    montarModalVigilante_(modal);
     modal.hidden = false;
   }
 
@@ -1077,18 +1092,20 @@
       var etiqueta = c.etiquetaModal != null && c.etiquetaModal !== ''
         ? plainText(c.etiquetaModal)
         : 'Parado';
+      var lineaTxt = plainText(c.linea || c.codTren || 'Tren');
       var lugar = c.lugar
         ? ('<div class="vig-item-lugar">📍 ' + esc(plainText(c.lugar)) +
           (c.horaDesde ? (' · desde las <b>' + esc(plainText(c.horaDesde)) + '</b>h') : '') +
           '</div>')
         : '';
       return '<div class="vig-item vig-item--amber">' +
-        '<div class="vig-item-linea">' + String(c.linea || '') + '</div>' +
+        '<div class="vig-item-linea">' + esc(lineaTxt) + '</div>' +
         '<div class="vig-item-tag">' + esc(etiqueta) + '</div>' +
         lugar +
         '<div class="vig-item-msg">' + esc(plainText(c.mensaje)) + '</div>' +
         '</div>';
     }).join('');
+    montarModalVigilante_(modal);
     modal.hidden = false;
   }
 
@@ -1174,20 +1191,28 @@
   function confirmarRetrasos() {
     trenesPendientesConfirmacion.forEach(function (k) { trenesYaAlertados[k] = true; });
     trenesPendientesConfirmacion = [];
-    document.getElementById('modal-retraso-grave').hidden = true;
+    cerrarModalVigilante_('modal-retraso-grave');
   }
   function posponerRetrasos() {
     trenesPendientesConfirmacion = [];
-    document.getElementById('modal-retraso-grave').hidden = true;
+    cerrarModalVigilante_('modal-retraso-grave');
   }
   function confirmarDetenciones() {
     trenesPendientesDetencion.forEach(function (k) { trenesYaAlertados[k] = true; });
     trenesPendientesDetencion = [];
-    document.getElementById('modal-detencion-grave').hidden = true;
+    cerrarModalVigilante_('modal-detencion-grave');
   }
   function posponerDetenciones() {
     trenesPendientesDetencion = [];
-    document.getElementById('modal-detencion-grave').hidden = true;
+    cerrarModalVigilante_('modal-detencion-grave');
+  }
+
+  function cerrarModalVigilante_(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    modal.hidden = true;
+    var host = document.getElementById('vig-modals-host') || document.body;
+    if (modal.parentElement !== host) host.appendChild(modal);
   }
 
   // ========== GENERAR AVISO ==========
@@ -1895,6 +1920,11 @@
       btn.textContent = activo ? '✕' : '⛶';
       btn.title = activo ? 'Salir de pantalla completa' : 'Pantalla completa';
     }
+    // Reubicar pop-outs del Vigilante abiertos (fullscreen nativo del mapa).
+    ['modal-retraso-grave', 'modal-detencion-grave'].forEach(function (id) {
+      var m = document.getElementById(id);
+      if (m && !m.hidden) montarModalVigilante_(m);
+    });
     if (window._mapaLeaflet) {
       setTimeout(function () {
         try { window._mapaLeaflet.invalidateSize(); } catch (_) {}
