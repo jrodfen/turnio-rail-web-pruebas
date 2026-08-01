@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=monitor-aviso1">
+    <link rel="stylesheet" href="./styles.css?v=mallas-dias2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -163,7 +163,6 @@
         <div id="gtfs-busqueda" class="mallas-card mallas-card--cuadro" hidden>
           <div class="gtfs-head-row">
             <h3>&#128269; Buscador de horarios oficial</h3>
-            <button type="button" class="action-btn" data-go="mallas-localizador" title="Localizador por n&uacute;mero">&#128197; D&iacute;as / localizador</button>
           </div>
           <p class="mallas-lead">Consulta por estaci&oacute;n, producto, fecha y hora. Pulsa las tarjetas para ver la hoja de ruta.</p>
           <label class="aviso-label" for="inputEstacionBuscar">Estaci&oacute;n</label>
@@ -194,13 +193,15 @@
               <label class="aviso-label" for="filtroHoraDesde">A partir de</label>
               <input id="filtroHoraDesde" type="time" title="Vac&iacute;o = desde ahora">
             </div>
-            <div>
+            <div class="filters-tren-cell">
               <label class="aviso-label" for="filtroNumTren">N&ordm; tren</label>
-              <input id="filtroNumTren" type="search" inputmode="numeric" placeholder="Ej. 13022" autocomplete="off">
-              <button type="button" class="btn secondary" id="btn-dias-circulacion" style="margin-top:8px;width:100%;padding:10px;">&#128197; D&iacute;as de circulaci&oacute;n</button>
-              <div id="diasCirculacionTren" class="mallas-dias" hidden></div>
+              <div class="tren-dias-row">
+                <input id="filtroNumTren" type="search" inputmode="numeric" placeholder="Ej. 13022" autocomplete="off">
+                <button type="button" class="btn-dias-circulacion" id="btn-dias-circulacion" title="D&iacute;as de circulaci&oacute;n">&#128197; D&iacute;as</button>
+              </div>
             </div>
           </div>
+          <div id="diasCirculacionTren" class="mallas-dias mallas-dias--cuadro" hidden></div>
           <button type="button" class="btn primary" id="btn-generar-cuadro" style="margin-top:8px;">Generar cuadro</button>
           <div class="gtfs-results-meta">
             <span>Pulsa las tarjetas para detalles</span>
