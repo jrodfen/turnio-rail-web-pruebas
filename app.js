@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces5');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces6');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3358,8 +3358,9 @@
     }
   }
   /**
-   * Desde TURNIO (otro dominio) window.open no manda bien la sesión de Copérnico.
-   * Pegar la URL en la barra sí funciona → copiamos el enlace y lo mostramos.
+   * Pegar en la barra funciona; window.open desde TURNIO a menudo no
+   * (Referer cruzado / cookies). Solución: <a> con referrerpolicy=no-referrer
+   * para que la petición se parezca a escribir la URL a mano.
    */
   function urlExcelCombinadosHoy_() {
     return urlCopernicoAtajo_('combinados') || '';
@@ -3374,6 +3375,8 @@
       if (!a) return;
       if (url) {
         a.href = url;
+        a.setAttribute('referrerpolicy', 'no-referrer');
+        a.rel = 'noreferrer';
         a.hidden = false;
       } else {
         a.removeAttribute('href');
@@ -3408,6 +3411,19 @@
       }
     });
   }
+  function abrirUrlSinReferer_(url) {
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noreferrer';
+    a.setAttribute('referrerpolicy', 'no-referrer');
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      if (a.parentNode) a.parentNode.removeChild(a);
+    }, 0);
+  }
   function abrirCopernicoCombinadosHoy_() {
     var url = urlExcelCombinadosHoy_();
     if (!url) {
@@ -3415,16 +3431,15 @@
       return;
     }
     pintarUrlCombinadosUi_(url);
+    try {
+      abrirUrlSinReferer_(url);
+      toast('Abriendo descarga Combinados…', 'success');
+    } catch (err) {
+      /* ignore: usamos copia como respaldo */
+    }
     copiarTextoClipboard_(url).then(function () {
-      toast('Enlace copiado. Pégalo en la barra de una pestaña (Ctrl+L → Ctrl+V → Enter).', 'success');
-    }).catch(function () {
-      var inp = document.getElementById('cx-coper-url') || document.getElementById('cx-coper-url-panel');
-      if (inp) {
-        inp.focus();
-        inp.select();
-      }
-      toast('Copia el enlace del cuadro y pégalo en la barra del navegador.', 'success');
-    });
+      /* Enlace también en portapapeles por si el navegador bloquea la pestaña */
+    }).catch(function () { /* ignore */ });
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
@@ -4234,6 +4249,10 @@
     ['btn-cx-abrir-coper', 'btn-cx-abrir-coper-panel', 'btn-cx-modal-coper'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('click', abrirCopernicoCombinadosHoy_);
+    });
+    ['cx-coper-url', 'cx-coper-url-panel'].forEach(function (id) {
+      var inp = document.getElementById(id);
+      if (inp) inp.addEventListener('focus', function () { inp.select(); });
     });
     function abrirAyudaCx_() {
       var ov = document.getElementById('cx-help-overlay');
