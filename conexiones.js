@@ -272,17 +272,17 @@
     return '';
   }
 
-  /** Listado Copérnico Trenes Combinados del día (GET; red Renfe + sesión). */
+  /** Descarga Excel Trenes Combinados del día (GET excel=E; red Renfe + sesión). */
   function urlCombinadosHoy() {
     var n = new Date();
     var dd = String(n.getDate()).padStart(2, '0');
     var mm = String(n.getMonth() + 1).padStart(2, '0');
     var yyyy = n.getFullYear();
-    var slash = dd + '/' + mm + '/' + yyyy;
+    var fecha = encodeURIComponent(dd + '/' + mm + '/' + yyyy);
     return 'http://copernico.sir.renfe.es/copernico/SrvRenfeSeguimiento'
-      + '?todo=combinados&excel=&codusuario=&hoy=' + slash
+      + '?todo=combinados&excel=E&codusuario=&hoy=' + fecha
       + '&perfil=3&inicio=false&servicio1=&estacion=&orden=4'
-      + '&fechaInicio=' + slash + '&fechaFin=' + slash;
+      + '&fechaInicio=' + fecha + '&fechaFin=' + fecha;
   }
 
   function limpiar() {

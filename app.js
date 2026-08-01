@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces1');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces2');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3350,7 +3350,9 @@
       case 'combinados':
         return (window.TurnioConexiones && window.TurnioConexiones.urlCombinadosHoy)
           ? window.TurnioConexiones.urlCombinadosHoy()
-          : (base + 'SrvRenfeSeguimiento?todo=combinados&excel=&fechaInicio=' + f.slash + '&fechaFin=' + f.slash + '&hoy=' + f.slash + '&orden=4&perfil=3&inicio=false');
+          : (base + 'SrvRenfeSeguimiento?todo=combinados&excel=E&codusuario=&hoy=' + encodeURIComponent(f.slash)
+            + '&perfil=3&inicio=false&servicio1=&estacion=&orden=4&fechaInicio=' + encodeURIComponent(f.slash)
+            + '&fechaFin=' + encodeURIComponent(f.slash));
       default:
         return '';
     }
