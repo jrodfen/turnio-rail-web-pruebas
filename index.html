@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=mallas-hora1">
+    <link rel="stylesheet" href="./styles.css?v=mallas-hora2">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -185,13 +185,15 @@
               <label class="aviso-label" for="filtroProducto">Producto</label>
               <select id="filtroProducto"><option value="">Todos</option></select>
             </div>
-            <div>
+            <div class="filters-fecha-cell">
               <label class="aviso-label" for="filtroFechaServicio">Fecha</label>
               <input id="filtroFechaServicio" type="date">
             </div>
-            <div>
+            <div class="filters-hora-cell">
               <label class="aviso-label" for="filtroHoraDesde">A partir de</label>
-              <input id="filtroHoraDesde" type="time" title="Vac&iacute;o = desde ahora">
+              <div class="filters-input-clip">
+                <input id="filtroHoraDesde" type="time" title="Vac&iacute;o = desde ahora">
+              </div>
             </div>
             <div class="filters-tren-cell">
               <label class="aviso-label" for="filtroNumTren">N&ordm; tren</label>
