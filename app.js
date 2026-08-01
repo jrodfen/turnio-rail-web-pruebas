@@ -2893,6 +2893,7 @@
   function htmlTarjetaConexion_(f, opts) {
     opts = opts || {};
     var highlight = String(opts.estacion || '');
+    var retApi = window.TurnioCxRetrasos;
     var ahora = new Date();
     var ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
     var espera = Number(f.tiempoConexion) || 0;
@@ -2904,9 +2905,6 @@
         if (espera < 0) espera += 24 * 60;
       }
     }
-    var tClass = 'cx-t-ok';
-    if (espera > 60) tClass = 'cx-t-danger';
-    else if (espera > 30) tClass = 'cx-t-warn';
     var v = Number(f.viajeros) || 0;
     var vIcon = v >= 10 ? '👥' : v >= 5 ? '👤' : v > 0 ? '·' : '—';
     var horaEnlaceMin = cxHoraAMinutos_(f.horaSalidaEnlace);
@@ -2934,6 +2932,7 @@
         (v > 15 ? 'Alta ocup.' : '') +
         '</span>'
       : '';
+    var riesgoBadge = (!esRealizado && retApi) ? retApi.riesgoHtml(f, esc) : '';
     var rolesHtml = (f._roles || []).map(function (r) {
       var label = r === 'origen' ? 'Como Origen' : r === 'destino' ? 'Como Destino' : 'Como Enlace';
       return '<span class="cx-role-badge cx-role-' + r + '">' + label + '</span>';
@@ -2944,6 +2943,11 @@
       if (a && b && b.indexOf(a) >= 0) return '<span class="cx-est-highlight">' + esc(nombre) + '</span>';
       return esc(nombre || '—');
     }
+    var badgeOrig = retApi ? retApi.badgeHtml(f.servicio, esc) : '';
+    var badgeEnl = retApi ? retApi.badgeHtml(f.servicioEnlazado, esc) : '';
+    var esperaHtml = retApi
+      ? retApi.esperaBubbleHtml(espera, f.servicio)
+      : '<div class="cxn-espera cx-t-ok">&#9201;<br><b>' + esc(String(espera)) + '</b><br><small>min</small></div>';
     return '<article class="cx-card' + (esRealizado ? ' cx-card-realizado' : '') +
       (esDestaca ? ' cx-card-destaca' : '') + proxClass + '">' +
       (esRealizado ? '<span class="cx-realizado-badge">Realizado</span>' : '') +
@@ -2951,13 +2955,13 @@
       '<div class="cxn-hora">' + esc(f.horaSalidaEnlace || '—') + '</div>' +
       '<div class="cxn-top-mid">' +
       '<div class="cxn-estacion">' + esc(f.estacionEnlace || 'Enlace') + '</div>' +
-      '<div class="cxn-badges">' + proxBadge + destacaBadge + rolesHtml + '</div>' +
+      '<div class="cxn-badges">' + proxBadge + destacaBadge + riesgoBadge + rolesHtml + '</div>' +
       '</div>' +
       '<div class="cxn-top-right"><span class="cxn-viajeros">' + vIcon + ' ' + v + ' viaj.</span></div>' +
       '</div>' +
       '<div class="cxn-trenes">' +
       '<div class="cxn-tren-blk">' +
-      '<div class="cxn-tren-id cxn-llega">&#128642; ' + esc(f.servicio || '—') + '</div>' +
+      '<div class="cxn-tren-id cxn-llega">&#128642; ' + esc(f.servicio || '—') + badgeOrig + '</div>' +
       '<div class="cxn-tren-detail">' +
       '<span class="cxn-station-nm">' + hi(f.origen) + '</span>' +
       '<div class="cxn-times-row">' +
@@ -2965,9 +2969,9 @@
       '<span class="cxn-arr">&#8594;</span>' +
       '<span class="cxn-t cxn-t-hl">' + esc(f.horaLlegadaEnlace || '—') + '</span><span class="cxn-t-lbl">llega</span>' +
       '</div></div></div>' +
-      '<div class="cxn-espera ' + tClass + '">&#9201;<br><b>' + esc(String(espera)) + '</b><br><small>min</small></div>' +
+      esperaHtml +
       '<div class="cxn-tren-blk cxn-tren-blk-r">' +
-      '<div class="cxn-tren-id cxn-sale">&#128646; ' + esc(f.servicioEnlazado || '—') + '</div>' +
+      '<div class="cxn-tren-id cxn-sale">&#128646; ' + esc(f.servicioEnlazado || '—') + badgeEnl + '</div>' +
       '<div class="cxn-tren-detail cxn-tren-detail-r">' +
       '<div class="cxn-times-row cxn-times-row-r">' +
       '<span class="cxn-t cxn-t-hl">' + esc(f.horaSalidaEnlace || '—') + '</span><span class="cxn-t-lbl">sale</span>' +
@@ -2976,6 +2980,18 @@
       '</div>' +
       '<span class="cxn-station-nm cxn-station-nm-r">' + hi(f.destino) + '</span>' +
       '</div></div></div></article>';
+  }
+
+  function refrescarLiveIndCx_() {
+    var ind = document.getElementById('cx-live-ind');
+    var api = window.TurnioCxRetrasos;
+    if (!ind || !api) return;
+    var st = api.estado();
+    ind.textContent = st.label;
+    ind.classList.remove('ok', 'err', 'loading');
+    if (st.cargado) ind.classList.add('ok');
+    else if (st.error) ind.classList.add('err');
+    else ind.classList.add('loading');
   }
 
   function refrescarUiConexiones_() {
@@ -2994,6 +3010,22 @@
       var meta = document.getElementById(id);
       if (meta) meta.textContent = txt;
     });
+    [
+      ['cx-upload-circ', 'btn-cx-cargar', 'btn-cx-limpiar'],
+      ['cx-upload-panel', 'btn-cx-cargar-panel', 'btn-cx-limpiar-panel']
+    ].forEach(function (ids) {
+      var row = document.getElementById(ids[0]);
+      var loadBtn = document.getElementById(ids[1]);
+      var clearBtn = document.getElementById(ids[2]);
+      if (row) row.classList.toggle('cx-upload-row--ready', !!st.cargado);
+      if (clearBtn) clearBtn.hidden = !st.cargado;
+      if (loadBtn) {
+        var idle = loadBtn.getAttribute('data-cx-label-idle') || 'Cargar Excel';
+        var ready = loadBtn.getAttribute('data-cx-label-ready') || 'Recargar';
+        loadBtn.textContent = st.cargado ? ready : idle;
+      }
+    });
+    refrescarLiveIndCx_();
   }
 
   function pintarBotonesEstacionCx_() {
@@ -3240,6 +3272,25 @@
     }
     refrescarUiConexiones_();
     pintarBotonesEstacionCx_();
+    if (window.TurnioCxRetrasos) {
+      window.TurnioCxRetrasos.onChange(function () {
+        refrescarLiveIndCx_();
+        var scr = document.getElementById('screen-conexiones');
+        if (scr && scr.classList.contains('active')) pintarPanelConexiones_();
+        var modal = document.getElementById('modal-conexiones');
+        if (modal && !modal.hidden && cxTrenModal_) abrirModalConexiones_(cxTrenModal_);
+      });
+      window.TurnioCxRetrasos.startPolling(5 * 60 * 1000);
+      var liveInd = document.getElementById('cx-live-ind');
+      if (liveInd) {
+        liveInd.addEventListener('click', function () {
+          liveInd.classList.remove('ok', 'err');
+          liveInd.classList.add('loading');
+          liveInd.textContent = 'Recargando tiempo real…';
+          window.TurnioCxRetrasos.cargar();
+        });
+      }
+    }
   })();
   // Los popups de Leaflet a veces no delegan bien solo en #mapa-container.
   document.addEventListener('click', function (e) {
