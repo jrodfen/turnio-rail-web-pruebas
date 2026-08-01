@@ -86,6 +86,16 @@
       return REGION_LABELS[r] || r;
     }).join(' + ');
   }
+  function etiquetaAmbitoRadarHome_() {
+    var regs = obtenerRegionesRadar();
+    if (regs.indexOf('espana') >= 0) return 'toda España';
+    return etiquetaRegiones_(regs) || 'Andalucía';
+  }
+  function saludoBienvenida_(nombre) {
+    var h = new Date().getHours();
+    var saludo = h < 12 ? 'Buenos días' : (h < 20 ? 'Buenas tardes' : 'Buenas noches');
+    return saludo + ', ' + (nombre || 'Usuario');
+  }
   function sincronizarSelectRegionHidden_() {
     var sel = document.getElementById('region');
     if (!sel) return;
@@ -732,7 +742,11 @@
     var nombre = (persona && persona.nombre) || 'Usuario';
     var email = (persona && persona.email) || document.getElementById('email').value || '';
     sessionEmail = String(email || '').trim().toLowerCase();
-    document.getElementById('welcome-name').textContent = 'Hola, ' + nombre + '.';
+    document.getElementById('welcome-name').textContent = saludoBienvenida_(nombre);
+    var welcomeSub = document.getElementById('welcome-sub');
+    if (welcomeSub) {
+      welcomeSub.textContent = 'Bienvenido a TURNIO. Aquí tienes un primer vistazo al Radar y a los avisos de red.';
+    }
     document.getElementById('user-name').textContent = nombre;
     var emailEl = document.getElementById('user-email');
     emailEl.textContent = email;
@@ -1519,18 +1533,26 @@
     var total = radar[0] && Number(radar[0].totalActivos);
     var incid = radar[0] && Number(radar[0].totalIncidencias);
     var home = document.getElementById('home-radar');
+    var ambito = etiquetaAmbitoRadarHome_();
     meta.textContent = 'Última carga: ' + new Date().toLocaleTimeString('es-ES', {
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
     if (!radar.length || (radar.length === 1 && /LIMPIA/i.test(String(radar[0].tipo || '')))) {
       var msg = radar[0] && radar[0].mensaje || 'Red operando con normalidad.';
       list.innerHTML = '<div class="empty clean">' + esc(msg) + '</div>';
-      home.textContent = msg;
+      if (home) {
+        home.innerHTML = esc(msg) +
+          ' <span class="home-radar-ambito">· Datos de <strong>' + esc(ambito) + '</strong></span>';
+      }
       return;
     }
-    home.innerHTML = '<b>' + esc(String(isFinite(total) ? total : radar.length)) +
-      ' trenes analizados</b> &middot; ' +
-      esc(String(isFinite(incid) ? incid : radar.length)) + ' incidencias';
+    var nTrenes = isFinite(total) ? total : radar.length;
+    var nIncid = isFinite(incid) ? incid : radar.length;
+    if (home) {
+      home.innerHTML = '<b>' + esc(String(nTrenes)) + ' trenes analizados</b> &middot; ' +
+        esc(String(nIncid)) + ' incidencia' + (Number(nIncid) === 1 ? '' : 's') +
+        ' en <strong>' + esc(ambito) + '</strong>';
+    }
     var head = isFinite(total)
       ? '<div class="summary-chips"><span>&#128642; ' + total + ' trenes</span><span class="incident">&#9888; ' +
         (isFinite(incid) ? incid : radar.length) + ' incidencias</span></div>'

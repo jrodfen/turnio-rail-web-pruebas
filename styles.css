@@ -215,8 +215,19 @@ body.monitor-mode #screen-mapa{display:none!important}
 .circ-grid--turnio{grid-template-columns:1fr 1fr}
 .circ-tile--conex{grid-column:1/-1;min-height:64px;flex-direction:row;align-items:center;justify-content:space-between;border-color:rgba(5,150,105,.35);background:linear-gradient(160deg,rgba(5,150,105,.08),var(--bg))}
 .circ-tile--conex span{text-align:right}
-.home-card--conex{border-color:rgba(5,150,105,.35);background:linear-gradient(160deg,rgba(5,150,105,.07),var(--card))}
-.home-card--conex b{color:#047857}
+.home-welcome{text-align:left;margin-bottom:14px}
+.home-welcome-kicker{margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary-dark);opacity:.85}
+.home-welcome h2{margin:0 0 6px;font-size:24px;letter-spacing:-.02em}
+.home-welcome #welcome-sub{margin:0;font-size:14px;line-height:1.45;color:var(--muted)}
+.home-glance{display:flex;flex-direction:column;gap:10px;margin:0 0 16px}
+.home-glance-title{margin:0 0 2px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.home-glance-card{margin:0;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
+.home-glance-card:hover{box-shadow:0 8px 24px rgba(21,34,50,.1)}
+.home-glance-card:active{transform:scale(.99)}
+.home-radar-ambito{font-weight:600;color:var(--muted)}
+.home-radar-ambito strong{color:var(--primary-dark);font-weight:800}
+.home-shortcuts{margin:0 0 10px}
+.home-card--solo{width:100%;grid-column:1/-1}
 .cx-panel{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:4px solid #059669}
 .cx-panel--se{padding:12px 12px 20px}
 .cx-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px}

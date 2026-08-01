@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=cx-se10">
+    <link rel="stylesheet" href="./styles.css?v=cx-se11">
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -27,12 +27,32 @@
         </div>
       </header>
       <section id="screen-home" class="screen active">
-        <div class="welcome-hero"><h2 id="welcome-name">Hola</h2><p>Resumen vivo para empezar el d&iacute;a. Los datos se refrescan desde TURNIO.</p></div>
-        <article class="welcome-card radar-summary" data-go="radar"><h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Radar</button></h3><div id="home-radar" class="welcome-muted">Cargando Radar...</div></article>
-        <article class="welcome-card" data-go="avisos"><h3><span>&#128226; Red / avisos</span><button type="button" class="text-btn">Ver avisos</button></h3><div id="home-avisos" class="welcome-muted">Cargando avisos de red...</div></article>
-        <div class="cards-grid">
-          <button class="home-card home-card--blue" data-go="pantallas" type="button"><b>&#128421; Pantallas en estaci&oacute;n</b><span>Busca por c&oacute;digo o nombre &middot; salidas/llegadas ADIF</span></button>
-        </div><p class="foot-note">Circulaci&oacute;n (Radar, mapa, mallas, kms y enlaces) est&aacute; en la pesta&ntilde;a Circulaci&oacute;n. Esta pantalla es de resumen y atajos.</p>
+        <div class="welcome-hero home-welcome">
+          <p class="home-welcome-kicker">TURNIO RAIL &middot; pruebas</p>
+          <h2 id="welcome-name">Hola</h2>
+          <p id="welcome-sub">Bienvenido. Aqu&iacute; tienes un primer vistazo al Radar y a los avisos de red.</p>
+        </div>
+
+        <div class="home-glance">
+          <h3 class="home-glance-title">Primer vistazo</h3>
+          <article class="welcome-card radar-summary home-glance-card" data-go="radar" role="button" tabindex="0">
+            <h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Abrir Radar</button></h3>
+            <div id="home-radar" class="welcome-muted">Cargando Radar&hellip;</div>
+          </article>
+          <article class="welcome-card home-glance-card" data-go="avisos" role="button" tabindex="0">
+            <h3><span>&#128226; Red / avisos</span><button type="button" class="text-btn">Ver avisos</button></h3>
+            <div id="home-avisos" class="welcome-muted">Cargando avisos de red&hellip;</div>
+          </article>
+        </div>
+
+        <div class="home-shortcuts">
+          <h3 class="home-glance-title">Atajo</h3>
+          <button class="home-card home-card--blue home-card--solo" data-go="pantallas" type="button">
+            <b>&#128421; Pantallas en estaci&oacute;n</b>
+            <span>Busca por c&oacute;digo o nombre &middot; salidas/llegadas ADIF</span>
+          </button>
+        </div>
+        <p class="foot-note">Radar, mapa, mallas, kms y enlaces est&aacute;n en la pesta&ntilde;a Circulaci&oacute;n.</p>
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
@@ -716,11 +736,11 @@
       </div>
     </div>
     <script src="./turnio-config.js"></script>
-    <script src="./conexiones.js?v=cx-se9"></script>
-    <script src="./cx-retrasos.js?v=cx-se9"></script>
-    <script src="./cx-encaminar.js?v=cx-se9"></script>
+    <script src="./conexiones.js?v=cx-se11"></script>
+    <script src="./cx-retrasos.js?v=cx-se11"></script>
+    <script src="./cx-encaminar.js?v=cx-se11"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=cx-se10"></script>
+    <script src="./app.js?v=cx-se11"></script>
   </body>
 </html>
 
