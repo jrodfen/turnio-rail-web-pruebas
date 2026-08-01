@@ -18,6 +18,10 @@
   var mode = 'TODOS';
   var radar = [];
   var sessionEmail = '';
+  // El Worker entrega este perfil tras validar Supabase. Nunca se toma el rol
+  // de un dato que haya enviado el navegador por su cuenta.
+  var sessionProfile = { role_code: 'LECTURA', can_write: false };
+  var puedeEscribir = false;
   var cacheClavero = [];
   var cargandoClavero = false;
   var PREFIJO_AVISO_DEFAULT = 'CG SP Andalucía';
@@ -226,6 +230,44 @@
       text = el.textContent || el.innerText || '';
     }
     return text.replace(/\s+/g, ' ').trim();
+  }
+  function perfilSesion_(persona) {
+    var p = persona || {};
+    var role = String(p.role_code || p.roleCode || p.rol || 'LECTURA').toUpperCase();
+    if (['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].indexOf(role) < 0) role = 'LECTURA';
+    return {
+      role_code: role,
+      can_write: p.can_write === true || p.canWrite === true || role === 'ADMIN' || role === 'CGO',
+      active: p.active !== false,
+      expires_at: p.expires_at || p.expiresAt || '',
+      display_name: p.display_name || p.displayName || p.nombre || ''
+    };
+  }
+  function textoPermisoPerfil_(perfil) {
+    if (perfil.can_write) return 'Permiso operativo: puedes generar avisos y usar el Vigilante.';
+    if (perfil.role_code === 'INVITADO') return 'Modo invitado: consulta de datos. No puedes generar avisos ni usar el Vigilante.';
+    return 'Modo lectura: puedes consultar datos, sin generar avisos ni usar el Vigilante.';
+  }
+  function aplicarPermisosPerfil_(persona) {
+    sessionProfile = perfilSesion_(persona);
+    puedeEscribir = !!sessionProfile.can_write;
+    document.documentElement.classList.toggle('turnio-solo-lectura', !puedeEscribir);
+    document.querySelectorAll('[data-requiere-escritura]').forEach(function (el) {
+      el.hidden = !puedeEscribir;
+      el.disabled = !puedeEscribir;
+    });
+    var roleText = 'Rol: ' + sessionProfile.role_code;
+    var badge = document.getElementById('user-role');
+    if (badge) { badge.textContent = roleText; badge.hidden = false; }
+    var profileRole = document.getElementById('profile-role');
+    if (profileRole) profileRole.textContent = roleText;
+    var profilePermissions = document.getElementById('profile-permissions');
+    if (profilePermissions) profilePermissions.textContent = textoPermisoPerfil_(sessionProfile);
+  }
+  function exigirEscritura_(accion) {
+    if (puedeEscribir) return true;
+    toast((accion || 'Esta acción') + ' no está disponible con tu rol de ' + sessionProfile.role_code + '.', 'error');
+    return false;
   }
   function clientId() {
     var id = localStorage.getItem(clientKey) || '';
@@ -771,6 +813,7 @@
     nav.hidden = false;
     var nombre = (persona && persona.nombre) || 'Usuario';
     var email = (persona && persona.email) || document.getElementById('email').value || '';
+    aplicarPermisosPerfil_(persona);
     sessionEmail = String(email || '').trim().toLowerCase();
     document.getElementById('welcome-name').textContent = saludoBienvenida_(nombre);
     var welcomeSub = document.getElementById('welcome-sub');
@@ -784,8 +827,13 @@
     var userBox = emailEl.parentElement;
     if (userBox) userBox.title = email ? (nombre + ' · ' + email) : nombre;
     document.getElementById('profile-email').textContent = email;
+    var profileName = document.getElementById('profile-name');
+    if (profileName) profileName.textContent = nombre;
     loadRadar();
-    arrancarVigilanteDesdeCuadrante();
+    // Un perfil de consulta no puede arrancar un Vigilante aunque el
+    // cuadrante heredado de GAS estuviera configurado para activarlo.
+    if (puedeEscribir) arrancarVigilanteDesdeCuadrante();
+    else setVigilanteState(false, true);
     gestionarAutoRadar();
     refrescarAvisosRed();
     // Precarga flota del mapa en segundo plano (no mallas: demasiado pesado).
@@ -1057,6 +1105,7 @@
   }
 
   function toggleVigilante() {
+    if (!exigirEscritura_('El Vigilante')) return;
     setVigilanteState(!vigilanteActivo);
   }
 
@@ -1299,6 +1348,7 @@
     });
   }
   function abrirModalAviso() {
+    if (!exigirEscritura_('Generar avisos')) return;
     sincronizarFirmaModal();
     document.getElementById('modal-aviso-cg').hidden = false;
     setTimeout(function () {
@@ -1423,6 +1473,7 @@
     }).catch(function () {});
   }
   function abrirAvisoDesdeAlerta(alerta) {
+    if (!exigirEscritura_('Generar avisos')) return;
     if (!alerta) { toast('No hay datos de la alerta.'); return; }
     if (!cacheClavero.length) cargarClavero();
     var id = parseIdentidadAlerta(alerta);
@@ -1506,6 +1557,7 @@
     document.getElementById('cg-buscador').focus();
   }
   function copiarAviso() {
+    if (!exigirEscritura_('Copiar avisos')) return;
     var texto = document.getElementById('cg-mensaje').value;
     if (!texto.trim()) { toast('No hay aviso que copiar.', 'error'); return; }
     function ok() {
@@ -1529,6 +1581,7 @@
     document.body.removeChild(ta);
   }
   function abrirAvisoManual() {
+    if (!exigirEscritura_('Generar avisos')) return;
     document.getElementById('input-tren-manual').value = '';
     document.getElementById('modal-aviso-manual').hidden = false;
     setTimeout(function () {
@@ -1539,6 +1592,7 @@
     document.getElementById('modal-aviso-manual').hidden = true;
   }
   async function ejecutarBusquedaManual() {
+    if (!exigirEscritura_('Generar avisos')) return;
     var input = document.getElementById('input-tren-manual');
     var btn = document.getElementById('btn-buscar-tren-manual');
     var num = String(input.value || '').trim().replace(/^0+/, '');
@@ -1631,7 +1685,9 @@
         (window.TurnioConexiones && window.TurnioConexiones.tieneEnlaces(tren)
           ? '<button class="cx-btn" type="button" data-cx-tren="' + esc(tren) + '" title="Ver servicios enlazados">&#128279; Enlace</button>'
           : '') +
-        '<button class="generate" type="button" data-aviso-tren="' + esc(tren) + '" data-aviso-trip="' + esc(trip) + '">&#128172; Generar Aviso</button>' +
+        (puedeEscribir
+          ? '<button class="generate" type="button" data-aviso-tren="' + esc(tren) + '" data-aviso-trip="' + esc(trip) + '">&#128172; Generar Aviso</button>'
+          : '') +
         '</div></div>' +
         '<div class="marcha-panel" hidden></div></article>';
     }).join('');
@@ -2502,9 +2558,11 @@
       '</div>' + prox +
       '<div class="mapa-popup-delay">⏱ ' + retrasoHtml + '</div>' +
       '<div class="mapa-popup-actions">' +
-      '<button class="mapa-popup-btn mapa-popup-btn--aviso" type="button" data-aviso-mapa-tren="' +
-        esc(cod) + '" data-aviso-mapa-trip="' + esc(String(ft.tripId || '')) +
-        '">💬 Generar aviso</button></div>';
+      (puedeEscribir
+        ? '<button class="mapa-popup-btn mapa-popup-btn--aviso" type="button" data-aviso-mapa-tren="' +
+          esc(cod) + '" data-aviso-mapa-trip="' + esc(String(ft.tripId || '')) +
+          '">💬 Generar aviso</button>'
+        : '') + '</div>';
   }
 
   async function marchaDesdePopup(tren, trip) {
@@ -2613,9 +2671,11 @@
       '<div class="mapa-popup-actions">' +
       '<button class="mapa-popup-btn" type="button" data-marcha-tren="' + esc(String(a.codTren)) +
         '" data-marcha-trip="' + esc(String(a.tripId || '')) + '">📡 Marcha</button>' +
-      '<button class="mapa-popup-btn mapa-popup-btn--aviso" type="button" data-aviso-mapa-tren="' +
-        esc(String(a.codTren)) + '" data-aviso-mapa-trip="' + esc(String(a.tripId || '')) +
-        '">💬 Generar aviso</button>' +
+      (puedeEscribir
+        ? '<button class="mapa-popup-btn mapa-popup-btn--aviso" type="button" data-aviso-mapa-tren="' +
+          esc(String(a.codTren)) + '" data-aviso-mapa-trip="' + esc(String(a.tripId || '')) +
+          '">💬 Generar aviso</button>'
+        : '') +
       '</div></div>';
   }
 
@@ -2659,6 +2719,7 @@
   }
 
   async function avisoDesdeMapa(tren, trip) {
+    if (!exigirEscritura_('Generar avisos')) return;
     var ft = encontrarTrenFlota_(tren) || {};
     var alertaRadar = encontrarAlertaAviso(tren, trip);
     if (alertaRadar) {

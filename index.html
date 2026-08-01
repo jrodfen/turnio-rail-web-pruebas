@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=health1">
+    <link rel="stylesheet" href="./styles.css?v=roles1">
+    <style>
+      .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
+      .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
+      .turnio-solo-lectura [data-requiere-escritura]{display:none!important}
+    </style>
   </head>
   <body>
     <section id="login-shell" class="login-shell">
@@ -34,6 +39,7 @@
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
             <span id="user-email" class="top-user-email"></span>
+            <span id="user-role" class="top-user-role" hidden></span>
           </div>
         </div>
       </header>
@@ -80,7 +86,7 @@
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
         <div class="radar-top-row">
           <button class="back" type="button" data-go="home">&#11013; Volver</button>
-          <button type="button" id="btn-vigilante" class="vigilante-btn" aria-pressed="false" title="Activar o desactivar el Vigilante">
+          <button type="button" id="btn-vigilante" class="vigilante-btn" aria-pressed="false" title="Activar o desactivar el Vigilante" data-requiere-escritura>
             <i id="led-vigilante" aria-hidden="true"></i>
             <span id="txt-vigilante">VIGILANTE: OFF</span>
           </button>
@@ -121,7 +127,7 @@
             <button class="filter" data-mode="LD" type="button">&#128644; MD/LD</button>
             <button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button>
           </div>
-          <button type="button" class="manual" id="radar-manual">&#128221; Redactar Aviso Manual (Tren no detectado)</button>
+          <button type="button" class="manual" id="radar-manual" data-requiere-escritura>&#128221; Redactar Aviso Manual (Tren no detectado)</button>
           <label class="search" id="radar-search-box"><span>&#128269;</span><input id="search" type="search" placeholder="Buscar tren, estaci&oacute;n, retraso..." autocomplete="off"></label>
           <div id="radar-meta" class="last-update">&Uacute;ltima carga: --:--:--</div>
           <div id="radar-list" class="radar-list" aria-live="polite"></div>
@@ -489,7 +495,14 @@
           </span>
         </button>
       </section>
-      <section id="screen-perfil" class="screen coming-screen"><h2>Cuenta</h2><p id="profile-email"></p><p>Tu sesi&oacute;n externa est&aacute; protegida y es independiente de la aplicaci&oacute;n en GAS.</p></section>
+      <section id="screen-perfil" class="screen coming-screen">
+        <h2>Cuenta</h2>
+        <p id="profile-name"></p>
+        <p id="profile-email"></p>
+        <p id="profile-role" class="profile-role"></p>
+        <p id="profile-permissions" class="welcome-muted"></p>
+        <p>Tu sesi&oacute;n externa est&aacute; protegida y es independiente de la aplicaci&oacute;n en GAS.</p>
+      </section>
     </main>
     <nav id="bottom-nav" class="fixed-nav" hidden>
       <button class="nav-item active" data-go="home" type="button"><span>&#127968;</span>Inicio</button>
@@ -782,7 +795,7 @@
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=health1"></script>
+    <script src="./app.js?v=roles1"></script>
   </body>
 </html>
 
