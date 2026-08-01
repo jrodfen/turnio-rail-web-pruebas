@@ -7,7 +7,7 @@
   var list = document.getElementById('radar-list');
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
-  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces13');
+  var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces14');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3411,51 +3411,6 @@
       }
     });
   }
-  function htmlAyudanteCombinados_(url) {
-    var safe = String(url).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-    return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-      '<meta name="referrer" content="no-referrer">' +
-      '<title>TrenesCombinados</title>' +
-      '<style>body{font-family:Segoe UI,sans-serif;padding:28px;max-width:560px;margin:auto;line-height:1.45}' +
-      'a.btn{display:inline-block;margin:12px 0;padding:12px 18px;background:#0b57d0;color:#fff;' +
-      'text-decoration:none;border-radius:8px;font-weight:700}</style></head><body>' +
-      '<h1>Trenes Combinados</h1>' +
-      '<p id="e">Descargando Excel…</p>' +
-      '<p><a class="btn" id="go" href="' + safe + '" download="TrenesCombinados.xls" ' +
-      'referrerpolicy="no-referrer" rel="noreferrer">Descargar TrenesCombinados.xls</a></p>' +
-      '<script>(function(){var u=' + JSON.stringify(url) + ';' +
-      'function pedir(){var o=document.getElementById("f");if(o&&o.parentNode)o.parentNode.removeChild(o);' +
-      'var f=document.createElement("iframe");f.id="f";f.style.cssText="display:none";' +
-      'f.setAttribute("referrerpolicy","no-referrer");f.src=u;document.body.appendChild(f);' +
-      'var a=document.createElement("a");a.href=u;a.setAttribute("download","TrenesCombinados.xls");' +
-      'a.rel="noreferrer";a.setAttribute("referrerpolicy","no-referrer");' +
-      'a.style.display="none";document.body.appendChild(a);a.click();' +
-      'if(a.parentNode)a.parentNode.removeChild(a);' +
-      'var e=document.getElementById("e");if(e)e.textContent="Revisa Descargas: TrenesCombinados.xls";}' +
-      'document.getElementById("go").addEventListener("click",function(ev){ev.preventDefault();pedir();});' +
-      'pedir();})()<\\/script></body></html>';
-  }
-  /** Mismo truco que funcionaba: ayudante local, pero guardado como .xls (antes .htm). */
-  function descargarAyudanteCombinadosXls_(url) {
-    try {
-      var blob = new Blob([htmlAyudanteCombinados_(url)], { type: 'text/html;charset=utf-8' });
-      var blobUrl = URL.createObjectURL(blob);
-      try { window.open(blobUrl, '_blank'); } catch (errOpen) { /* ignore */ }
-      var a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = 'TrenesCombinados.xls';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () {
-        if (a.parentNode) a.parentNode.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-      }, 2500);
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
   function abrirCopernicoCombinadosHoy_() {
     var url = urlExcelCombinadosHoy_();
     if (!url) {
@@ -3465,18 +3420,16 @@
     pintarUrlCombinadosUi_(url);
     copiarTextoClipboard_(url).catch(function () { /* ignore */ });
 
-    if (descargarAyudanteCombinadosXls_(url)) {
-      toast('TrenesCombinados.xls listo en Descargas (y pestaña de descarga).', 'success');
+    /* Nunca descargar HTML disfrazado de .xls (Excel lo marca como dañado).
+       Solo abrir la página TURNIO, que pide el fichero real a Copérnico. */
+    var helper = './combinados-hoy.html?v=' + encodeURIComponent(FRONT_BUILD);
+    var w = null;
+    try { w = window.open(helper, '_blank'); } catch (err) { w = null; }
+    if (w) {
+      toast('Pestaña Combinados abierta: espera la descarga del Excel.', 'success');
       return;
     }
-    var helper = './combinados-hoy.html?v=' + encodeURIComponent(FRONT_BUILD);
-    try {
-      if (window.open(helper, '_blank')) {
-        toast('Abre la pestaña de Combinados para el .xls.', 'success');
-        return;
-      }
-    } catch (err) { /* ignore */ }
-    toast('Enlace copiado. Pégalo en la barra: Ctrl+L → Ctrl+V → Enter.', 'success');
+    toast('Permite ventanas emergentes, o pega el enlace: Ctrl+L → Ctrl+V → Enter.', 'success');
   }
   var circCoper = document.getElementById('circ-coper-links');
   if (circCoper) {
