@@ -434,6 +434,256 @@
     }
   }
 
+  // ========== CALCULAR KMS (datos Anthony) ==========
+  var kmsData = null;
+  var kmsCarga = null;
+  var kmsIndex = null;
+  var kmsCities = [];
+  var kmsTramos = [];
+  var kmsSugTimer = null;
+  var kmsFR = {
+    'Perpignan': 1, 'Narbonne': 1, 'Montpellier St. Roch': 1, 'Nimes Centre': 1,
+    'Avignon TGV': 1, 'Aix-en-Provence TGV': 1, 'Marseille Saint Charles': 1,
+    'Valence TGV': 1, 'Lyon Part Dieu': 1
+  };
+
+  function asegurarKmsData_() {
+    if (kmsData && kmsIndex) return Promise.resolve(kmsData);
+    if (kmsCarga) return kmsCarga;
+    kmsCarga = fetch('./distancias-kms.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('No se pudo cargar el catálogo de kilómetros.');
+        return r.json();
+      })
+      .then(function (data) {
+        kmsData = data || { cities: [], pairs: [] };
+        kmsCities = Array.isArray(kmsData.cities) ? kmsData.cities.slice() : [];
+        kmsIndex = Object.create(null);
+        (kmsData.pairs || []).forEach(function (p) {
+          if (!p || p.length < 3) return;
+          var a = String(p[0]);
+          var b = String(p[1]);
+          var km = Number(p[2]);
+          if (!a || !b || !isFinite(km)) return;
+          kmsIndex[a + '\t' + b] = km;
+          if (kmsIndex[b + '\t' + a] == null) kmsIndex[b + '\t' + a] = km;
+        });
+        return kmsData;
+      })
+      .catch(function (err) {
+        kmsCarga = null;
+        throw err;
+      });
+    return kmsCarga;
+  }
+
+  function kmsEsc_(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function kmsLabel_(name) {
+    var n = String(name || '');
+    return kmsFR[n] ? (kmsEsc_(n) + ' <span class="kms-fr" title="Francia">FR</span>') : kmsEsc_(n);
+  }
+
+  function obtenerDistanciaKms_(a, b) {
+    if (!kmsIndex) return null;
+    var v = kmsIndex[a + '\t' + b];
+    return v == null ? null : v;
+  }
+
+  function pintarTotalKms_() {
+    var totalEl = document.getElementById('kms-total');
+    var tbody = document.getElementById('kms-tbody');
+    if (!totalEl || !tbody) return;
+    if (!kmsTramos.length) {
+      totalEl.hidden = true;
+      totalEl.textContent = '';
+      return;
+    }
+    var sum = 0;
+    for (var i = 0; i < kmsTramos.length; i++) sum += kmsTramos[i].km;
+    totalEl.hidden = false;
+    totalEl.textContent = 'Total: ' + sum + ' km';
+  }
+
+  function pintarTablaKms_() {
+    var tbody = document.getElementById('kms-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = kmsTramos.map(function (t) {
+      return '<tr><td>' + kmsLabel_(t.a) + '</td><td>' + kmsLabel_(t.b) + '</td><td>' + t.km + '</td></tr>';
+    }).join('');
+    pintarTotalKms_();
+  }
+
+  function kmsSetMsg_(text) {
+    var el = document.getElementById('kms-msg');
+    if (!el) return;
+    if (!text) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    el.hidden = false;
+    el.textContent = text;
+  }
+
+  function filtrarCiudadesKms_(q) {
+    var nq = String(q || '').trim().toLowerCase();
+    if (!nq) return [];
+    var out = [];
+    for (var i = 0; i < kmsCities.length; i++) {
+      var c = kmsCities[i];
+      if (c.toLowerCase().indexOf(nq) >= 0) out.push(c);
+      if (out.length >= 12) break;
+    }
+    return out;
+  }
+
+  function pintarSugKms_(boxId, inputId, q) {
+    var box = document.getElementById(boxId);
+    var inp = document.getElementById(inputId);
+    if (!box || !inp) return;
+    var hits = filtrarCiudadesKms_(q);
+    if (!hits.length) {
+      box.innerHTML = '';
+      box.hidden = true;
+      return;
+    }
+    box.innerHTML = hits.map(function (c, i) {
+      return '<button type="button" data-kms-city="' + kmsEsc_(c) + '"' +
+        (i === 0 ? ' class="is-on"' : '') + '>' + kmsEsc_(c) + '</button>';
+    }).join('');
+    box.hidden = false;
+  }
+
+  function ocultarSugKms_() {
+    ['kms-sug-origen', 'kms-sug-destino'].forEach(function (id) {
+      var box = document.getElementById(id);
+      if (!box) return;
+      box.innerHTML = '';
+      box.hidden = true;
+    });
+  }
+
+  function anadirTramoKms_() {
+    var aInp = document.getElementById('kms-origen');
+    var bInp = document.getElementById('kms-destino');
+    var a = aInp ? aInp.value.trim() : '';
+    var b = bInp ? bInp.value.trim() : '';
+    if (!a || !b) {
+      kmsSetMsg_('Indica origen y destino.');
+      return;
+    }
+    var km = obtenerDistanciaKms_(a, b);
+    if (km == null) {
+      kmsSetMsg_('No hay distancia para ese par de estaciones.');
+      return;
+    }
+    kmsSetMsg_('');
+    kmsTramos.push({ a: a, b: b, km: km });
+    pintarTablaKms_();
+    ocultarSugKms_();
+  }
+
+  function abrirKms() {
+    asegurarKmsData_()
+      .then(function () { pintarTablaKms_(); })
+      .catch(function (err) {
+        kmsSetMsg_(String(err.message || err));
+        toast(String(err.message || err), 'error');
+      });
+  }
+
+  function wireKmsField_(inputId, sugId) {
+    var inp = document.getElementById(inputId);
+    var box = document.getElementById(sugId);
+    if (!inp || !box) return;
+    inp.addEventListener('input', function () {
+      var q = inp.value;
+      clearTimeout(kmsSugTimer);
+      kmsSugTimer = setTimeout(function () {
+        asegurarKmsData_()
+          .then(function () { pintarSugKms_(sugId, inputId, q); })
+          .catch(function (err) { toast(String(err.message || err), 'error'); });
+      }, 80);
+    });
+    inp.addEventListener('keydown', function (ev) {
+      var buttons = box.querySelectorAll('button');
+      var on = box.querySelector('button.is-on');
+      var idx = on ? Array.prototype.indexOf.call(buttons, on) : -1;
+      if (ev.key === 'ArrowDown' && buttons.length) {
+        ev.preventDefault();
+        idx = Math.min(idx + 1, buttons.length - 1);
+        buttons.forEach(function (b, i) { b.classList.toggle('is-on', i === idx); });
+      } else if (ev.key === 'ArrowUp' && buttons.length) {
+        ev.preventDefault();
+        idx = Math.max(idx - 1, 0);
+        buttons.forEach(function (b, i) { b.classList.toggle('is-on', i === idx); });
+      } else if (ev.key === 'Enter') {
+        if (on) {
+          ev.preventDefault();
+          inp.value = on.getAttribute('data-kms-city') || on.textContent;
+          ocultarSugKms_();
+        } else {
+          ev.preventDefault();
+          anadirTramoKms_();
+        }
+      } else if (ev.key === 'Escape') {
+        ocultarSugKms_();
+      }
+    });
+    box.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-kms-city]');
+      if (!btn) return;
+      inp.value = btn.getAttribute('data-kms-city') || '';
+      ocultarSugKms_();
+      inp.focus();
+    });
+  }
+
+  function wireKmsUi_() {
+    wireKmsField_('kms-origen', 'kms-sug-origen');
+    wireKmsField_('kms-destino', 'kms-sug-destino');
+    var btnBuscar = document.getElementById('btn-kms-buscar');
+    var btnSwap = document.getElementById('btn-kms-swap');
+    var btnBorrar = document.getElementById('btn-kms-borrar');
+    var btnLimpiar = document.getElementById('btn-kms-limpiar');
+    if (btnBuscar) btnBuscar.addEventListener('click', anadirTramoKms_);
+    if (btnSwap) {
+      btnSwap.addEventListener('click', function () {
+        var a = document.getElementById('kms-origen');
+        var b = document.getElementById('kms-destino');
+        if (!a || !b) return;
+        var t = a.value;
+        a.value = b.value;
+        b.value = t;
+      });
+    }
+    if (btnBorrar) {
+      btnBorrar.addEventListener('click', function () {
+        if (!kmsTramos.length) return;
+        kmsTramos.pop();
+        pintarTablaKms_();
+      });
+    }
+    if (btnLimpiar) {
+      btnLimpiar.addEventListener('click', function () {
+        kmsTramos = [];
+        pintarTablaKms_();
+        kmsSetMsg_('');
+      });
+    }
+    document.addEventListener('click', function (ev) {
+      if (ev.target.closest('#kms-origen, #kms-destino, #kms-sug-origen, #kms-sug-destino')) return;
+      ocultarSugKms_();
+    });
+  }
+
   function go(screen) {
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
     var el = document.getElementById('screen-' + screen);
@@ -449,6 +699,7 @@
     if (screen === 'radar') refrescarAvisosRed();
     if (screen === 'avisos') cargarPantallaAvisos(true);
     if (screen === 'pantallas') abrirPantallas();
+    if (screen === 'kms') abrirKms();
     if (screen === 'mapa') openMapa();
     if (screen === 'home') refrescarAvisosRed();
     if (screen === 'mallas') {
@@ -2294,6 +2545,7 @@
     });
   });
   wirePantallasUi_();
+  wireKmsUi_();
   document.querySelectorAll('.filter').forEach(function (b) {
     b.addEventListener('click', function () {
       mode = b.dataset.mode;
