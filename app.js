@@ -2657,6 +2657,41 @@
       window.location.reload(true);
     }
   });
+
+  /* Atajos Copérnico (mismo patrón que Anthony; solo red Renfe) */
+  function fechaCoperDdMmYyyy_() {
+    var n = new Date();
+    var dd = String(n.getDate()).padStart(2, '0');
+    var mm = String(n.getMonth() + 1).padStart(2, '0');
+    var yyyy = n.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+  }
+  function abrirCopernico_(url) {
+    try {
+      var w = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!w) toast('Permite ventanas emergentes o ábrelo en red Renfe.', 'error');
+      else toast('Abriendo Copérnico…', 'success');
+    } catch (err) {
+      toast('No se pudo abrir Copérnico en este dispositivo.', 'error');
+    }
+  }
+  var btnFichaVeh = document.getElementById('btn-coper-ficha-vehiculo');
+  if (btnFichaVeh) {
+    btnFichaVeh.addEventListener('click', function () {
+      abrirCopernico_('http://copernico.sir.renfe.es/copernico/SrvController/operaciones/fichaVehiculo/');
+    });
+  }
+  var btnVVeh = document.getElementById('btn-coper-v-vehiculo');
+  if (btnVVeh) {
+    btnVVeh.addEventListener('click', function () {
+      // Misma URL que Anthony (fecha dd/mm/yyyy sin encode).
+      abrirCopernico_(
+        'http://copernico.sir.renfe.es/copernico/SrvRenfeAsignarMaterialM?todo=buscarmaterialmatri&desde=MOTOR&fechaOrigen=' +
+        fechaCoperDdMmYyyy_() +
+        '&mercado=&tipo=&serie=&matbusca='
+      );
+    });
+  }
   document.getElementById('btn-mallas-buscar').addEventListener('click', buscarMallaTren);
   document.getElementById('mallas-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); buscarMallaTren(); }

@@ -167,6 +167,13 @@ body.monitor-mode #screen-mapa{display:none!important}
 .ajustes-card-body span{font-size:12px;color:var(--muted);line-height:1.4}
 .ajustes-danger{color:var(--red)!important}
 .ajustes-chip{display:inline-flex;align-self:flex-start;margin-top:4px;background:rgba(29,78,216,.1);color:#1d4ed8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid rgba(29,78,216,.2)}
+.ajustes-tools{margin:0 0 14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
+.ajustes-tools-title{margin:0 0 4px;font-size:15px;color:var(--primary-dark)}
+.ajustes-tools-note{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.4}
+.ajustes-tools-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ajustes-link-btn{margin:0;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:12px 10px;font-size:13px;font-weight:800;cursor:pointer;text-align:center;line-height:1.25}
+.ajustes-link-btn:active{transform:scale(.98);background:#eef4ff}
+@media (max-width:360px){.ajustes-tools-row{grid-template-columns:1fr}}
 
 /* Mallas y horarios / buscador GTFS */
 .mallas-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:4px solid #059669}
