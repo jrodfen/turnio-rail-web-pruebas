@@ -1066,12 +1066,14 @@
     if (FLOAT_NUNCA_[screen]) return false;
     if (!FLOAT_TITLES_[screen]) return false;
     var cur = pantallaActivaId_();
-    // Circulación solo flota desde Radar (no desde Mapa ni otras).
+    // Circulación solo flota desde Radar.
     if (screen === 'trafico') return cur === 'radar';
-    // Herramientas: flotan sobre Radar/Mapa (y si ya hay base de trabajo).
+    // Herramientas desde Circulación flotante (abierta desde Radar): también flotan.
+    if (floatState_ && floatState_.screenId === 'trafico') return true;
+    // Desde Radar/Mapa (sin Circulación a pantalla completa): herramientas flotan.
     if (FLOAT_BASE_KEEP_[cur]) return true;
-    // Desde Circulación u otras: herramientas también pueden flotar.
-    return screen !== 'trafico';
+    // Circulación a pantalla completa (nav/FAB/Mapa/…) → Mallas, Enlazados, etc. a pantalla completa.
+    return false;
   }
 
   function pintarNavActiva_(screen) {
