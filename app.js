@@ -779,10 +779,125 @@
     return '51003';
   }
 
+  function resumirMensajeAdif_(mensajeCrudo) {
+    var datos = typeof mensajeCrudo === 'string' ? JSON.parse(mensajeCrudo) : mensajeCrudo;
+    if (datos == null) return { ok: false, resumen: 'payload vacío' };
+    var trenes = Array.isArray(datos.trains) ? datos.trains
+      : (Array.isArray(datos) ? datos : null);
+    if (!trenes) {
+      var keys = typeof datos === 'object' ? Object.keys(datos).slice(0, 12).join(', ') : typeof datos;
+      return { ok: true, resumen: 'payload sin .trains (keys: ' + keys + ')', trenes: [] };
+    }
+    var conVia = trenes.filter(function (t) { return t && (t.platform || t.platform_in); }).length;
+    var sample = trenes[0] || null;
+    var extra = '';
+    if (sample) {
+      var num =
+        (sample.commercial_id && sample.commercial_id[0] && sample.commercial_id[0].number) ||
+        sample.technical_number_planif ||
+        sample.id ||
+        '?';
+      var via = sample.platform || sample.platform_in || '—';
+      extra = ' · ej. tren ' + num + ' vía ' + via;
+    }
+    return {
+      ok: true,
+      resumen: trenes.length + ' tren(es), ' + conVia + ' con vía' + extra,
+      trenes: trenes
+    };
+  }
+
+  async function probarUnModoInfoStation_(signalR, opts, codigo, log) {
+    var result = { modo: opts.label, connected: false, message: false, detail: '' };
+    var conn = new signalR.HubConnectionBuilder()
+      .withUrl('https://info.adif.es/InfoStation', opts.urlOpts)
+      .build();
+    adifInfoStationProbe_ = conn;
+    var got = [];
+    var eventNames = [
+      'ReceiveMessage', 'receiveMessage', 'SendMessage', 'sendMessage',
+      'Receive', 'Update', 'Info', 'StationInfo', 'LastMessage'
+    ];
+    eventNames.forEach(function (ev) {
+      conn.on(ev, function () {
+        var args = Array.prototype.slice.call(arguments);
+        got.push({ ev: ev, args: args });
+      });
+    });
+    if (typeof conn.onany === 'function') {
+      conn.onany(function (evName) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        if (!got.some(function (g) { return g.ev === evName; })) {
+          got.push({ ev: String(evName), args: args });
+        }
+      });
+    }
+    try {
+      await conn.start();
+      result.connected = true;
+      log('   [' + opts.label + '] conectado');
+      var padded = String(codigo);
+      while (padded.length < 5) padded = '0' + padded;
+      var canales = [];
+      [codigo, padded].forEach(function (c) {
+        ['ECM-' + c, c, 'ECM' + c].forEach(function (ch) {
+          if (canales.indexOf(ch) < 0) canales.push(ch);
+        });
+      });
+      // También Atocha como control si no es la estación pedida.
+      if (codigo !== '18000') canales.push('ECM-18000');
+      for (var i = 0; i < canales.length; i++) {
+        var canal = canales[i];
+        try {
+          await conn.invoke('JoinInfo', canal);
+          log('   JoinInfo OK · ' + canal);
+        } catch (eJoin) {
+          log('   JoinInfo FAIL · ' + canal + ' · ' + String(eJoin.message || eJoin));
+          continue;
+        }
+        var ret = null;
+        try {
+          ret = await conn.invoke('GetLastMessage', canal);
+          if (ret != null && ret !== '') {
+            got.push({ ev: 'GetLastMessage:return', args: [ret], canal: canal });
+            log('   GetLastMessage devolvió datos · ' + canal);
+          } else {
+            log('   GetLastMessage sin retorno · ' + canal);
+          }
+        } catch (eGet) {
+          log('   GetLastMessage FAIL · ' + canal + ' · ' + String(eGet.message || eGet));
+        }
+      }
+      var t0 = Date.now();
+      while (!got.length && Date.now() - t0 < 10000) {
+        await new Promise(function (r) { setTimeout(r, 250); });
+      }
+      if (got.length) {
+        result.message = true;
+        var first = got[0];
+        try {
+          var raw = first.args && first.args.length === 1 ? first.args[0] : first.args;
+          var sum = resumirMensajeAdif_(raw);
+          result.detail = first.ev + ' → ' + sum.resumen;
+          log('   DATOS vía ' + first.ev + ': ' + sum.resumen);
+        } catch (eSum) {
+          result.detail = first.ev + ' (no parseable): ' + String(eSum.message || eSum);
+          log('   DATOS vía ' + first.ev + ' no parseables');
+        }
+      } else {
+        result.detail = 'sin push ni retorno en 10 s';
+        log('   sin mensajes en este modo');
+      }
+    } finally {
+      try { await conn.stop(); } catch (_) {}
+      if (adifInfoStationProbe_ === conn) adifInfoStationProbe_ = null;
+    }
+    return result;
+  }
+
   async function probarInfoStationAdif_() {
     var btn = document.getElementById('btn-probar-infostation');
     var codigo = codigoEstacionProbeAdif_();
-    var canal = 'ECM-' + codigo;
     var lines = [];
     function log(line) {
       lines.push(line);
@@ -796,65 +911,63 @@
       }
       log('1) Cargando SignalR…');
       var signalR = await cargarSignalRAdif_();
-      log('2) Conectando a info.adif.es/InfoStation…');
-      log('   Canal: ' + canal + (codigo === '51003' ? ' (Santa Justa por defecto)' : ''));
-      var conn = new signalR.HubConnectionBuilder()
-        .withUrl('https://info.adif.es/InfoStation', {
-          skipNegotiation: true,
-          transport: signalR.HttpTransportType.WebSockets
-        })
-        .withAutomaticReconnect()
-        .build();
-      adifInfoStationProbe_ = conn;
-      var gotMessage = false;
-      var sample = null;
-      conn.on('ReceiveMessage', function (mensajeCrudo) {
-        gotMessage = true;
-        try {
-          var datos = typeof mensajeCrudo === 'string' ? JSON.parse(mensajeCrudo) : mensajeCrudo;
-          var trenes = Array.isArray(datos && datos.trains) ? datos.trains : [];
-          sample = trenes[0] || null;
-          var conVia = trenes.filter(function (t) {
-            return t && (t.platform || t.platform_in);
-          }).length;
-          lines.push('4) Mensaje recibido: ' + trenes.length + ' tren(es), ' + conVia + ' con vía.');
-          if (sample) {
-            var num =
-              (sample.commercial_id && sample.commercial_id[0] && sample.commercial_id[0].number) ||
-              sample.technical_number_planif ||
-              sample.id ||
-              '?';
-            var via = sample.platform || sample.platform_in || '—';
-            lines.push('   Ejemplo: tren ' + num + ' · vía ' + via);
+      log('2) Estación ' + codigo + (codigo === '51003' ? ' (Santa Justa)' : '') + '. Probando modos…');
+      var modos = [
+        {
+          label: 'WS skipNegotiation (GAS)',
+          urlOpts: {
+            skipNegotiation: true,
+            transport: signalR.HttpTransportType.WebSockets
           }
-          setAdifProbeStatus_(lines.join('\n'), 'is-ok');
-        } catch (parseErr) {
-          lines.push('4) Mensaje recibido, pero no se pudo parsear JSON.');
-          setAdifProbeStatus_(lines.join('\n'), 'is-ok');
+        },
+        {
+          label: 'negociado (WS/SSE/LP)',
+          urlOpts: {}
         }
+      ];
+      var results = [];
+      for (var m = 0; m < modos.length; m++) {
+        log('3.' + (m + 1) + ') Modo ' + modos[m].label);
+        try {
+          results.push(await probarUnModoInfoStation_(signalR, modos[m], codigo, log));
+        } catch (eModo) {
+          log('   ERROR modo: ' + String(eModo.message || eModo));
+          results.push({
+            modo: modos[m].label,
+            connected: false,
+            message: false,
+            detail: String(eModo.message || eModo)
+          });
+        }
+      }
+      log('—');
+      log('RESUMEN:');
+      var anyMsg = false;
+      var anyConn = false;
+      results.forEach(function (r) {
+        anyConn = anyConn || r.connected;
+        anyMsg = anyMsg || r.message;
+        log('· ' + r.modo + ': ' +
+          (r.connected ? 'conexión OK' : 'sin conexión') +
+          (r.message ? ' + DATOS' : ' + sin datos') +
+          (r.detail ? ' (' + r.detail + ')' : ''));
       });
-      await conn.start();
-      log('3) Conexión OK. JoinInfo + GetLastMessage…');
-      await conn.invoke('JoinInfo', canal);
-      await conn.invoke('GetLastMessage', canal);
-      var t0 = Date.now();
-      while (!gotMessage && Date.now() - t0 < 12000) {
-        await new Promise(function (r) { setTimeout(r, 250); });
-      }
-      if (!gotMessage) {
-        lines.push('4) Timeout (12 s): conectó, pero no llegó mensaje del canal.');
-        lines.push('   Puede ser estación sin tráfico o filtro de red parcial.');
+      if (anyMsg) {
+        setAdifProbeStatus_(lines.join('\n'), 'is-ok');
+        toast('InfoStation: datos recibidos', 'success');
+      } else if (anyConn) {
+        lines.push('Conclusión: WebSocket accesible, pero el hub no entrega snapshot (protocolo/canal o sin tráfico en canal).');
+        lines.push('El panel web oficial puede seguir funcionando; implantar vía en TURNIO requiere capturar el tráfico real del navegador en info.adif.es.');
         setAdifProbeStatus_(lines.join('\n'), 'is-err');
-        toast('InfoStation: conectó sin datos', 'error');
+        toast('InfoStation: conecta sin datos', 'error');
       } else {
-        toast('InfoStation OK · ' + codigo, 'success');
+        lines.push('Conclusión: no hay conexión usable a InfoStation desde este entorno.');
+        setAdifProbeStatus_(lines.join('\n'), 'is-err');
+        toast('InfoStation no disponible', 'error');
       }
-      try { await conn.stop(); } catch (_) {}
-      adifInfoStationProbe_ = null;
     } catch (err) {
       var msg = String((err && err.message) || err || 'Error desconocido');
       lines.push('ERROR: ' + msg);
-      lines.push('En redes Renfe/Zscaler a menudo falla el WebSocket; el panel web sí puede abrir.');
       setAdifProbeStatus_(lines.join('\n'), 'is-err');
       toast('InfoStation no disponible aquí', 'error');
       if (adifInfoStationProbe_) {
