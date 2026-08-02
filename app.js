@@ -998,6 +998,15 @@
   }
 
   function go(screen) {
+    if (debeAbrirFlotante_(screen)) {
+      abrirVentanaFlotante_(screen);
+      return;
+    }
+    if (floatState_ && pantallaActivaId_() === screen) {
+      cerrarVentanaFlotante_();
+      return;
+    }
+    cerrarVentanaFlotante_();
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
     var el = document.getElementById('screen-' + screen);
     if (el) el.classList.add('active');
@@ -1009,6 +1018,49 @@
       cerrarMarchaMapa();
       salirMapaFullscreen_();
     }
+    entrarPantalla_(screen);
+    gestionarAutoRadar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  var FLOAT_TITLES_ = {
+    trafico: 'Circulación',
+    mallas: 'Mallas',
+    'mallas-localizador': 'Localizador mallas',
+    kms: 'Kilómetros',
+    pantallas: 'Pantallas estación',
+    conexiones: 'Servicios enlazados',
+    avisos: 'Avisos de red'
+  };
+  var floatState_ = null;
+  var floatZ_ = 3000;
+  var floatMq_ = null;
+
+  function pantallaActivaId_() {
+    var a = document.querySelector('#app-shell > .screen.active, #app-shell .screen.active');
+    if (!a) a = document.querySelector('.screen.active:not(.screen--in-float)');
+    if (!a || !a.id) return '';
+    return String(a.id).replace(/^screen-/, '');
+  }
+
+  function esDesktopFloat_() {
+    if (window.TURNIO_DESKTOP_FLOAT_WINDOWS === false) return false;
+    try {
+      return window.matchMedia('(min-width: 900px)').matches;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function debeAbrirFlotante_(screen) {
+    if (!esDesktopFloat_()) return false;
+    if (!FLOAT_TITLES_[screen]) return false;
+    if (screen !== 'trafico') return true;
+    var cur = pantallaActivaId_();
+    return cur === 'radar' || cur === 'mapa';
+  }
+
+  function entrarPantalla_(screen) {
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') refrescarAvisosRed();
     if (screen === 'avisos') cargarPantallaAvisos(true);
@@ -1044,9 +1096,161 @@
       }
       cargarAdminPerfiles_();
     }
-    gestionarAutoRadar();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  function invalidateMapaSiHay_() {
+    if (!window._mapaLeaflet) return;
+    setTimeout(function () {
+      try { window._mapaLeaflet.invalidateSize(); } catch (e) {}
+    }, 60);
+  }
+
+  function wireFloatDrag_(win, handle) {
+    var dragging = false;
+    var ox = 0;
+    var oy = 0;
+    var sx = 0;
+    var sy = 0;
+    function onMove(e) {
+      if (!dragging) return;
+      var nx = ox + (e.clientX - sx);
+      var ny = oy + (e.clientY - sy);
+      var maxX = Math.max(0, window.innerWidth - 80);
+      var maxY = Math.max(0, window.innerHeight - 48);
+      if (nx < -win.offsetWidth + 80) nx = -win.offsetWidth + 80;
+      if (ny < 0) ny = 0;
+      if (nx > maxX) nx = maxX;
+      if (ny > maxY) ny = maxY;
+      win.style.left = nx + 'px';
+      win.style.top = ny + 'px';
+      win.style.right = 'auto';
+      win.style.bottom = 'auto';
+    }
+    function onUp() {
+      if (!dragging) return;
+      dragging = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    handle.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      if (e.target.closest('button')) return;
+      dragging = true;
+      var r = win.getBoundingClientRect();
+      ox = r.left;
+      oy = r.top;
+      sx = e.clientX;
+      sy = e.clientY;
+      win.style.zIndex = String(++floatZ_);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      e.preventDefault();
+    });
+  }
+
+  function cerrarVentanaFlotante_() {
+    if (!floatState_) return;
+    var st = floatState_;
+    floatState_ = null;
+    document.body.classList.remove('has-turnio-float');
+    var screenEl = document.getElementById('screen-' + st.screenId);
+    if (screenEl) {
+      screenEl.classList.remove('screen--in-float');
+      if (st.homeParent) {
+        if (st.nextSibling && st.nextSibling.parentNode === st.homeParent) {
+          st.homeParent.insertBefore(screenEl, st.nextSibling);
+        } else {
+          st.homeParent.appendChild(screenEl);
+        }
+      }
+    }
+    if (st.winEl && st.winEl.parentNode) st.winEl.parentNode.removeChild(st.winEl);
+    invalidateMapaSiHay_();
+    gestionarAutoRadar();
+  }
+
+  function abrirVentanaFlotante_(screen) {
+    var screenEl = document.getElementById('screen-' + screen);
+    var host = document.getElementById('float-windows-host');
+    if (!screenEl || !host) {
+      // Fallback: navegación clásica si falta markup.
+      cerrarVentanaFlotante_();
+      document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+      if (screenEl) screenEl.classList.add('active');
+      entrarPantalla_(screen);
+      gestionarAutoRadar();
+      return;
+    }
+    if (floatState_ && floatState_.screenId === screen) {
+      floatState_.winEl.style.zIndex = String(++floatZ_);
+      return;
+    }
+    if (floatState_) cerrarVentanaFlotante_();
+
+    var win = document.createElement('div');
+    win.className = 'turnio-float';
+    win.setAttribute('role', 'dialog');
+    win.setAttribute('aria-label', FLOAT_TITLES_[screen] || screen);
+    win.style.zIndex = String(++floatZ_);
+    win.style.width = Math.min(920, Math.max(520, Math.floor(window.innerWidth * 0.72))) + 'px';
+    win.style.height = Math.min(780, Math.max(360, Math.floor(window.innerHeight * 0.78))) + 'px';
+    win.style.left = Math.max(16, Math.floor((window.innerWidth - parseInt(win.style.width, 10)) / 2)) + 'px';
+    win.style.top = Math.max(24, Math.floor(window.innerHeight * 0.08)) + 'px';
+
+    var head = document.createElement('div');
+    head.className = 'turnio-float-head';
+    var title = document.createElement('h2');
+    title.className = 'turnio-float-title';
+    title.textContent = FLOAT_TITLES_[screen] || screen;
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'turnio-float-close';
+    closeBtn.setAttribute('aria-label', 'Cerrar ventana');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', function () { cerrarVentanaFlotante_(); });
+    head.appendChild(title);
+    head.appendChild(closeBtn);
+
+    var body = document.createElement('div');
+    body.className = 'turnio-float-body';
+
+    floatState_ = {
+      screenId: screen,
+      homeParent: screenEl.parentNode,
+      nextSibling: screenEl.nextSibling,
+      winEl: win
+    };
+    body.appendChild(screenEl);
+    screenEl.classList.add('screen--in-float');
+    win.appendChild(head);
+    win.appendChild(body);
+    host.appendChild(win);
+    document.body.classList.add('has-turnio-float');
+    wireFloatDrag_(win, head);
+
+    if (screen === 'trafico') {
+      document.querySelectorAll('.nav-item').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.go === 'trafico');
+      });
+    }
+
+    entrarPantalla_(screen);
+    gestionarAutoRadar();
+    invalidateMapaSiHay_();
+  }
+
+  function asegurarMediaFloat_() {
+    try {
+      floatMq_ = window.matchMedia('(min-width: 900px)');
+      var onChange = function (ev) {
+        if (!ev.matches) cerrarVentanaFlotante_();
+      };
+      if (floatMq_.addEventListener) floatMq_.addEventListener('change', onChange);
+      else if (floatMq_.addListener) floatMq_.addListener(onChange);
+    } catch (e) {}
+  }
+  asegurarMediaFloat_();
+
   function showApp(persona) {
     loginShell.hidden = true;
     appShell.hidden = false;
