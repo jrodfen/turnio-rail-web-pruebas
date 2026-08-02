@@ -3348,6 +3348,68 @@
       abrirEnlaceExterno_(url, label);
     });
   }
+  var MERCADOS_SIN_JUSTIFICAR_ = [
+    { code: '31', name: 'SP Andalucía', def: true },
+    { code: '10', name: 'SP Centro' },
+    { code: '30', name: 'SP Este' },
+    { code: '38', name: 'SP Galicia' },
+    { code: '50', name: 'Rodalies Catalunya' },
+    { code: '35', name: 'SP País Vasco' },
+    { code: '34', name: 'SP Ámbito Extremadura' },
+    { code: '90,0,60,62,61,64,65,68,80', name: 'Todos los mercados', todos: true }
+  ];
+  var MERCADO_SIN_JUSTIFICAR_DEFAULT_ = '31';
+
+  function urlSinJustificarMercado_(mercado) {
+    var f = fechaCoperPartes_();
+    var m = String(mercado || MERCADO_SIN_JUSTIFICAR_DEFAULT_).trim() || MERCADO_SIN_JUSTIFICAR_DEFAULT_;
+    return 'http://copernico.sir.renfe.es/copernico/SrvRenfeIncidencias?todo=retsinjustificar' +
+      '&fincidencia=01/' + f.mm + '/' + f.yyyy +
+      '&fechafin=' + f.slash +
+      '&horaIni=0000&horaFin=2359&mercado=' + encodeURIComponent(m).replace(/%2C/g, ',');
+  }
+
+  function cerrarModalSinJustificar_() {
+    var modal = document.getElementById('modal-sin-justificar');
+    if (modal) modal.hidden = true;
+  }
+
+  function abrirModalSinJustificar_() {
+    var modal = document.getElementById('modal-sin-justificar');
+    var list = document.getElementById('sj-mercado-list');
+    if (!modal || !list) {
+      abrirCopernico_(urlSinJustificarMercado_(MERCADO_SIN_JUSTIFICAR_DEFAULT_));
+      return;
+    }
+    list.innerHTML = '';
+    MERCADOS_SIN_JUSTIFICAR_.forEach(function (item) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sj-mercado-btn' +
+        (item.def ? ' sj-mercado-btn--default' : '') +
+        (item.todos ? ' sj-mercado-btn--todos' : '');
+      btn.setAttribute('data-mercado', item.code);
+      btn.setAttribute('role', 'listitem');
+      var left = document.createElement('span');
+      left.className = 'sj-mercado-name';
+      left.textContent = item.name;
+      if (item.def) {
+        var badge = document.createElement('span');
+        badge.className = 'sj-mercado-badge';
+        badge.textContent = 'Predeterminado';
+        left.appendChild(document.createTextNode(' '));
+        left.appendChild(badge);
+      }
+      var right = document.createElement('span');
+      right.className = 'sj-mercado-code';
+      right.textContent = item.todos ? 'varios' : item.code;
+      btn.appendChild(left);
+      btn.appendChild(right);
+      list.appendChild(btn);
+    });
+    modal.hidden = false;
+  }
+
   function urlCopernicoAtajo_(key) {
     var f = fechaCoperPartes_();
     var base = 'http://copernico.sir.renfe.es/copernico/';
@@ -3357,9 +3419,7 @@
       case 'anadir-dt':
         return base + 'SrvRenfeAsignar_recursos?todo=documento_tren_mensaje';
       case 'sin-justificar':
-        // Mercado 31 (Cercanías Andalucía). Rango: día 1 del mes → hoy.
-        return base + 'SrvRenfeIncidencias?todo=retsinjustificar&fincidencia=01/' + f.mm + '/' + f.yyyy +
-          '&fechafin=' + f.slash + '&horaIni=0000&horaFin=2359&mercado=31';
+        return urlSinJustificarMercado_(MERCADO_SIN_JUSTIFICAR_DEFAULT_);
       case 'transbordados':
         return base + 'SrvRenfeSituacion?todo=informetrasbordados&fechaDesde=' + f.slash + '&fechaHasta=' + f.slash;
       case 'matricula-real':
@@ -3448,10 +3508,36 @@
         abrirCopernicoCombinadosHoy_();
         return;
       }
+      if (key === 'sin-justificar') {
+        abrirModalSinJustificar_();
+        return;
+      }
       var url = urlCopernicoAtajo_(key);
       if (url) abrirCopernico_(url);
     });
   }
+  (function cablearModalSinJustificar_() {
+    var modal = document.getElementById('modal-sin-justificar');
+    var list = document.getElementById('sj-mercado-list');
+    var btnCerrar = document.getElementById('btn-cerrar-sin-justificar');
+    var btnCancel = document.getElementById('btn-cancelar-sin-justificar');
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModalSinJustificar_);
+    if (btnCancel) btnCancel.addEventListener('click', cerrarModalSinJustificar_);
+    if (modal) {
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) cerrarModalSinJustificar_();
+      });
+    }
+    if (list) {
+      list.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-mercado]');
+        if (!btn || !list.contains(btn)) return;
+        var mercado = btn.getAttribute('data-mercado');
+        cerrarModalSinJustificar_();
+        abrirCopernico_(urlSinJustificarMercado_(mercado));
+      });
+    }
+  })();
   document.getElementById('btn-mallas-buscar').addEventListener('click', buscarMallaTren);
   document.getElementById('mallas-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); buscarMallaTren(); }

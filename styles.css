@@ -222,6 +222,31 @@ body.monitor-mode #screen-mapa{display:none!important}
   .vig-item-lugar{color:#fbbf24}
 }
 
+/* Selector mercado Sin justificar (Copérnico) */
+.sj-modal-card{max-width:420px;text-align:left}
+.sj-mercado-list{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px;max-height:min(56vh,420px);overflow:auto}
+.sj-mercado-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;text-align:left;cursor:pointer;
+  border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;
+  padding:12px 14px;font:inherit;color:#1c2430;
+}
+.sj-mercado-btn:hover,.sj-mercado-btn:focus-visible{border-color:#2d7ff9;background:#eff6ff;outline:none}
+.sj-mercado-btn--default{border-color:#2d7ff9;background:#e8f1ff;font-weight:700}
+.sj-mercado-btn--todos{border-style:dashed;margin-top:4px}
+.sj-mercado-name{font-size:14px;font-weight:700}
+.sj-mercado-code{font-size:12px;font-weight:800;color:#64748b;font-variant-numeric:tabular-nums}
+.sj-mercado-btn--default .sj-mercado-code{color:#1d4ed8}
+.sj-mercado-badge{font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#1d4ed8;background:#dbeafe;border-radius:999px;padding:2px 8px}
+@media (prefers-color-scheme:dark){
+  .sj-mercado-btn{background:#252525;border-color:#374151;color:#f3f4f6}
+  .sj-mercado-btn:hover,.sj-mercado-btn:focus-visible{background:#1e3a5f;border-color:#60a5fa}
+  .sj-mercado-btn--default{background:#1e3a5f;border-color:#60a5fa}
+  .sj-mercado-code{color:#9ca3af}
+  .sj-mercado-btn--default .sj-mercado-code{color:#93c5fd}
+  .sj-mercado-badge{background:#1e40af;color:#dbeafe}
+}
+
 /* Generar aviso */
 .aviso-modal-card{max-width:420px;text-align:left}
 .aviso-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
