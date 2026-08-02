@@ -1066,8 +1066,8 @@
     if (FLOAT_NUNCA_[screen]) return false;
     if (!FLOAT_TITLES_[screen]) return false;
     var cur = pantallaActivaId_();
-    // Circulación flota sobre Radar/Mapa.
-    if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
+    // Circulación solo flota desde Radar (no desde Mapa ni otras).
+    if (screen === 'trafico') return cur === 'radar';
     // Herramientas: flotan sobre Radar/Mapa (y si ya hay base de trabajo).
     if (FLOAT_BASE_KEEP_[cur]) return true;
     // Desde Circulación u otras: herramientas también pueden flotar.
