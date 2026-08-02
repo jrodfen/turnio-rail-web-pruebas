@@ -8,6 +8,7 @@
   var meta = document.getElementById('radar-meta');
   var api = String(window.TURNIO_EXTERNAL_API || '').replace(/\/$/, '');
   var FRONT_BUILD = String(window.TURNIO_FRONT_BUILD || 'enlaces17');
+  var APP_VERSION = String(window.TURNIO_APP_VERSION || 'V.2');
   var supabaseCfg = window.TURNIO_SUPABASE || {};
   var supabase = window.supabase && window.supabase.createClient(
     supabaseCfg.url, supabaseCfg.publishableKey,
@@ -3459,6 +3460,12 @@
     abrirAvisoDesdeAlerta(pseudo);
   }
 
+  function mostrarVersionApp_() {
+    document.querySelectorAll('[data-turnio-version]').forEach(function (el) {
+      el.textContent = APP_VERSION;
+    });
+  }
+
   async function init() {
     if (!api) {
       setStatus('error', 'Falta TURNIO_EXTERNAL_API (turnio-config.js). Build ' + FRONT_BUILD + '.');
@@ -5185,5 +5192,6 @@
   var btnCerrarMarchaMapa = document.getElementById('btn-cerrar-mapa-marcha');
   if (btnCerrarMarchaMapa) btnCerrarMarchaMapa.addEventListener('click', cerrarMarchaMapa);
 
+  mostrarVersionApp_();
   init();
 }());
