@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.4">
+    <link rel="stylesheet" href="./styles.css?v=V.5">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.4</strong></span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.5</strong></span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -34,7 +34,7 @@
         <div class="top-bar">
           <div class="top-brand">
             <h1>TURNIO RAIL</h1>
-            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.4</span></span>
+            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.5</span></span>
           </div>
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
@@ -217,7 +217,7 @@
           <p class="mallas-lead">Consulta por estaci&oacute;n, producto, fecha y hora. Pulsa las tarjetas para ver la hoja de ruta.</p>
           <label class="aviso-label" for="inputEstacionBuscar">Estaci&oacute;n</label>
           <div class="searchable-select-container">
-            <input id="inputEstacionBuscar" type="search" placeholder="Selecciona o escribe para buscar&hellip;" autocomplete="off">
+            <input id="inputEstacionBuscar" type="search" placeholder="Por defecto: Sevilla Santa Justa (51003)" autocomplete="off">
             <div id="listaEstacionesCustom" class="searchable-select-list" hidden></div>
             <div id="msgSinEstacion" class="searchable-empty" hidden>No se encontr&oacute; ninguna estaci&oacute;n</div>
           </div>
@@ -535,7 +535,7 @@
           <span class="ajustes-card-body">
             <b>Obtener nueva actualizaci&oacute;n</b>
             <span>Descarga el c&oacute;digo m&aacute;s reciente y recarga la app. Ideal en m&oacute;vil cuando TURNIO est&aacute; anclado al inicio y la cach&eacute; no se limpia sola.</span>
-            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.4</span></span>
+            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.5</span></span>
           </span>
         </button>
         <button type="button" class="ajustes-card" id="btn-ayuda-app">
@@ -1210,12 +1210,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.4"></script>
-    <script src="./conexiones.js?v=V.4"></script>
+    <script src="./turnio-config.js?v=V.5"></script>
+    <script src="./conexiones.js?v=V.5"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
-    <script src="./mallas-gtfs.js?v=mallas5"></script>
-    <script src="./app.js?v=V.4"></script>
+    <script src="./mallas-gtfs.js?v=mallas6"></script>
+    <script src="./app.js?v=V.5"></script>
   </body>
 </html>
 

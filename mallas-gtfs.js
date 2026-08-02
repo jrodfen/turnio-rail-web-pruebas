@@ -7,6 +7,9 @@
   var CACHE_NAME = 'turnio-operativa-gtfs-v1';
   var SCHEMA = 'v1.8-7d-r2';
   var cargando = null;
+  /** Estación por defecto al abrir Mallas (código ADIF / stop_id GTFS). */
+  var ESTACION_DEFAULT_STOP_ID = '51003';
+  var ESTACION_DEFAULT_NOMBRE_FALLBACK = 'SEVILLA-SANTA JUSTA';
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -217,6 +220,7 @@
       document.getElementById('gtfs-carga').hidden = true;
       document.getElementById('gtfs-busqueda').hidden = false;
       reconstruirSelectores();
+      aplicarEstacionPorDefectoMallas_();
       return true;
     }
     if (cargando) return cargando;
@@ -265,6 +269,7 @@
       setStatus('Operativa lista · ' + Object.keys(global.viajes).length.toLocaleString('es-ES') + ' servicios');
       if (panelCarga) panelCarga.hidden = true;
       if (panelBusqueda) panelBusqueda.hidden = false;
+      aplicarEstacionPorDefectoMallas_();
       return true;
     })();
     try {
@@ -308,6 +313,47 @@
     var lista = document.getElementById('listaEstacionesCustom');
     if (input) input.value = nombre;
     if (lista) lista.hidden = true;
+  }
+
+  function resolverNombreEstacionDefault_() {
+    var est = global.estaciones || {};
+    var candidatosId = [ESTACION_DEFAULT_STOP_ID, '0' + ESTACION_DEFAULT_STOP_ID];
+    for (var i = 0; i < candidatosId.length; i++) {
+      if (est[candidatosId[i]]) return est[candidatosId[i]];
+    }
+    var keys = Object.keys(est);
+    for (var k = 0; k < keys.length; k++) {
+      if (String(keys[k]).replace(/^0+/, '') === ESTACION_DEFAULT_STOP_ID) return est[keys[k]];
+    }
+    var mapa = global.mapaEstacionesGlobal || {};
+    var nombres = Object.keys(mapa);
+    for (var n = 0; n < nombres.length; n++) {
+      var nn = String(nombres[n] || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (nn.indexOf('santa justa') >= 0 && nn.indexOf('sevilla') >= 0) return nombres[n];
+    }
+    if (mapa[ESTACION_DEFAULT_NOMBRE_FALLBACK]) return ESTACION_DEFAULT_NOMBRE_FALLBACK;
+    return ESTACION_DEFAULT_NOMBRE_FALLBACK;
+  }
+
+  /** Si el campo estación está vacío, fija Sevilla Santa Justa (51003) y carga el cuadro. */
+  function aplicarEstacionPorDefectoMallas_() {
+    var input = document.getElementById('inputEstacionBuscar');
+    if (!input) return false;
+    if (String(input.value || '').trim()) return false;
+    var nombre = resolverNombreEstacionDefault_();
+    var mapa = global.mapaEstacionesGlobal || {};
+    if (!mapa[nombre]) {
+      var hit = Object.keys(mapa).find(function (n) {
+        var nn = String(n || '').toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nn.indexOf('santa justa') >= 0 && nn.indexOf('sevilla') >= 0;
+      });
+      if (hit) nombre = hit;
+    }
+    seleccionarEstacion(nombre);
+    try { mostrarHorarios(); } catch (e) {}
+    return true;
   }
 
   function flipCard(el) {
@@ -666,6 +712,7 @@
     filtrarListaEstaciones: filtrarListaEstaciones,
     mostrarListaEstaciones: mostrarListaEstaciones,
     seleccionarEstacion: seleccionarEstacion,
+    aplicarEstacionPorDefectoMallas: aplicarEstacionPorDefectoMallas_,
     mostrarHorarios: mostrarHorarios,
     mostrarDiasCirculacionCuadro: mostrarDiasCirculacionCuadro,
     flipCard: flipCard,
