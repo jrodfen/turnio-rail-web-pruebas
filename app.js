@@ -1031,7 +1031,6 @@
   var FLOAT_TITLES_ = {
     trafico: 'Circulación',
     radar: 'Radar',
-    home: 'Inicio',
     ajustes: 'Ajustes',
     mallas: 'Mallas',
     'mallas-localizador': 'Localizador mallas',
@@ -1070,8 +1069,10 @@
     if (screen === 'radar') return !!cur && cur !== 'radar';
     // Circulación flota sobre Radar/Mapa.
     if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
-    // Desde Radar/Mapa: Inicio y Ajustes flotan (1er clic abre, 2º cierra).
-    if (screen === 'home' || screen === 'ajustes') return cur === 'radar' || cur === 'mapa';
+    // Inicio nunca flota (siempre pantalla completa).
+    if (screen === 'home') return false;
+    // Desde Radar/Mapa: Ajustes flota (1er clic abre, 2º cierra).
+    if (screen === 'ajustes') return cur === 'radar' || cur === 'mapa';
     // Herramientas: flotan si la base es Radar, Mapa o Circulación (mismo uso).
     if (FLOAT_BASE_KEEP_[cur]) return true;
     // Desde Inicio/otras: también flotan (no quitan el contexto).
@@ -1255,7 +1256,7 @@
     document.body.classList.add('has-turnio-float');
     wireFloatDrag_(win, head);
 
-    if (screen === 'trafico' || screen === 'radar' || screen === 'home' || screen === 'ajustes') {
+    if (screen === 'trafico' || screen === 'radar' || screen === 'ajustes') {
       pintarNavActiva_(screen);
     }
 
