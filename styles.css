@@ -454,6 +454,16 @@ body.monitor-mode #screen-mapa{display:none!important}
 .home-glance-card{margin:0;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
 .home-glance-card:hover{box-shadow:0 8px 24px rgba(21,34,50,.1)}
 .home-glance-card:active{transform:scale(.99)}
+#home-card-radar{cursor:default}
+#home-card-radar:active{transform:none}
+.welcome-list{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.35}
+.welcome-list li{padding:7px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.welcome-list li:last-child{border-bottom:none}
+.home-retraso-item{cursor:pointer;border-radius:8px;margin:0 -4px;padding-left:4px;padding-right:4px}
+.home-retraso-item:hover,.home-retraso-item:focus{background:rgba(45,127,249,.08);outline:none}
+.home-retraso-item strong{color:var(--primary-dark)}
+.alert-flash{animation:alert-flash-pulse 2.1s ease-out 1;box-shadow:0 0 0 3px rgba(45,127,249,.45)}
+@keyframes alert-flash-pulse{0%{box-shadow:0 0 0 6px rgba(45,127,249,.55)}100%{box-shadow:0 0 0 0 rgba(45,127,249,0)}}
 .home-radar-ambito{font-weight:600;color:var(--muted)}
 .home-radar-ambito strong{color:var(--primary-dark);font-weight:800}
 .home-shortcuts{margin:0 0 10px}

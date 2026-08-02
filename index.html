@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=enlaces31">
+    <link rel="stylesheet" href="./styles.css?v=enlaces32">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces31</span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces32</span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -55,8 +55,11 @@
 
         <div class="home-glance">
           <h3 class="home-glance-title">Primer vistazo</h3>
-          <article class="welcome-card radar-summary home-glance-card" data-go="radar" role="button" tabindex="0">
-            <h3><span>&#128225; Retrasos e incidencias</span><button type="button" class="text-btn">Abrir Radar</button></h3>
+          <article class="welcome-card radar-summary home-glance-card" id="home-card-radar">
+            <h3>
+              <span id="home-radar-title">&#128225; Retrasos &ge; 15 min &middot; Andaluc&iacute;a</span>
+              <button type="button" class="text-btn" data-go="radar">Radar</button>
+            </h3>
             <div id="home-radar" class="welcome-muted">Cargando Radar&hellip;</div>
           </article>
           <article class="welcome-card home-glance-card" data-go="avisos" role="button" tabindex="0">
@@ -792,7 +795,7 @@
               <div class="cx-hi-icon">&#127968;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Primer vistazo</div>
-                <div class="cx-hi-desc">Resumen vivo del <strong>Radar</strong> (retrasos/incidencias) y de los <strong>avisos de red</strong>. Pulsa la tarjeta para abrir la pantalla completa. Los accesos r&aacute;pidos a sistemas Renfe/ADIF est&aacute;n en <strong>Circulaci&oacute;n</strong>.</div>
+                <div class="cx-hi-desc">Lista de <strong>retrasos &ge; 15 min</strong> del &aacute;mbito del Radar (p. ej. Andaluc&iacute;a) y resumen de <strong>avisos de red</strong>. Pulsa un tren de la lista para abrir su tarjeta en el Radar. Los accesos r&aacute;pidos a sistemas Renfe/ADIF est&aacute;n en <strong>Circulaci&oacute;n</strong>.</div>
               </div>
             </div>
           </div>
@@ -1181,12 +1184,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=enlaces31"></script>
-    <script src="./conexiones.js?v=enlaces31"></script>
+    <script src="./turnio-config.js?v=enlaces32"></script>
+    <script src="./conexiones.js?v=enlaces32"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas5"></script>
-    <script src="./app.js?v=enlaces31"></script>
+    <script src="./app.js?v=enlaces32"></script>
   </body>
 </html>
 

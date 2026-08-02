@@ -2121,30 +2121,120 @@
       return !q || JSON.stringify(a).toLowerCase().indexOf(q) >= 0;
     });
   }
+
+  var pendingRadarFocusCod_ = '';
+
+  function rutaCortaRadarHome_(a) {
+    var t = plainText((a && (a.linea || a.mensaje)) || '').replace(/^[\s▪·•■▫]+/, '').trim();
+    var m = t.match(/(.+?)\s*(?:→|->|➔|➜|➔)\s*(.+)/);
+    if (m) {
+      return (m[1].replace(/\s+/g, ' ').trim() + ' → ' + m[2].replace(/\s+/g, ' ').trim()).substring(0, 90);
+    }
+    return t.substring(0, 90);
+  }
+
+  function retrasos15Home_() {
+    var out = [];
+    (radar || []).forEach(function (a) {
+      if (!a) return;
+      var tipo = String(a.tipo || '');
+      if (/LIMPIA|ERROR|ACTUALIZ/i.test(tipo)) return;
+      var r = Number(a.retrasoNum || 0);
+      if (!(r >= 15)) return;
+      var tren = String(a.codTren || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+      if (!tren) return;
+      out.push({
+        tren: tren,
+        retraso: r,
+        ruta: rutaCortaRadarHome_(a),
+        trip: String(a.tripId || a.trip_id || '')
+      });
+    });
+    out.sort(function (a, b) { return b.retraso - a.retraso; });
+    return out.slice(0, 10);
+  }
+
+  function pintarHomeRetrasos15_() {
+    var home = document.getElementById('home-radar');
+    var title = document.getElementById('home-radar-title');
+    var ambito = etiquetaAmbitoRadarHome_();
+    if (title) {
+      title.innerHTML = '&#128225; Retrasos &ge; 15 min &middot; ' + esc(ambito);
+    }
+    if (!home) return;
+    if (!radar.length || (radar.length === 1 && /LIMPIA/i.test(String(radar[0].tipo || '')))) {
+      var msg = (radar[0] && radar[0].mensaje) || 'Ningún tren con demora ≥ 15 min en el sondeo actual.';
+      if (/normalidad|limpia|sin incid/i.test(msg)) {
+        home.innerHTML = '<span class="welcome-muted">Ningún tren con demora ≥ 15 min en el sondeo actual.</span>';
+      } else {
+        home.innerHTML = '<span class="welcome-muted">' + esc(msg) + '</span>';
+      }
+      return;
+    }
+    var lista = retrasos15Home_();
+    if (!lista.length) {
+      home.innerHTML = '<span class="welcome-muted">Ningún tren con demora ≥ 15 min en el sondeo actual.</span>';
+      return;
+    }
+    home.innerHTML = '<ul class="welcome-list home-retrasos-list">' + lista.map(function (x) {
+      return '<li class="home-retraso-item" role="button" tabindex="0" data-radar-tren="' + esc(x.tren) + '"' +
+        (x.trip ? ' data-radar-trip="' + esc(x.trip) + '"' : '') +
+        ' title="Abrir en Radar">' +
+        '<span><strong>' + esc(x.tren) + '</strong> +' + esc(String(x.retraso)) + ' min</span>' +
+        '<span class="welcome-muted">' + esc(x.ruta || '') + '</span></li>';
+    }).join('') + '</ul>';
+  }
+
+  function enfocarTarjetaRadarPendiente_() {
+    var cod = String(pendingRadarFocusCod_ || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    if (!cod || !list) return;
+    var card = null;
+    list.querySelectorAll('.alert[data-cod]').forEach(function (el) {
+      if (card) return;
+      var c = String(el.getAttribute('data-cod') || '').replace(/^0+(?=\d)/, '');
+      if (c === cod) card = el;
+    });
+    if (!card) return;
+    pendingRadarFocusCod_ = '';
+    try {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (_) {
+      card.scrollIntoView(true);
+    }
+    card.classList.add('alert-flash');
+    window.setTimeout(function () { card.classList.remove('alert-flash'); }, 2200);
+  }
+
+  function irATarjetaRadarDesdeHome_(cod) {
+    var tren = String(cod || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    if (!tren) {
+      go('radar');
+      return;
+    }
+    pendingRadarFocusCod_ = tren;
+    mode = 'TODOS';
+    document.querySelectorAll('.filter').forEach(function (x) {
+      x.classList.toggle('active', x.dataset.mode === 'TODOS');
+    });
+    var search = document.getElementById('search');
+    if (search) search.value = '';
+    go('radar');
+    render();
+    window.setTimeout(enfocarTarjetaRadarPendiente_, 80);
+  }
+
   function render() {
     var a = filtered();
     var total = radar[0] && Number(radar[0].totalActivos);
     var incid = radar[0] && Number(radar[0].totalIncidencias);
-    var home = document.getElementById('home-radar');
-    var ambito = etiquetaAmbitoRadarHome_();
     meta.textContent = 'Última carga: ' + new Date().toLocaleTimeString('es-ES', {
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
+    pintarHomeRetrasos15_();
     if (!radar.length || (radar.length === 1 && /LIMPIA/i.test(String(radar[0].tipo || '')))) {
       var msg = radar[0] && radar[0].mensaje || 'Red operando con normalidad.';
       list.innerHTML = '<div class="empty clean">' + esc(msg) + '</div>';
-      if (home) {
-        home.innerHTML = esc(msg) +
-          ' <span class="home-radar-ambito">· Datos de <strong>' + esc(ambito) + '</strong></span>';
-      }
       return;
-    }
-    var nTrenes = isFinite(total) ? total : radar.length;
-    var nIncid = isFinite(incid) ? incid : radar.length;
-    if (home) {
-      home.innerHTML = '<b>' + esc(String(nTrenes)) + ' trenes analizados</b> &middot; ' +
-        esc(String(nIncid)) + ' incidencia' + (Number(nIncid) === 1 ? '' : 's') +
-        ' en <strong>' + esc(ambito) + '</strong>';
     }
     var head = isFinite(total)
       ? '<div class="summary-chips"><span>&#128642; ' + total + ' trenes</span><span class="incident">&#9888; ' +
@@ -2175,6 +2265,7 @@
         '</div></div>' +
         '<div class="marcha-panel" hidden></div></article>';
     }).join('');
+    enfocarTarjetaRadarPendiente_();
   }
   function labelStatus(s) {
     return s === 'STOPPED_AT' ? '&#128205; Posición en estación'
@@ -3483,6 +3574,28 @@
   document.querySelectorAll('[data-go]').forEach(function (b) {
     b.addEventListener('click', function () { go(b.dataset.go); });
   });
+  (function wireHomeRetrasosRadar_() {
+    var home = document.getElementById('home-radar');
+    if (!home) return;
+    function activar(el) {
+      if (!el) return;
+      irATarjetaRadarDesdeHome_(el.getAttribute('data-radar-tren'));
+    }
+    home.addEventListener('click', function (e) {
+      var item = e.target.closest('.home-retraso-item');
+      if (!item || !home.contains(item)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      activar(item);
+    });
+    home.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var item = e.target.closest('.home-retraso-item');
+      if (!item || !home.contains(item)) return;
+      e.preventDefault();
+      activar(item);
+    });
+  })();
   var btnRed = document.getElementById('btn-estado-red');
   if (btnRed) btnRed.addEventListener('click', toggleTeletipoRed);
   var btnRefAvisos = document.getElementById('btn-refrescar-avisos');
