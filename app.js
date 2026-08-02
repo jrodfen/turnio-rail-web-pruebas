@@ -3357,8 +3357,9 @@
       case 'anadir-dt':
         return base + 'SrvRenfeAsignar_recursos?todo=documento_tren_mensaje';
       case 'sin-justificar':
+        // Mercado 31 (Cercanías Andalucía). Rango: día 1 del mes → hoy.
         return base + 'SrvRenfeIncidencias?todo=retsinjustificar&fincidencia=01/' + f.mm + '/' + f.yyyy +
-          '&fechafin=' + f.slash + '&horaIni=0000&horaFin=2359&mercado=90,0,60,62,61,64,65,68,80';
+          '&fechafin=' + f.slash + '&horaIni=0000&horaFin=2359&mercado=31';
       case 'transbordados':
         return base + 'SrvRenfeSituacion?todo=informetrasbordados&fechaDesde=' + f.slash + '&fechaHasta=' + f.slash;
       case 'matricula-real':
