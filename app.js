@@ -839,13 +839,17 @@
       var padded = String(codigo);
       while (padded.length < 5) padded = '0' + padded;
       var canales = [];
+      // Panel actual (Gravita): PRO-ECM-{código}. GAS antiguo usaba ECM-{código}.
       [codigo, padded].forEach(function (c) {
-        ['ECM-' + c, c, 'ECM' + c].forEach(function (ch) {
+        ['PRO-ECM-' + c, 'ECM-' + c, c, 'ECM' + c].forEach(function (ch) {
           if (canales.indexOf(ch) < 0) canales.push(ch);
         });
       });
-      // También Atocha como control si no es la estación pedida.
-      if (codigo !== '18000') canales.push('ECM-18000');
+      // Controles: Atocha con prefijo nuevo y antiguo.
+      if (codigo !== '18000') {
+        canales.push('PRO-ECM-18000');
+        canales.push('ECM-18000');
+      }
       for (var i = 0; i < canales.length; i++) {
         var canal = canales[i];
         try {
