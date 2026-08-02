@@ -3356,7 +3356,8 @@
     { code: '50', name: 'Rodalies Catalunya' },
     { code: '35', name: 'SP País Vasco' },
     { code: '34', name: 'SP Ámbito Extremadura' },
-    { code: '90,0,60,62,61,64,65,68,80', name: 'Todos los mercados', todos: true }
+    // Antiguo listado + los SP/Rodalies del selector.
+    { code: '90,0,60,62,61,64,65,68,80,10,31,30,38,50,35,34', name: 'Todos los mercados', todos: true }
   ];
   var MERCADO_SIN_JUSTIFICAR_DEFAULT_ = '31';
 
