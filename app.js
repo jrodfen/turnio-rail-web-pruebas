@@ -107,6 +107,115 @@
     var saludo = h < 12 ? 'Buenos días' : (h < 20 ? 'Buenas tardes' : 'Buenas noches');
     return saludo + ', ' + (nombre || 'Usuario');
   }
+
+  /** Misma fuente y ciudad que GAS producción (Sevilla / Open-Meteo). */
+  var CLIMA_HOME_URL_ =
+    'https://api.open-meteo.com/v1/forecast?latitude=37.3891&longitude=-5.9845' +
+    '&current=temperature_2m,weather_code,relative_humidity_2m' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min' +
+    '&forecast_days=2&timezone=Europe%2FMadrid';
+  var climaHomeCargando_ = false;
+  var climaHomeCache_ = null;
+
+  function descWeatherWmo_(code) {
+    var c = Number(code);
+    if (c === 0) return 'Despejado';
+    if (c <= 3) return 'Poco nuboso';
+    if (c <= 48) return 'Niebla o nubes';
+    if (c <= 57) return 'Llovizna';
+    if (c <= 67) return 'Lluvia';
+    if (c <= 77) return 'Nieve o granizo';
+    if (c <= 82) return 'Chubascos';
+    if (c <= 86) return 'Nieve intensa';
+    if (c <= 99) return 'Tormenta';
+    return 'Variable';
+  }
+
+  function pintarClimaBienvenida_(data) {
+    var elC = document.getElementById('welcome-body-clima-ahora');
+    var elP = document.getElementById('welcome-body-clima-prev');
+    if (!data) {
+      if (elC) elC.textContent = 'Sin datos.';
+      if (elP) elP.textContent = 'Sin datos.';
+      return;
+    }
+    if (elC) {
+      if (data.clima && data.clima.temp != null) {
+        elC.innerHTML =
+          '<div class="welcome-temp-now">' + Math.round(Number(data.clima.temp)) + '°C</div>' +
+          '<div class="welcome-muted">' + esc(descWeatherWmo_(data.clima.code)) +
+          (data.clima.humedad != null ? (' · Humedad ' + esc(String(data.clima.humedad)) + '%') : '') +
+          '</div>';
+      } else {
+        elC.textContent = 'Tiempo no disponible.';
+      }
+    }
+    if (elP) {
+      if (data.climaPrevision && data.climaPrevision.hoy && data.climaPrevision.manana) {
+        var h = data.climaPrevision.hoy;
+        var m = data.climaPrevision.manana;
+        elP.innerHTML =
+          '<div class="welcome-prev-line">Hoy · máx ' + Math.round(Number(h.tmax)) + '° · mín ' +
+          Math.round(Number(h.tmin)) + '°</div>' +
+          '<div class="welcome-muted">' + esc(descWeatherWmo_(h.code)) + '</div>' +
+          '<div class="welcome-prev-line" style="margin-top:10px;">Mañana · máx ' +
+          Math.round(Number(m.tmax)) + '° · mín ' + Math.round(Number(m.tmin)) + '°</div>' +
+          '<div class="welcome-muted">' + esc(descWeatherWmo_(m.code)) + '</div>';
+      } else {
+        elP.textContent = 'Previsión no disponible.';
+      }
+    }
+  }
+
+  async function cargarClimaBienvenida_(force) {
+    var elC = document.getElementById('welcome-body-clima-ahora');
+    var elP = document.getElementById('welcome-body-clima-prev');
+    if (!elC && !elP) return;
+    if (!force && climaHomeCache_) {
+      pintarClimaBienvenida_(climaHomeCache_);
+      return;
+    }
+    if (climaHomeCargando_) return;
+    climaHomeCargando_ = true;
+    if (elC) elC.textContent = 'Cargando…';
+    if (elP) elP.textContent = 'Cargando…';
+    try {
+      var r = await fetch(CLIMA_HOME_URL_, { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var wj = await r.json();
+      var out = { clima: null, climaPrevision: null };
+      if (wj && wj.current) {
+        out.clima = {
+          temp: wj.current.temperature_2m,
+          code: wj.current.weather_code,
+          humedad: wj.current.relative_humidity_2m
+        };
+      }
+      if (wj && wj.daily && wj.daily.time && wj.daily.time.length >= 2) {
+        out.climaPrevision = {
+          hoy: {
+            fecha: wj.daily.time[0],
+            tmax: wj.daily.temperature_2m_max[0],
+            tmin: wj.daily.temperature_2m_min[0],
+            code: wj.daily.weather_code[0]
+          },
+          manana: {
+            fecha: wj.daily.time[1],
+            tmax: wj.daily.temperature_2m_max[1],
+            tmin: wj.daily.temperature_2m_min[1],
+            code: wj.daily.weather_code[1]
+          }
+        };
+      }
+      climaHomeCache_ = out;
+      pintarClimaBienvenida_(out);
+    } catch (e) {
+      if (elC) elC.textContent = 'Tiempo no disponible.';
+      if (elP) elP.textContent = 'Previsión no disponible.';
+    } finally {
+      climaHomeCargando_ = false;
+    }
+  }
   function sincronizarSelectRegionHidden_() {
     var sel = document.getElementById('region');
     if (!sel) return;
@@ -1090,7 +1199,10 @@
     if (screen === 'pantallas') abrirPantallas();
     if (screen === 'kms') abrirKms();
     if (screen === 'mapa') openMapa();
-    if (screen === 'home') refrescarAvisosRed();
+    if (screen === 'home') {
+      refrescarAvisosRed();
+      cargarClimaBienvenida_(false);
+    }
     if (screen === 'mallas') {
       if (window.TurnioMallasGtfs) {
         window.TurnioMallasGtfs.asegurarOperativaGtfs().catch(function (err) {
@@ -1311,6 +1423,7 @@
     else setVigilanteState(false, true);
     gestionarAutoRadar();
     refrescarAvisosRed();
+    cargarClimaBienvenida_(false);
     // Precarga flota del mapa en segundo plano (no mallas: demasiado pesado).
     precargarFlotaMapa();
   }
@@ -3595,6 +3708,16 @@
 
   document.querySelectorAll('[data-go]').forEach(function (b) {
     b.addEventListener('click', function () { go(b.dataset.go); });
+  });
+  ['btn-refrescar-clima', 'btn-refrescar-clima-prev'].forEach(function (id) {
+    var btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        cargarClimaBienvenida_(true);
+      });
+    }
   });
   (function wireHomeRetrasosRadar_() {
     var home = document.getElementById('home-radar');

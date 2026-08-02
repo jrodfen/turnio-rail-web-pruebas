@@ -445,6 +445,18 @@ body.monitor-mode #screen-mapa{display:none!important}
 @media (min-width:1100px){
   .circ-grid--links{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
+.welcome-top-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin-bottom:14px}
+.welcome-top-row .home-welcome{flex:1 1 200px;margin-bottom:0;min-width:180px}
+.welcome-weather-cols{flex:1 1 220px;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:200px;align-content:stretch}
+.welcome-weather-cols .welcome-card{margin-bottom:0;min-height:0}
+.welcome-weather-cols .welcome-card h3{margin:0 0 8px;font-size:13px;font-weight:800;color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.welcome-link{border:0;background:transparent;padding:0;font-size:11px;font-weight:700;color:var(--primary);cursor:pointer;white-space:nowrap}
+.welcome-link:hover{opacity:.85}
+.welcome-prev-line{font-size:12px;font-weight:700;color:var(--text);line-height:1.35;margin-top:2px}
+.welcome-temp-now{font-size:26px;font-weight:900;color:var(--primary-dark);line-height:1.1}
+@media (max-width:640px){
+  .welcome-weather-cols{flex-basis:100%;grid-template-columns:1fr 1fr}
+}
 .home-welcome{text-align:left;margin-bottom:14px}
 .home-welcome-kicker{margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary-dark);opacity:.85}
 .home-welcome h2{margin:0 0 6px;font-size:24px;letter-spacing:-.02em}

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=enlaces35">
+    <link rel="stylesheet" href="./styles.css?v=enlaces36">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -44,13 +44,31 @@
         </div>
       </header>
       <section id="screen-home" class="screen active">
-        <div class="welcome-hero home-welcome">
-          <div class="home-welcome-top">
-            <p class="home-welcome-kicker">TURNIO RAIL &middot; pruebas</p>
-            <button type="button" class="cx-help-ico home-help-ico" id="btn-ayuda-home" title="Manual de TURNIO" aria-label="Abrir manual">?</button>
+        <div class="welcome-top-row">
+          <div class="welcome-hero home-welcome">
+            <div class="home-welcome-top">
+              <p class="home-welcome-kicker">TURNIO RAIL &middot; pruebas</p>
+              <button type="button" class="cx-help-ico home-help-ico" id="btn-ayuda-home" title="Manual de TURNIO" aria-label="Abrir manual">?</button>
+            </div>
+            <h2 id="welcome-name">Hola</h2>
+            <p id="welcome-sub">Bienvenido. Aqu&iacute; tienes un primer vistazo al Radar y a los avisos de red.</p>
           </div>
-          <h2 id="welcome-name">Hola</h2>
-          <p id="welcome-sub">Bienvenido. Aqu&iacute; tienes un primer vistazo al Radar y a los avisos de red.</p>
+          <div class="welcome-weather-cols">
+            <div class="welcome-card" id="welcome-card-clima-ahora">
+              <h3>
+                <span>&#127780;&#65039; Sevilla &middot; ahora</span>
+                <button type="button" class="welcome-link" id="btn-refrescar-clima" title="Actualizar tiempo">&#8635;</button>
+              </h3>
+              <div id="welcome-body-clima-ahora" class="welcome-muted">Cargando&hellip;</div>
+            </div>
+            <div class="welcome-card" id="welcome-card-clima-prev">
+              <h3>
+                <span>&#128197; Previsi&oacute;n</span>
+                <button type="button" class="welcome-link" id="btn-refrescar-clima-prev" title="Actualizar previsi&oacute;n">&#8635;</button>
+              </h3>
+              <div id="welcome-body-clima-prev" class="welcome-muted">Cargando&hellip;</div>
+            </div>
+          </div>
         </div>
 
         <div class="home-glance">
@@ -795,7 +813,7 @@
               <div class="cx-hi-icon">&#127968;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Primer vistazo</div>
-                <div class="cx-hi-desc">Resumen del Radar (<strong>trenes analizados / incidencias</strong> del &aacute;mbito filtrado) m&aacute;s la lista de <strong>retrasos &ge; 15 min</strong>. Pulsa un tren de esa lista para abrir su tarjeta en el Radar. Debajo, avisos de red. Los accesos r&aacute;pidos est&aacute;n en <strong>Circulaci&oacute;n</strong>.</div>
+                <div class="cx-hi-desc">Junto al saludo: <strong>tiempo en Sevilla</strong> y <strong>previsi&oacute;n de 2 d&iacute;as</strong> (como en GAS). Debajo, resumen del Radar (trenes / incidencias del &aacute;mbito) m&aacute;s retrasos &ge; 15 min con enlace a su tarjeta, y avisos de red. Accesos r&aacute;pidos en <strong>Circulaci&oacute;n</strong>.</div>
               </div>
             </div>
           </div>
@@ -1184,12 +1202,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=version2"></script>
-    <script src="./conexiones.js?v=enlaces35"></script>
+    <script src="./turnio-config.js?v=enlaces36"></script>
+    <script src="./conexiones.js?v=enlaces36"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas5"></script>
-    <script src="./app.js?v=enlaces35"></script>
+    <script src="./app.js?v=enlaces36"></script>
   </body>
 </html>
 

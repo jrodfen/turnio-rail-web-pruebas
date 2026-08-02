@@ -1,6 +1,6 @@
 /* Este repositorio es público: no guardar claves, tokens ni datos privados.
    La URL siguiente es el puente de PRUEBAS; no contiene secretos. */
-window.TURNIO_FRONT_BUILD = 'enlaces35';
+window.TURNIO_FRONT_BUILD = 'enlaces36';
 // Versión visible para usuarios. Actualizar este valor en cada entrega funcional.
 window.TURNIO_APP_VERSION = 'V.2';
 /* Escritorio ≥900px: herramientas en ventana flotante sin salir de Radar/Mapa.
