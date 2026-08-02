@@ -1066,9 +1066,10 @@
     if (!esDesktopFloat_()) return false;
     if (!FLOAT_TITLES_[screen]) return false;
     var cur = pantallaActivaId_();
-    // Circulación flota sobre Radar/Mapa; Radar flota sobre Circulación/Mapa.
+    // Radar: flota desde cualquier pantalla que no sea el propio Radar a pantalla completa.
+    if (screen === 'radar') return !!cur && cur !== 'radar';
+    // Circulación flota sobre Radar/Mapa.
     if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
-    if (screen === 'radar') return cur === 'trafico' || cur === 'mapa';
     // Desde Radar/Mapa: Inicio y Ajustes flotan (1er clic abre, 2º cierra).
     if (screen === 'home' || screen === 'ajustes') return cur === 'radar' || cur === 'mapa';
     // Herramientas: flotan si la base es Radar, Mapa o Circulación (mismo uso).

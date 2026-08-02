@@ -1,6 +1,6 @@
 /* Este repositorio es público: no guardar claves, tokens ni datos privados.
    La URL siguiente es el puente de PRUEBAS; no contiene secretos. */
-window.TURNIO_FRONT_BUILD = 'enlaces24';
+window.TURNIO_FRONT_BUILD = 'enlaces25';
 /* Escritorio ≥900px: herramientas en ventana flotante sin salir de Radar/Mapa.
    false = comportamiento clásico (una pantalla). Móvil no usa flotantes. */
 window.TURNIO_DESKTOP_FLOAT_WINDOWS = true;
