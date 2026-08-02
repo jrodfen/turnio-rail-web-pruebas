@@ -3518,7 +3518,17 @@
     else if (tipo === 'mallas') go('mallas');
     else if (tipo === 'trafico') go('trafico');
     else if (tipo === 'aviso') abrirAvisoManual();
+    else if (tipo === 'ayuda') abrirAyudaApp_();
     else if (tipo === 'logout') cerrarSesionPruebas_();
+  }
+
+  function abrirAyudaApp_() {
+    var ov = document.getElementById('app-help-overlay');
+    if (ov) ov.hidden = false;
+  }
+  function cerrarAyudaApp_() {
+    var ov = document.getElementById('app-help-overlay');
+    if (ov) ov.hidden = true;
   }
 
   function cerrarSesionPruebas_() {
@@ -3548,6 +3558,18 @@
       var btn = e.target.closest('[data-fab]');
       if (!btn || !fabMenu.contains(btn)) return;
       accionFAB_(btn.getAttribute('data-fab'));
+    });
+  }
+  var btnAyudaApp = document.getElementById('btn-ayuda-app');
+  if (btnAyudaApp) btnAyudaApp.addEventListener('click', abrirAyudaApp_);
+  var btnAyudaHome = document.getElementById('btn-ayuda-home');
+  if (btnAyudaHome) btnAyudaHome.addEventListener('click', abrirAyudaApp_);
+  var btnAyudaAppCerrar = document.getElementById('btn-ayuda-app-cerrar');
+  if (btnAyudaAppCerrar) btnAyudaAppCerrar.addEventListener('click', cerrarAyudaApp_);
+  var appAyudaOv = document.getElementById('app-help-overlay');
+  if (appAyudaOv) {
+    appAyudaOv.addEventListener('click', function (e) {
+      if (e.target === appAyudaOv) cerrarAyudaApp_();
     });
   }
   var btnAdminRef = document.getElementById('btn-admin-refrescar');

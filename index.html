@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=enlaces28">
+    <link rel="stylesheet" href="./styles.css?v=enlaces29">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces28</span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces29</span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -45,7 +45,10 @@
       </header>
       <section id="screen-home" class="screen active">
         <div class="welcome-hero home-welcome">
-          <p class="home-welcome-kicker">TURNIO RAIL &middot; pruebas</p>
+          <div class="home-welcome-top">
+            <p class="home-welcome-kicker">TURNIO RAIL &middot; pruebas</p>
+            <button type="button" class="cx-help-ico home-help-ico" id="btn-ayuda-home" title="Manual de TURNIO" aria-label="Abrir manual">?</button>
+          </div>
           <h2 id="welcome-name">Hola</h2>
           <p id="welcome-sub">Bienvenido. Aqu&iacute; tienes un primer vistazo al Radar y a los avisos de red.</p>
         </div>
@@ -504,6 +507,14 @@
             <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas</span>
           </span>
         </button>
+        <button type="button" class="ajustes-card" id="btn-ayuda-app">
+          <span class="ajustes-card-ico" aria-hidden="true">&#128214;</span>
+          <span class="ajustes-card-body">
+            <b>Manual de TURNIO</b>
+            <span>C&oacute;mo funciona cada parte: Inicio, Radar, Vigilante, Mapa, Circulaci&oacute;n y m&aacute;s.</span>
+            <span class="ajustes-chip">Ayuda completa</span>
+          </span>
+        </button>
         <button type="button" class="ajustes-card" id="logout">
           <span class="ajustes-card-ico" aria-hidden="true">&#128682;</span>
           <span class="ajustes-card-body">
@@ -582,6 +593,10 @@
         <button type="button" class="fab-snake-item" data-fab="trafico">
           <span class="fab-snake-label">Circulaci&oacute;n</span>
           <span class="fab-snake-glow fab-snake-glow--trafico" aria-hidden="true">&#128642;</span>
+        </button>
+        <button type="button" class="fab-snake-item" data-fab="ayuda">
+          <span class="fab-snake-label">Manual de uso</span>
+          <span class="fab-snake-glow fab-snake-glow--ayuda" aria-hidden="true">&#128214;</span>
         </button>
         <button type="button" class="fab-snake-item" data-fab="logout">
           <span class="fab-snake-label">Cerrar sesi&oacute;n</span>
@@ -725,6 +740,283 @@
     </div>
 
     </div><!-- #vig-modals-host -->
+
+    <div id="app-help-overlay" class="cx-help-overlay app-help-overlay" hidden>
+      <div class="cx-help-modal" role="dialog" aria-modal="true" aria-labelledby="app-help-title">
+        <div class="cx-help-header">
+          <div>
+            <h2 id="app-help-title">Manual de TURNIO</h2>
+            <p>TURNIO RAIL &middot; entorno de pruebas</p>
+          </div>
+          <button type="button" class="cx-help-close" id="btn-ayuda-app-cerrar" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="cx-help-body">
+
+          <div class="cx-help-section">
+            <h3>C&oacute;mo moverse</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128221;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Barra inferior</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-blue">Inicio</span>
+                  <span class="help-badge hb-purple">Radar</span>
+                  <span class="help-badge hb-green">Circulaci&oacute;n</span>
+                  <span class="help-badge hb-gray">Ajustes</span>
+                  <span class="help-badge hb-gray">Cuenta</span>
+                  &mdash; siempre a pantalla completa (no flotan).
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#9889;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Men&uacute; flotante &#9889;</div>
+                <div class="cx-hi-desc">Bot&oacute;n abajo a la derecha. Acceso r&aacute;pido a Radar, Mapa, Mallas, Aviso manual, Circulaci&oacute;n, este manual y cerrar sesi&oacute;n.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128187;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Ventanas flotantes (escritorio)</div>
+                <div class="cx-hi-desc">En pantalla ancha (&ge;900&nbsp;px), desde <strong>Radar</strong> o <strong>Mapa</strong> puedes abrir Circulaci&oacute;n, Mallas, Kms, Pantallas, Enlazados o Avisos en una ventana encima sin perder la vista. 1.er clic abre, 2.&ordm; clic cierra. En m&oacute;vil todo sigue a pantalla completa.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Inicio</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#127968;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Primer vistazo</div>
+                <div class="cx-hi-desc">Resumen vivo del <strong>Radar</strong> (retrasos/incidencias) y de los <strong>avisos de red</strong>. Pulsa la tarjeta para abrir la pantalla completa.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128279;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Accesos r&aacute;pidos</div>
+                <div class="cx-hi-desc">Atajos a Cop&eacute;rnico, VMT, MOL, SITRA+, Siges, Gtrenes, GIFO+, MON-R, Interesa, H24 y SIM. En m&oacute;vil o fuera de intranet pueden pedir VPN o SSO de Renfe/ADIF.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Radar (lo esencial)</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128225;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Qu&eacute; muestra</div>
+                <div class="cx-hi-desc">Lista en vivo de trenes con incidencia o demora, a partir de los feeds GTFS-RT de Renfe. Cada tarjeta resume n&uacute;mero, producto, mensaje operativo y minutos de retraso. Si la red va limpia ver&aacute;s el mensaje en verde.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#127758;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Regiones</div>
+                <div class="cx-hi-desc">Bot&oacute;n de regiones: elige hasta <strong>3 &aacute;mbitos</strong> (Andaluc&iacute;a, Madrid, Catalu&ntilde;a, C. Valenciana, Norte&hellip;) o <span class="help-badge hb-blue">Espa&ntilde;a</span> (todas). La selecci&oacute;n se guarda en este dispositivo.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128646;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Filtros CERC. / MD-LD / TODOS</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-green">CERC.</span> solo Cercan&iacute;as.<br>
+                  <span class="help-badge hb-blue">MD/LD</span> Media y Larga Distancia (AVE, Alvia, Avant, Intercity&hellip;).<br>
+                  <span class="help-badge hb-purple">TODOS</span> ambos &aacute;mbitos.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128269;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Buscador</div>
+                <div class="cx-hi-desc">Filtra la lista por n&uacute;mero de tren, texto del mensaje, producto u otros datos visibles en las tarjetas.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128196;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Tarjeta y marcha</div>
+                <div class="cx-hi-desc">Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual, pr&oacute;ximas con demora). Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128221;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Aviso manual</div>
+                <div class="cx-hi-desc">Si el tren no aparece en el Radar pero necesitas redactar un parte, usa <span class="help-badge hb-amber">Redactar Aviso Manual</span> (o el atajo del men&uacute; &#9889;). Introduce el n&uacute;mero y TURNIO completa contexto cuando puede.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128226;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Estado de red</div>
+                <div class="cx-hi-desc">El chip <span class="help-badge hb-red">Red</span> abre el teletipo de avisos de infraestructura. Tambi&eacute;n hay pantalla dedicada <strong>Avisos</strong> (desde Inicio o Circulaci&oacute;n).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128257;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Actualizaci&oacute;n autom&aacute;tica</div>
+                <div class="cx-hi-desc">Con el Radar visible se refresca solo cada <strong>2 minutos</strong>. La hora de &uacute;ltima carga aparece bajo la lista.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128250;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Modo monitor</div>
+                <div class="cx-hi-desc">Pensado para pantalla de pared: oculta barra y controles. Sal con el bot&oacute;n <span class="help-badge hb-gray">Salir</span> de la esquina.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Vigilante CGO</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128308;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Qu&eacute; hace</div>
+                <div class="cx-hi-desc">Bot&oacute;n <span class="help-badge hb-green">VIGILANTE: ON/OFF</span> en el Radar (perfiles con escritura). Escanea peri&oacute;dicamente la regi&oacute;n activa y avisa en pantalla de situaciones cr&iacute;ticas.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#9888;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Umbrales de retraso grave</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-red">&ge;15 min</span> AVE / Avlo / Alvia / Avant / Intercity (productos &laquo;alta&raquo;).<br>
+                  <span class="help-badge hb-red">&ge;25 min</span> resto de servicios.<br>
+                  Modal rojo = demora grave. Este camino es <strong>independiente</strong> del detector de detenidos.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128683;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Sin salida</div>
+                <div class="cx-hi-desc">Aviso cuando el tren sigue en origen sin realizar la salida tras el horario (camino aparte). No se mezcla con el detector de detenidos.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128679;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Detenidos (en calibraci&oacute;n)</div>
+                <div class="cx-hi-desc">El detector nuevo de detenci&oacute;n (estaci&oacute;n / v&iacute;a) est&aacute; en pruebas en paralelo. <strong>No se muestra a&uacute;n</strong> como modal operativo en el Vigilante del Radar hasta completar calibraci&oacute;n y OK expl&iacute;cito. Retraso grave y Sin salida s&iacute; siguen activos.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Mapa</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128506;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Flota en vivo</div>
+                <div class="cx-hi-desc">Marcadores de la flota sobre el mapa, filtrables por regi&oacute;n y modo. Colores seg&uacute;n demora. Pulsa un tren para ficha y marcha. Se actualiza peri&oacute;dicamente mientras la pantalla est&aacute; abierta.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128269;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Buscar tren</div>
+                <div class="cx-hi-desc">Campo de b&uacute;squeda: centra el mapa en ese n&uacute;mero si est&aacute; en la flota (y dentro del filtro actual).</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Circulaci&oacute;n</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128642;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Hub de herramientas</div>
+                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas y Enlazados. Abajo: carga del Excel de combinados y atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128203;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Sin justificar</div>
+                <div class="cx-hi-desc">Abre el enlace de Cop&eacute;rnico. Antes puedes elegir el <strong>mercado</strong> (p. ej. Andaluc&iacute;a = 31, o Todos los mercados). Necesitas sesi&oacute;n en Cop&eacute;rnico.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Mallas, Pantallas y Kms</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128646;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Mallas y horarios</div>
+                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. &Uacute;til para planificar y contrastar con lo que ves en Radar/Mapa.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128421;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Pantallas estaci&oacute;n</div>
+                <div class="cx-hi-desc">Busca por c&oacute;digo ADIF o nombre y abre salidas/llegadas de la estaci&oacute;n (enlace a pantallas ADIF).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128207;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Kil&oacute;metros</div>
+                <div class="cx-hi-desc">Calcula distancia entre estaciones (preferencia ancho UIC cuando aplica). Consulta orientativa: no sustituye Cop&eacute;rnico ni el Planificador.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Servicios enlazados</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128279;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Panel de conexiones</div>
+                <div class="cx-hi-desc">Carga el Excel/HTML de <em>Trenes Combinados</em> del d&iacute;a y cruza retrasos con la flota TURNIO. Sem&aacute;foro de proximidad, filtros de estaci&oacute;n/turno y sugerencias de encaminamiento. El manual detallado est&aacute; en el bot&oacute;n <span class="help-badge hb-green">?</span> del propio panel (Circulaci&oacute;n &rarr; Enlazados).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128203;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Copiar enlace Combinados</div>
+                <div class="cx-hi-desc">Copia la URL del Excel de hoy al portapapeles: p&eacute;gala en la barra del navegador (a menudo HTTPS&rarr;HTTP en intranet Cop&eacute;rnico).</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Ajustes y Cuenta</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#9881;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Obtener nueva actualizaci&oacute;n</div>
+                <div class="cx-hi-desc">Fuerza la descarga del c&oacute;digo m&aacute;s reciente sin cerrar sesi&oacute;n. Imprescindible en m&oacute;vil si TURNIO est&aacute; anclado al inicio y ves una build antigua (el login muestra <em>enlacesXX</em>).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128100;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Cuenta y permisos</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-blue">LECTURA</span> consulta.<br>
+                  <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante&hellip;).<br>
+                  <span class="help-badge hb-purple">ADMIN</span> gesti&oacute;n de usuarios en Administraci&oacute;n.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="cx-help-footer">
+          <span>TURNIO RAIL &middot; pruebas</span>
+          <span>Manual general</span>
+        </div>
+      </div>
+    </div>
 
     <div id="cx-help-overlay" class="cx-help-overlay" hidden>
       <div class="cx-help-modal" role="dialog" aria-modal="true" aria-labelledby="cx-help-title">
@@ -887,12 +1179,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=enlaces28"></script>
-    <script src="./conexiones.js?v=enlaces28"></script>
+    <script src="./turnio-config.js?v=enlaces29"></script>
+    <script src="./conexiones.js?v=enlaces29"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=enlaces28"></script>
+    <script src="./app.js?v=enlaces29"></script>
   </body>
 </html>
 

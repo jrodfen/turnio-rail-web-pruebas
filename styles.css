@@ -1068,6 +1068,11 @@ body.has-turnio-float .fixed-nav{z-index:40}
 .fab-snake-glow--aviso{background:#e60000}
 .fab-snake-glow--trafico{background:#2563eb}
 .fab-snake-glow--logout{background:#64748b;font-size:20px}
+.fab-snake-glow--ayuda{background:#0f766e}
+.home-welcome-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px}
+.home-welcome-top .home-welcome-kicker{margin:0}
+.home-help-ico{flex-shrink:0}
+.app-help-overlay{z-index:13000}
 #fab-menu.fab-rail-open .fab-snake-item:active .fab-snake-glow{transform:scale(.94)}
 @keyframes fabAladdinReveal{
   0%{opacity:0;transform:translateY(40px) scale(.2);filter:blur(8px)}
