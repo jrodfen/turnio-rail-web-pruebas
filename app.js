@@ -1025,6 +1025,7 @@
 
   var FLOAT_TITLES_ = {
     trafico: 'Circulación',
+    radar: 'Radar',
     mallas: 'Mallas',
     'mallas-localizador': 'Localizador mallas',
     kms: 'Kilómetros',
@@ -1032,6 +1033,8 @@
     conexiones: 'Servicios enlazados',
     avisos: 'Avisos de red'
   };
+  /** Pantallas base desde las que Circulación/Radar abren como flotante. */
+  var FLOAT_BASE_KEEP_ = { radar: 1, mapa: 1, trafico: 1 };
   var floatState_ = null;
   var floatZ_ = 3000;
   var floatMq_ = null;
@@ -1055,9 +1058,14 @@
   function debeAbrirFlotante_(screen) {
     if (!esDesktopFloat_()) return false;
     if (!FLOAT_TITLES_[screen]) return false;
-    if (screen !== 'trafico') return true;
     var cur = pantallaActivaId_();
-    return cur === 'radar' || cur === 'mapa';
+    // Circulación flota sobre Radar/Mapa; Radar flota sobre Circulación/Mapa.
+    if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
+    if (screen === 'radar') return cur === 'trafico' || cur === 'mapa';
+    // Herramientas: flotan si la base es Radar, Mapa o Circulación (mismo uso).
+    if (FLOAT_BASE_KEEP_[cur]) return true;
+    // Desde Inicio/otras: también flotan (no quitan el contexto).
+    return true;
   }
 
   function entrarPantalla_(screen) {
@@ -1228,9 +1236,9 @@
     document.body.classList.add('has-turnio-float');
     wireFloatDrag_(win, head);
 
-    if (screen === 'trafico') {
+    if (screen === 'trafico' || screen === 'radar') {
       document.querySelectorAll('.nav-item').forEach(function (b) {
-        b.classList.toggle('active', b.dataset.go === 'trafico');
+        b.classList.toggle('active', b.dataset.go === screen);
       });
     }
 
@@ -2307,15 +2315,19 @@
     return window._radarLoading;
   }
 
+  function radarVisibleParaAuto_() {
+    var scr = document.getElementById('screen-radar');
+    if (!scr || appShell.hidden) return false;
+    return scr.classList.contains('active') || scr.classList.contains('screen--in-float');
+  }
+
   /** Igual que GAS producción: refresco automático cada 2 min con el radar visible. */
   function gestionarAutoRadar() {
-    var pantallaRadar = document.getElementById('screen-radar');
-    var activa = !!(pantallaRadar && pantallaRadar.classList.contains('active') && !appShell.hidden);
+    var activa = radarVisibleParaAuto_();
     if (activa) {
       if (!intervaloAutoRadar) {
         intervaloAutoRadar = setInterval(function () {
-          var scr = document.getElementById('screen-radar');
-          if (scr && scr.classList.contains('active') && !appShell.hidden) {
+          if (radarVisibleParaAuto_()) {
             loadRadar({ silent: true });
             refrescarAvisosRed();
           }

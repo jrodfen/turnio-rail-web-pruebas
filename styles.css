@@ -1019,4 +1019,11 @@ body.has-turnio-float .fixed-nav{z-index:40}
 @media(max-width:899px){
   #float-windows-host{display:none!important}
 }
+/* 5 pestañas: Inicio · Radar · Circulación · Ajustes · Cuenta */
+.fixed-nav .nav-item{max-width:76px;font-size:10px}
+.fixed-nav .nav-item span{font-size:20px;margin-bottom:2px}
+@media(max-width:420px){
+  .fixed-nav .nav-item{max-width:64px;font-size:9px;padding:0 1px}
+  .fixed-nav .nav-item span{font-size:18px}
+}
 
