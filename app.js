@@ -3357,7 +3357,12 @@
     { code: '35', name: 'SP País Vasco' },
     { code: '34', name: 'SP Ámbito Extremadura' },
     // Antiguo listado + los SP/Rodalies del selector.
-    { code: '90,0,60,62,61,64,65,68,80,10,31,30,38,50,35,34', name: 'Todos los mercados', todos: true }
+    {
+      code: '90,0,60,62,61,64,65,68,80,10,31,30,38,50,35,34',
+      name: 'Todos los mercados',
+      todos: true,
+      codeLabel: 'antiguos + 10,31,30,38,50,35,34'
+    }
   ];
   var MERCADO_SIN_JUSTIFICAR_DEFAULT_ = '31';
 
@@ -3403,7 +3408,7 @@
       }
       var right = document.createElement('span');
       right.className = 'sj-mercado-code';
-      right.textContent = item.todos ? 'varios' : item.code;
+      right.textContent = item.codeLabel || (item.todos ? 'varios' : item.code);
       btn.appendChild(left);
       btn.appendChild(right);
       list.appendChild(btn);
