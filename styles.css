@@ -1027,3 +1027,77 @@ body.has-turnio-float .fixed-nav{z-index:40}
   .fixed-nav .nav-item span{font-size:18px}
 }
 
+/* Menú flotante FAB (⚡) — mismo patrón que GAS producción */
+#fab-overlay{
+  position:fixed;inset:0;z-index:11999;
+  background:rgba(15,23,42,.45);backdrop-filter:blur(14px) saturate(1.25);
+  -webkit-backdrop-filter:blur(14px) saturate(1.25)
+}
+#fab-container{
+  position:fixed;right:20px;bottom:calc(96px + env(safe-area-inset-bottom));
+  z-index:12000;min-width:72px;width:max-content;max-width:calc(100vw - 20px);
+  height:72px;pointer-events:none;overflow:visible
+}
+#fab-container #fab-main,
+#fab-container #fab-menu .fab-snake-item{pointer-events:auto}
+#fab-menu{
+  position:absolute;right:0;bottom:78px;left:auto;
+  display:none;flex-direction:column-reverse;flex-wrap:nowrap;align-items:flex-end;
+  gap:12px;max-width:min(100vw - 40px,420px);max-height:calc(100vh - 200px);
+  overflow-x:hidden;overflow-y:auto;padding:14px 4px 6px 0;pointer-events:none;
+  z-index:1;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none
+}
+#fab-menu::-webkit-scrollbar{display:none;width:0;height:0}
+#fab-menu:not([hidden]){display:flex}
+#fab-menu .fab-snake-item{
+  position:relative;flex-shrink:0;white-space:nowrap;will-change:transform,opacity;
+  transform-origin:50% 100%;display:flex;align-items:center;gap:10px;
+  border:0;background:transparent;padding:0;cursor:pointer;font:inherit;color:inherit
+}
+.fab-snake-label{
+  background:var(--card);color:var(--text);padding:5px 12px;border-radius:8px;
+  font-size:12px;font-weight:800;box-shadow:var(--shadow)
+}
+.fab-snake-glow{
+  width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;box-shadow:var(--shadow);transition:box-shadow .25s ease,transform .2s ease
+}
+.fab-snake-glow--radar{background:#9c27b0}
+.fab-snake-glow--mapa{background:#ea580c}
+.fab-snake-glow--mallas{background:#059669}
+.fab-snake-glow--aviso{background:#e60000}
+.fab-snake-glow--trafico{background:#2563eb}
+.fab-snake-glow--logout{background:#64748b;font-size:20px}
+#fab-menu.fab-rail-open .fab-snake-item:active .fab-snake-glow{transform:scale(.94)}
+@keyframes fabAladdinReveal{
+  0%{opacity:0;transform:translateY(40px) scale(.2);filter:blur(8px)}
+  58%{opacity:1;filter:blur(0);transform:translateY(-8px) scale(1.08)}
+  100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+}
+#fab-menu.fab-rail-open .fab-snake-item{
+  animation:fabAladdinReveal .52s cubic-bezier(.22,1,.32,1) backwards;
+  animation-delay:var(--fab-delay,0s)
+}
+#fab-main{
+  position:absolute;right:0;bottom:0;z-index:4;width:65px;height:65px;border:0;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:30px;color:#fff;cursor:pointer;
+  background:linear-gradient(145deg,#3b82f6,#6366f1);
+  box-shadow:0 5px 20px rgba(45,127,249,.5);transition:background .3s ease
+}
+#fab-main.fab-main-bump{animation:fabMainBump .38s cubic-bezier(.34,1.2,.64,1) both}
+@keyframes fabMainBump{
+  0%{transform:scale(1)}
+  55%{transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  #fab-menu.fab-rail-open .fab-snake-item{animation:none!important;opacity:1;transform:none!important;filter:none!important}
+  #fab-main.fab-main-bump{animation:none!important}
+}
+body.monitor-mode #fab-container,
+body.monitor-mode #fab-overlay{display:none!important}
+@media(prefers-color-scheme:dark){
+  .fab-snake-label{background:var(--card);color:var(--text)}
+}
+

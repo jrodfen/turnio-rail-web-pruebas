@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=enlaces27">
+    <link rel="stylesheet" href="./styles.css?v=enlaces28">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces27</span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces28</span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -560,6 +560,38 @@
       <button class="nav-item" data-go="ajustes" type="button"><span>&#9881;</span>Ajustes</button>
       <button class="nav-item" data-go="perfil" type="button"><span>&#128100;</span>Cuenta</button>
     </nav>
+    <div id="fab-overlay" hidden></div>
+    <div id="fab-container" hidden>
+      <div id="fab-menu" hidden>
+        <button type="button" class="fab-snake-item" data-fab="radar">
+          <span class="fab-snake-label">Radar de Red</span>
+          <span class="fab-snake-glow fab-snake-glow--radar" aria-hidden="true">&#128225;</span>
+        </button>
+        <button type="button" class="fab-snake-item" data-fab="mapa">
+          <span class="fab-snake-label">Mapa en vivo</span>
+          <span class="fab-snake-glow fab-snake-glow--mapa" aria-hidden="true">&#128506;</span>
+        </button>
+        <button type="button" class="fab-snake-item" data-fab="mallas">
+          <span class="fab-snake-label">Mallas y horarios</span>
+          <span class="fab-snake-glow fab-snake-glow--mallas" aria-hidden="true">&#128646;</span>
+        </button>
+        <button type="button" class="fab-snake-item" data-fab="aviso">
+          <span class="fab-snake-label">Aviso Manual</span>
+          <span class="fab-snake-glow fab-snake-glow--aviso" aria-hidden="true">&#128221;</span>
+        </button>
+        <button type="button" class="fab-snake-item" data-fab="trafico">
+          <span class="fab-snake-label">Circulaci&oacute;n</span>
+          <span class="fab-snake-glow fab-snake-glow--trafico" aria-hidden="true">&#128642;</span>
+        </button>
+        <button type="button" class="fab-snake-item" data-fab="logout">
+          <span class="fab-snake-label">Cerrar sesi&oacute;n</span>
+          <span class="fab-snake-glow fab-snake-glow--logout" aria-hidden="true">&#128682;</span>
+        </button>
+      </div>
+      <button type="button" id="fab-main" aria-label="Men&uacute; r&aacute;pido" aria-expanded="false">
+        <span id="fab-icon">&#9889;</span>
+      </button>
+    </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="float-windows-host" aria-live="polite"></div>
     <div id="vig-modals-host">
@@ -855,12 +887,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=enlaces27"></script>
-    <script src="./conexiones.js?v=enlaces27"></script>
+    <script src="./turnio-config.js?v=enlaces28"></script>
+    <script src="./conexiones.js?v=enlaces28"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=enlaces27"></script>
+    <script src="./app.js?v=enlaces28"></script>
   </body>
 </html>
 

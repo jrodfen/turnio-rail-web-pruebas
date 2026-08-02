@@ -1276,6 +1276,7 @@
     loginShell.hidden = true;
     appShell.hidden = false;
     nav.hidden = false;
+    mostrarFab_(true);
     var nombre = (persona && persona.nombre) || 'Usuario';
     var email = (persona && persona.email) || document.getElementById('email').value || '';
     aplicarPermisosPerfil_(persona);
@@ -2310,6 +2311,8 @@
         }
         if (/sesión|caducada/i.test(e.message)) {
           localStorage.removeItem(sessionKey);
+          if (fabAbierto_) toggleFAB_(false);
+          mostrarFab_(false);
           appShell.hidden = true;
           nav.hidden = true;
           loginShell.hidden = false;
@@ -3434,11 +3437,98 @@
   pintarResumenRegiones_();
   document.getElementById('search').addEventListener('input', render);
   document.getElementById('logout').addEventListener('click', function () {
+    cerrarSesionPruebas_();
+  });
+
+  // --- Menú flotante FAB (⚡), mismo patrón que GAS producción ---
+  var fabAbierto_ = false;
+
+  function mostrarFab_(on) {
+    var box = document.getElementById('fab-container');
+    if (!box) return;
+    if (!on) {
+      if (fabAbierto_) toggleFAB_(false);
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+  }
+
+  function fabSnakeItemVisible_(el) {
+    if (!el || el.hidden) return false;
+    var st = window.getComputedStyle(el);
+    if (st.display === 'none' || st.visibility === 'hidden') return false;
+    return el.offsetParent !== null || st.position === 'fixed';
+  }
+
+  function layoutFabRail_(menu) {
+    if (!menu) return;
+    var items = Array.prototype.slice.call(menu.querySelectorAll('.fab-snake-item')).filter(fabSnakeItemVisible_);
+    items.forEach(function (el, i) {
+      el.style.setProperty('--fab-delay', (i * 0.05) + 's');
+    });
+  }
+
+  function limpiarFabRail_(menu) {
+    if (!menu) return;
+    menu.querySelectorAll('.fab-snake-item').forEach(function (el) {
+      el.style.removeProperty('--fab-delay');
+    });
+  }
+
+  function toggleFAB_(force) {
+    var menu = document.getElementById('fab-menu');
+    var main = document.getElementById('fab-main');
+    var icon = document.getElementById('fab-icon');
+    var overlay = document.getElementById('fab-overlay');
+    if (!menu || !main || !icon || !overlay) return;
+    fabAbierto_ = typeof force === 'boolean' ? !!force : !fabAbierto_;
+    if (fabAbierto_) {
+      menu.hidden = false;
+      menu.style.display = 'flex';
+      limpiarFabRail_(menu);
+      menu.classList.remove('fab-rail-open');
+      void menu.offsetWidth;
+      layoutFabRail_(menu);
+      menu.classList.add('fab-rail-open');
+      overlay.hidden = false;
+      main.style.background = 'linear-gradient(145deg, #1e3a5f, #4338ca)';
+      main.classList.remove('fab-main-bump');
+      void main.offsetWidth;
+      main.classList.add('fab-main-bump');
+      main.setAttribute('aria-expanded', 'true');
+      icon.textContent = '✕';
+    } else {
+      menu.classList.remove('fab-rail-open');
+      limpiarFabRail_(menu);
+      menu.hidden = true;
+      menu.style.display = 'none';
+      overlay.hidden = true;
+      main.classList.remove('fab-main-bump');
+      main.style.background = 'linear-gradient(145deg, #3b82f6, #6366f1)';
+      main.setAttribute('aria-expanded', 'false');
+      icon.textContent = '⚡';
+    }
+  }
+
+  function accionFAB_(tipo) {
+    toggleFAB_(false);
+    if (tipo === 'radar') go('radar');
+    else if (tipo === 'mapa') go('mapa');
+    else if (tipo === 'mallas') go('mallas');
+    else if (tipo === 'trafico') go('trafico');
+    else if (tipo === 'aviso') abrirAvisoManual();
+    else if (tipo === 'logout') cerrarSesionPruebas_();
+  }
+
+  function cerrarSesionPruebas_() {
     setVigilanteState(false, true);
     if (intervaloAutoRadar) {
       clearInterval(intervaloAutoRadar);
       intervaloAutoRadar = null;
     }
+    if (fabAbierto_) toggleFAB_(false);
+    mostrarFab_(false);
     localStorage.removeItem(sessionKey);
     if (supabase) supabase.auth.signOut();
     appShell.hidden = true;
@@ -3446,7 +3536,20 @@
     loginShell.hidden = false;
     loginForm.hidden = false;
     toast('Sesión de pruebas cerrada.');
-  });
+  }
+
+  var fabMain = document.getElementById('fab-main');
+  if (fabMain) fabMain.addEventListener('click', function () { toggleFAB_(); });
+  var fabOverlay = document.getElementById('fab-overlay');
+  if (fabOverlay) fabOverlay.addEventListener('click', function () { toggleFAB_(false); });
+  var fabMenu = document.getElementById('fab-menu');
+  if (fabMenu) {
+    fabMenu.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-fab]');
+      if (!btn || !fabMenu.contains(btn)) return;
+      accionFAB_(btn.getAttribute('data-fab'));
+    });
+  }
   var btnAdminRef = document.getElementById('btn-admin-refrescar');
   if (btnAdminRef) btnAdminRef.addEventListener('click', function () { cargarAdminPerfiles_(); });
   var adminBuscar = document.getElementById('admin-buscar');
