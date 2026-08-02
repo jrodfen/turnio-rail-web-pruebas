@@ -1641,9 +1641,23 @@
       return !trenesYaAlertados[claveCritico(c)];
     });
     if (!nuevos.length) return criticos.length;
-    // Misma regla que GAS: ≥25 → modal rojo; <25 (detención/sin salida/AVE 15-24) → naranja.
-    var graves = nuevos.filter(function (c) { return Number(c.retrasoNum || 0) >= 25; });
-    var detenidos = nuevos.filter(function (c) { return Number(c.retrasoNum || 0) < 25; });
+    // ≥25 → modal rojo. <25 → naranja (sin salida / AVE 15-24).
+    // Detenciones del detector: silenciadas en UI hasta completar calibración
+    // (GAS: VIGILANTE_UI_MOSTRAR_DETENIDOS=false; categoría "detencion").
+    var graves = nuevos.filter(function (c) {
+      if (c && c.categoria === 'detencion') return false;
+      return Number(c.retrasoNum || 0) >= 25;
+    });
+    var detenidos = nuevos.filter(function (c) {
+      if (c && c.categoria === 'detencion') return false;
+      if (c && (c.categoria === 'sin_salida' || c.categoria === 'retraso')) {
+        return Number(c.retrasoNum || 0) < 25;
+      }
+      // Legacy sin categoría: no tratar "Parado…" como detenido de UI.
+      var et = String((c && c.etiquetaModal) || '');
+      if (/^Parado\b/i.test(et) || /·\s*parado\b/i.test(et)) return false;
+      return Number(c.retrasoNum || 0) < 25;
+    });
     if (graves.length) mostrarModalRetrasos(graves);
     if (detenidos.length) mostrarModalDetenciones(detenidos);
     return criticos.length;
