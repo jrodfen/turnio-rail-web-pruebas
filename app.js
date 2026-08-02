@@ -2158,31 +2158,44 @@
     var home = document.getElementById('home-radar');
     var title = document.getElementById('home-radar-title');
     var ambito = etiquetaAmbitoRadarHome_();
+    var total = radar[0] && Number(radar[0].totalActivos);
+    var incid = radar[0] && Number(radar[0].totalIncidencias);
+    var limpia = !radar.length || (radar.length === 1 && /LIMPIA/i.test(String(radar[0].tipo || '')));
     if (title) {
-      title.innerHTML = '&#128225; Retrasos &ge; 15 min &middot; ' + esc(ambito);
+      title.innerHTML = '&#128225; Retrasos e incidencias &middot; ' + esc(ambito);
     }
     if (!home) return;
-    if (!radar.length || (radar.length === 1 && /LIMPIA/i.test(String(radar[0].tipo || '')))) {
-      var msg = (radar[0] && radar[0].mensaje) || 'Ningún tren con demora ≥ 15 min en el sondeo actual.';
-      if (/normalidad|limpia|sin incid/i.test(msg)) {
-        home.innerHTML = '<span class="welcome-muted">Ningún tren con demora ≥ 15 min en el sondeo actual.</span>';
-      } else {
-        home.innerHTML = '<span class="welcome-muted">' + esc(msg) + '</span>';
-      }
-      return;
+
+    var resumenHtml;
+    if (limpia) {
+      var msgLimpia = (radar[0] && radar[0].mensaje) || 'Red operando con normalidad.';
+      resumenHtml = esc(msgLimpia) +
+        ' <span class="home-radar-ambito">&middot; Datos de <strong>' + esc(ambito) + '</strong></span>';
+    } else {
+      var nTrenes = isFinite(total) ? total : radar.length;
+      var nIncid = isFinite(incid) ? incid : radar.length;
+      resumenHtml = '<b>' + esc(String(nTrenes)) + ' trenes analizados</b> &middot; ' +
+        esc(String(nIncid)) + ' incidencia' + (Number(nIncid) === 1 ? '' : 's') +
+        ' en <strong>' + esc(ambito) + '</strong>';
     }
-    var lista = retrasos15Home_();
-    if (!lista.length) {
-      home.innerHTML = '<span class="welcome-muted">Ningún tren con demora ≥ 15 min en el sondeo actual.</span>';
-      return;
+
+    var lista = limpia ? [] : retrasos15Home_();
+    var listaHtml;
+    if (lista.length) {
+      listaHtml = '<div class="home-retrasos-label">Retrasos &ge; 15 min</div>' +
+        '<ul class="welcome-list home-retrasos-list">' + lista.map(function (x) {
+          return '<li class="home-retraso-item" role="button" tabindex="0" data-radar-tren="' + esc(x.tren) + '"' +
+            (x.trip ? ' data-radar-trip="' + esc(x.trip) + '"' : '') +
+            ' title="Abrir en Radar">' +
+            '<span><strong>' + esc(x.tren) + '</strong> +' + esc(String(x.retraso)) + ' min</span>' +
+            '<span class="welcome-muted">' + esc(x.ruta || '') + '</span></li>';
+        }).join('') + '</ul>';
+    } else {
+      listaHtml = '<div class="home-retrasos-label">Retrasos &ge; 15 min</div>' +
+        '<span class="welcome-muted">Ningún tren con demora ≥ 15 min en el sondeo actual.</span>';
     }
-    home.innerHTML = '<ul class="welcome-list home-retrasos-list">' + lista.map(function (x) {
-      return '<li class="home-retraso-item" role="button" tabindex="0" data-radar-tren="' + esc(x.tren) + '"' +
-        (x.trip ? ' data-radar-trip="' + esc(x.trip) + '"' : '') +
-        ' title="Abrir en Radar">' +
-        '<span><strong>' + esc(x.tren) + '</strong> +' + esc(String(x.retraso)) + ' min</span>' +
-        '<span class="welcome-muted">' + esc(x.ruta || '') + '</span></li>';
-    }).join('') + '</ul>';
+
+    home.innerHTML = '<div class="home-radar-resumen">' + resumenHtml + '</div>' + listaHtml;
   }
 
   function enfocarTarjetaRadarPendiente_() {
