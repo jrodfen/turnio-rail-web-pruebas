@@ -1030,8 +1030,6 @@
 
   var FLOAT_TITLES_ = {
     trafico: 'Circulación',
-    radar: 'Radar',
-    ajustes: 'Ajustes',
     mallas: 'Mallas',
     'mallas-localizador': 'Localizador mallas',
     kms: 'Kilómetros',
@@ -1039,8 +1037,10 @@
     conexiones: 'Servicios enlazados',
     avisos: 'Avisos de red'
   };
-  /** Pantallas base desde las que Circulación/Radar abren como flotante. */
-  var FLOAT_BASE_KEEP_ = { radar: 1, mapa: 1, trafico: 1 };
+  /** Pantallas base desde las que Circulación/herramientas abren como flotante. */
+  var FLOAT_BASE_KEEP_ = { radar: 1, mapa: 1 };
+  /** Nunca flotan: siempre pantalla completa (como Inicio). */
+  var FLOAT_NUNCA_ = { home: 1, radar: 1, ajustes: 1, perfil: 1, admin: 1 };
   var floatState_ = null;
   var floatZ_ = 3000;
   var floatMq_ = null;
@@ -1063,20 +1063,15 @@
 
   function debeAbrirFlotante_(screen) {
     if (!esDesktopFloat_()) return false;
+    if (FLOAT_NUNCA_[screen]) return false;
     if (!FLOAT_TITLES_[screen]) return false;
     var cur = pantallaActivaId_();
-    // Radar: flota desde cualquier pantalla que no sea el propio Radar a pantalla completa.
-    if (screen === 'radar') return !!cur && cur !== 'radar';
     // Circulación flota sobre Radar/Mapa.
     if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
-    // Inicio nunca flota (siempre pantalla completa).
-    if (screen === 'home') return false;
-    // Desde Radar/Mapa: Ajustes flota (1er clic abre, 2º cierra).
-    if (screen === 'ajustes') return cur === 'radar' || cur === 'mapa';
-    // Herramientas: flotan si la base es Radar, Mapa o Circulación (mismo uso).
+    // Herramientas: flotan sobre Radar/Mapa (y si ya hay base de trabajo).
     if (FLOAT_BASE_KEEP_[cur]) return true;
-    // Desde Inicio/otras: también flotan (no quitan el contexto).
-    return true;
+    // Desde Circulación u otras: herramientas también pueden flotar.
+    return screen !== 'trafico';
   }
 
   function pintarNavActiva_(screen) {
@@ -1256,7 +1251,7 @@
     document.body.classList.add('has-turnio-float');
     wireFloatDrag_(win, head);
 
-    if (screen === 'trafico' || screen === 'radar' || screen === 'ajustes') {
+    if (screen === 'trafico') {
       pintarNavActiva_(screen);
     }
 
