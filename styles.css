@@ -370,6 +370,9 @@ body.monitor-mode #screen-mapa{display:none!important}
 .circ-group--turnio{border-top:3px solid var(--primary)}
 .circ-group--coper{border-top:3px solid #1d4ed8}
 .circ-group--conex{border-top:3px solid #059669}
+.circ-group--apps{border-top:3px solid #64748b}
+.circ-group--apps .home-apps{margin:0}
+.circ-group--apps .home-apps-note{margin:0 0 10px}
 .circ-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px}
 .circ-group-title{margin:0 0 8px;font-size:14px;font-weight:800;color:var(--primary-dark)}
 .circ-group-head .circ-group-title{margin:0}
@@ -434,7 +437,7 @@ body.monitor-mode #screen-mapa{display:none!important}
 @media (min-width:900px){
   #screen-trafico{padding-left:20px;padding-right:20px}
   .circ-layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
-  .circ-group--turnio{grid-column:1/-1}
+  .circ-group--turnio,.circ-group--apps{grid-column:1/-1}
   .circ-grid--turnio{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
   .circ-grid--links{grid-template-columns:repeat(2,minmax(0,1fr))}
   .circ-tile{min-height:88px}

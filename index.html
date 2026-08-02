@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=enlaces29">
+    <link rel="stylesheet" href="./styles.css?v=enlaces30">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces29</span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; build enlaces30</span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -65,25 +65,7 @@
           </article>
         </div>
 
-        <div class="home-apps" id="home-apps">
-          <h3 class="home-glance-title">Accesos r&aacute;pidos</h3>
-          <p class="home-apps-note">Enlaces de red Renfe / ADIF. En m&oacute;vil o fuera de intranet pueden pedir VPN o SSO.</p>
-          <div class="home-apps-grid" role="list">
-            <button type="button" class="home-app" data-ext="copernico" role="listitem"><b>Cop&eacute;rnico</b></button>
-            <button type="button" class="home-app" data-ext="vmt" role="listitem"><b>VMT</b></button>
-            <button type="button" class="home-app" data-ext="mol" role="listitem"><b>MOL</b></button>
-            <button type="button" class="home-app" data-ext="sitra" role="listitem"><b>SITRA+</b></button>
-            <button type="button" class="home-app" data-ext="siges" role="listitem"><b>Siges</b></button>
-            <button type="button" class="home-app" data-ext="gtrenes" role="listitem"><b>Gtrenes</b></button>
-            <button type="button" class="home-app" data-ext="gifo" role="listitem"><b>GIFO+</b></button>
-            <button type="button" class="home-app" data-ext="mon-r" role="listitem"><b>MON-R</b></button>
-            <button type="button" class="home-app" data-ext="interesa" role="listitem"><b>Interesa</b></button>
-            <button type="button" class="home-app" data-ext="h24" role="listitem"><b>H24</b><span>Power Apps</span></button>
-            <button type="button" class="home-app" data-ext="sim" role="listitem"><b>SIM</b></button>
-          </div>
-        </div>
-
-        <p class="foot-note">Radar, mapa, mallas, kms, pantallas y enlaces est&aacute;n en la pesta&ntilde;a Circulaci&oacute;n.</p>
+        <p class="foot-note">Radar, mapa, mallas, kms, pantallas, enlaces y accesos r&aacute;pidos est&aacute;n en <strong>Circulaci&oacute;n</strong>.</p>
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
@@ -339,7 +321,7 @@
       <section id="screen-trafico" class="screen">
         <header class="circ-head">
           <h2 class="circ-title">Circulaci&oacute;n</h2>
-          <p class="circ-lead">Herramientas TURNIO y atajos operativos de Cop&eacute;rnico.</p>
+          <p class="circ-lead">Herramientas TURNIO, accesos r&aacute;pidos de red y atajos de Cop&eacute;rnico.</p>
         </header>
 
         <div class="circ-layout">
@@ -370,6 +352,26 @@
                 <b>&#128279; Enlazados</b>
                 <span>Panel de conexiones</span>
               </button>
+            </div>
+          </div>
+
+          <div class="circ-group circ-group--apps">
+            <div class="home-apps" id="home-apps">
+              <h3 class="circ-group-title">Accesos r&aacute;pidos</h3>
+              <p class="home-apps-note circ-note">Enlaces de red Renfe / ADIF. En m&oacute;vil o fuera de intranet pueden pedir VPN o SSO.</p>
+              <div class="home-apps-grid" role="list">
+                <button type="button" class="home-app" data-ext="copernico" role="listitem"><b>Cop&eacute;rnico</b></button>
+                <button type="button" class="home-app" data-ext="vmt" role="listitem"><b>VMT</b></button>
+                <button type="button" class="home-app" data-ext="mol" role="listitem"><b>MOL</b></button>
+                <button type="button" class="home-app" data-ext="sitra" role="listitem"><b>SITRA+</b></button>
+                <button type="button" class="home-app" data-ext="siges" role="listitem"><b>Siges</b></button>
+                <button type="button" class="home-app" data-ext="gtrenes" role="listitem"><b>Gtrenes</b></button>
+                <button type="button" class="home-app" data-ext="gifo" role="listitem"><b>GIFO+</b></button>
+                <button type="button" class="home-app" data-ext="mon-r" role="listitem"><b>MON-R</b></button>
+                <button type="button" class="home-app" data-ext="interesa" role="listitem"><b>Interesa</b></button>
+                <button type="button" class="home-app" data-ext="h24" role="listitem"><b>H24</b><span>Power Apps</span></button>
+                <button type="button" class="home-app" data-ext="sim" role="listitem"><b>SIM</b></button>
+              </div>
             </div>
           </div>
 
@@ -790,14 +792,7 @@
               <div class="cx-hi-icon">&#127968;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Primer vistazo</div>
-                <div class="cx-hi-desc">Resumen vivo del <strong>Radar</strong> (retrasos/incidencias) y de los <strong>avisos de red</strong>. Pulsa la tarjeta para abrir la pantalla completa.</div>
-              </div>
-            </div>
-            <div class="cx-help-item">
-              <div class="cx-hi-icon">&#128279;</div>
-              <div class="cx-hi-body">
-                <div class="cx-hi-title">Accesos r&aacute;pidos</div>
-                <div class="cx-hi-desc">Atajos a Cop&eacute;rnico, VMT, MOL, SITRA+, Siges, Gtrenes, GIFO+, MON-R, Interesa, H24 y SIM. En m&oacute;vil o fuera de intranet pueden pedir VPN o SSO de Renfe/ADIF.</div>
+                <div class="cx-hi-desc">Resumen vivo del <strong>Radar</strong> (retrasos/incidencias) y de los <strong>avisos de red</strong>. Pulsa la tarjeta para abrir la pantalla completa. Los accesos r&aacute;pidos a sistemas Renfe/ADIF est&aacute;n en <strong>Circulaci&oacute;n</strong>.</div>
               </div>
             </div>
           </div>
@@ -933,7 +928,14 @@
               <div class="cx-hi-icon">&#128642;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Hub de herramientas</div>
-                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas y Enlazados. Abajo: carga del Excel de combinados y atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas y Enlazados. Tambi&eacute;n carga del Excel de combinados y atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128279;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Accesos r&aacute;pidos</div>
+                <div class="cx-hi-desc">Bloque en Circulaci&oacute;n con atajos a Cop&eacute;rnico, VMT, MOL, SITRA+, Siges, Gtrenes, GIFO+, MON-R, Interesa, H24 y SIM. En m&oacute;vil o fuera de intranet pueden pedir VPN o SSO de Renfe/ADIF.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1179,12 +1181,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=enlaces29"></script>
-    <script src="./conexiones.js?v=enlaces29"></script>
+    <script src="./turnio-config.js?v=enlaces30"></script>
+    <script src="./conexiones.js?v=enlaces30"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas4"></script>
-    <script src="./app.js?v=enlaces29"></script>
+    <script src="./app.js?v=enlaces30"></script>
   </body>
 </html>
 

@@ -3672,7 +3672,7 @@
       toast('No se pudo abrir el enlace en este dispositivo.', 'error');
     }
   }
-  /* Accesos rápidos Inicio (URLs del portal Anthony) */
+  /* Accesos rápidos Circulación (URLs del portal Anthony) */
   function urlAccesoRapido_(key) {
     switch (String(key || '').toLowerCase()) {
       case 'copernico':
