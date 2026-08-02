@@ -998,6 +998,11 @@
   }
 
   function go(screen) {
+    // Toggle: si ese flotante ya está abierto, el mismo botón lo cierra.
+    if (floatState_ && floatState_.screenId === screen) {
+      cerrarVentanaFlotante_();
+      return;
+    }
     if (debeAbrirFlotante_(screen)) {
       abrirVentanaFlotante_(screen);
       return;
@@ -1026,6 +1031,8 @@
   var FLOAT_TITLES_ = {
     trafico: 'Circulación',
     radar: 'Radar',
+    home: 'Inicio',
+    ajustes: 'Ajustes',
     mallas: 'Mallas',
     'mallas-localizador': 'Localizador mallas',
     kms: 'Kilómetros',
@@ -1062,10 +1069,18 @@
     // Circulación flota sobre Radar/Mapa; Radar flota sobre Circulación/Mapa.
     if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
     if (screen === 'radar') return cur === 'trafico' || cur === 'mapa';
+    // Desde Radar/Mapa: Inicio y Ajustes flotan (1er clic abre, 2º cierra).
+    if (screen === 'home' || screen === 'ajustes') return cur === 'radar' || cur === 'mapa';
     // Herramientas: flotan si la base es Radar, Mapa o Circulación (mismo uso).
     if (FLOAT_BASE_KEEP_[cur]) return true;
     // Desde Inicio/otras: también flotan (no quitan el contexto).
     return true;
+  }
+
+  function pintarNavActiva_(screen) {
+    document.querySelectorAll('.nav-item').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.go === screen);
+    });
   }
 
   function entrarPantalla_(screen) {
@@ -1173,6 +1188,8 @@
       }
     }
     if (st.winEl && st.winEl.parentNode) st.winEl.parentNode.removeChild(st.winEl);
+    var base = pantallaActivaId_();
+    if (base) pintarNavActiva_(base);
     invalidateMapaSiHay_();
     gestionarAutoRadar();
   }
@@ -1189,8 +1206,9 @@
       gestionarAutoRadar();
       return;
     }
+    // El toggle (abrir/cerrar) lo resuelve go(); aquí no reenfocar.
     if (floatState_ && floatState_.screenId === screen) {
-      floatState_.winEl.style.zIndex = String(++floatZ_);
+      cerrarVentanaFlotante_();
       return;
     }
     if (floatState_) cerrarVentanaFlotante_();
@@ -1236,10 +1254,8 @@
     document.body.classList.add('has-turnio-float');
     wireFloatDrag_(win, head);
 
-    if (screen === 'trafico' || screen === 'radar') {
-      document.querySelectorAll('.nav-item').forEach(function (b) {
-        b.classList.toggle('active', b.dataset.go === screen);
-      });
+    if (screen === 'trafico' || screen === 'radar' || screen === 'home' || screen === 'ajustes') {
+      pintarNavActiva_(screen);
     }
 
     entrarPantalla_(screen);
