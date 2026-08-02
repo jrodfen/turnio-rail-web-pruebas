@@ -3356,12 +3356,12 @@
     { code: '50', name: 'Rodalies Catalunya' },
     { code: '35', name: 'SP País Vasco' },
     { code: '34', name: 'SP Ámbito Extremadura' },
-    // Antiguo listado + los SP/Rodalies del selector.
+    // Antiguo listado + los SP/Rodalies del selector (solo etiqueta "Todos los mercados").
     {
       code: '90,0,60,62,61,64,65,68,80,10,31,30,38,50,35,34',
       name: 'Todos los mercados',
       todos: true,
-      codeLabel: 'antiguos + 10,31,30,38,50,35,34'
+      codeLabel: ''
     }
   ];
   var MERCADO_SIN_JUSTIFICAR_DEFAULT_ = '31';
@@ -3398,7 +3398,7 @@
       btn.setAttribute('role', 'listitem');
       var left = document.createElement('span');
       left.className = 'sj-mercado-name';
-      left.textContent = item.name;
+      left.textContent = item.todos ? 'TODOS LOS MERCADOS' : item.name;
       if (item.def) {
         var badge = document.createElement('span');
         badge.className = 'sj-mercado-badge';
@@ -3406,11 +3406,13 @@
         left.appendChild(document.createTextNode(' '));
         left.appendChild(badge);
       }
-      var right = document.createElement('span');
-      right.className = 'sj-mercado-code';
-      right.textContent = item.codeLabel || (item.todos ? 'varios' : item.code);
       btn.appendChild(left);
-      btn.appendChild(right);
+      if (!item.todos) {
+        var right = document.createElement('span');
+        right.className = 'sj-mercado-code';
+        right.textContent = item.code;
+        btn.appendChild(right);
+      }
       list.appendChild(btn);
     });
     modal.hidden = false;
