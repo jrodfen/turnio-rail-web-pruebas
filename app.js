@@ -1099,6 +1099,9 @@
           toast(String(err.message || err), 'error');
         });
       }
+      precargarFlotaMapa();
+      marcarMallasCirculandoDesdeFlota_();
+      arrancarAutoFlota();
     }
     if (screen === 'conexiones') {
       if (typeof pintarPanelConexiones_ === 'function') pintarPanelConexiones_();
@@ -1107,6 +1110,9 @@
       asegurarRutasMallas().catch(function (err) {
         setMallasStatus(String(err.message || err), true);
       });
+      precargarFlotaMapa();
+      marcarMallasCirculandoDesdeFlota_();
+      arrancarAutoFlota();
     }
     if (screen === 'admin') {
       if (!sessionProfile.is_admin) {
@@ -1490,6 +1496,8 @@
         return;
       }
       renderResultadosMalla(num, servicios);
+      marcarMallasCirculandoDesdeFlota_();
+      precargarFlotaMapa();
     } catch (err) {
       setMallasStatus(String(err.message || err), true);
       box.innerHTML = '<div class="empty error-text">' + esc(err.message || err) + '</div>';
@@ -1517,15 +1525,7 @@
       var m = data.marcha;
       if (m && m.ok) {
         item.classList.add('live');
-        if (!item.querySelector('.malla-chip')) {
-          var meta = item.querySelector('.malla-meta');
-          if (meta) {
-            var chip = document.createElement('div');
-            chip.className = 'malla-chip';
-            chip.textContent = '🟢 CIRCULANDO';
-            meta.appendChild(chip);
-          }
-        }
+        asegurarChipCirculando_(item.querySelector('.malla-meta'), '🚆 CIRCULANDO');
         renderMarcha(panel, m);
       } else {
         panel.innerHTML =
@@ -2614,6 +2614,7 @@
         else if (cnt && flotaMapa.length) {
           cnt.textContent = flotaMapa.length + ' trenes listos · abre el mapa';
         }
+        marcarMallasCirculandoDesdeFlota_();
         return flotaMapa;
       } catch (e) {
         if (cnt && !silencioso) cnt.textContent = String(e.message || e);
@@ -2632,12 +2633,98 @@
       // Silencioso: se reintenta al abrir el mapa.
     });
   }
+  function normNumFlotaMalla_(s) {
+    return String(s == null ? '' : s).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  }
+
+  function indiceFlotaParaMallas_(lista) {
+    var byTrip = Object.create(null);
+    var byNum = Object.create(null);
+    (lista || []).forEach(function (t) {
+      if (!t) return;
+      var trip = String(t.tripId || '').trim();
+      var num = normNumFlotaMalla_(t.codTren || t.codComercial || t.tren || '');
+      if (trip) byTrip[trip] = t;
+      if (num && !byNum[num]) byNum[num] = t;
+    });
+    return { byTrip: byTrip, byNum: byNum };
+  }
+
+  function matchFlotaMalla_(tid, num, idx) {
+    if (!idx) return null;
+    var trip = String(tid || '').trim();
+    if (trip && idx.byTrip[trip]) return idx.byTrip[trip];
+    var n = normNumFlotaMalla_(num);
+    if (n && idx.byNum[n]) return idx.byNum[n];
+    if (trip.length > 11) {
+      var pref = trip.substring(0, trip.length - 11).replace(/^0+/, '');
+      if (pref && idx.byNum[pref]) return idx.byNum[pref];
+    }
+    return null;
+  }
+
+  function asegurarChipCirculando_(host, label) {
+    if (!host) return;
+    var chip = host.querySelector('.chip-circulando-front');
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'chip-circulando-front';
+      host.insertBefore(chip, host.firstChild);
+    }
+    chip.textContent = label || '🚆 CIRCULANDO';
+  }
+
+  function quitarChipCirculando_(host) {
+    if (!host) return;
+    var chip = host.querySelector('.chip-circulando-front');
+    if (chip) chip.remove();
+  }
+
+  /** Marca tarjetas de Mallas (cuadro + localizador) con la flota ya cargada. */
+  function marcarMallasCirculandoDesdeFlota_() {
+    var idx = indiceFlotaParaMallas_(flotaMapa);
+    document.querySelectorAll('#resultadosGTFS .flip-card').forEach(function (card) {
+      var pos = matchFlotaMalla_(card.getAttribute('data-tid'), card.getAttribute('data-num'), idx);
+      var tripInfo = card.querySelector('.trip-info');
+      if (pos) {
+        card.classList.add('live');
+        asegurarChipCirculando_(tripInfo, '🚆 CIRCULANDO');
+      } else {
+        card.classList.remove('live');
+        quitarChipCirculando_(tripInfo);
+      }
+    });
+    document.querySelectorAll('#mallas-resultados .malla-item').forEach(function (item) {
+      var pos = matchFlotaMalla_(item.getAttribute('data-trip'), item.getAttribute('data-tren'), idx);
+      var meta = item.querySelector('.malla-meta');
+      var legacy = meta && meta.querySelector('.malla-chip');
+      if (legacy) legacy.remove();
+      if (pos) {
+        item.classList.add('live');
+        asegurarChipCirculando_(meta, '🚆 CIRCULANDO');
+      } else {
+        item.classList.remove('live');
+        quitarChipCirculando_(meta);
+      }
+    });
+  }
+  window.TurnioMarcarMallasCirculando = marcarMallasCirculandoDesdeFlota_;
+
+  function mallasVisibleParaAutoFlota_() {
+    var a = document.getElementById('screen-mallas');
+    var b = document.getElementById('screen-mallas-localizador');
+    var mapa = document.getElementById('screen-mapa');
+    function vis(scr) {
+      return !!(scr && (scr.classList.contains('active') || scr.classList.contains('screen--in-float')));
+    }
+    return vis(a) || vis(b) || vis(mapa);
+  }
+
   function arrancarAutoFlota() {
     detenerAutoFlota();
     flotaTimer = setInterval(function () {
-      var scr = document.getElementById('screen-mapa');
-      if (!scr || !scr.classList.contains('active')) return;
-      cargarFlotaMapa({ fit: false }).catch(function () {});
+      if (!mallasVisibleParaAutoFlota_()) return;
+      cargarFlotaMapa({ fit: false, silent: true }).catch(function () {});
     }, 30000);
   }
   function detenerAutoFlota() {

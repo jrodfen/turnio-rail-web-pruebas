@@ -527,6 +527,9 @@
       html += '<div class="empty">Mostrando 80 de ' + trenesUtiles.length + '. Afina filtros para ver menos resultados.</div>';
     }
     cont.innerHTML = html;
+    if (typeof global.TurnioMarcarMallasCirculando === 'function') {
+      global.TurnioMarcarMallasCirculando();
+    }
   }
 
   function operativaCargada() {
