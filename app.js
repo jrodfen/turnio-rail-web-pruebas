@@ -1026,6 +1026,8 @@
   var FLOAT_TITLES_ = {
     trafico: 'Circulación',
     radar: 'Radar',
+    home: 'Inicio',
+    ajustes: 'Ajustes',
     mallas: 'Mallas',
     'mallas-localizador': 'Localizador mallas',
     kms: 'Kilómetros',
@@ -1062,6 +1064,8 @@
     // Circulación flota sobre Radar/Mapa; Radar flota sobre Circulación/Mapa.
     if (screen === 'trafico') return cur === 'radar' || cur === 'mapa';
     if (screen === 'radar') return cur === 'trafico' || cur === 'mapa';
+    // Desde Radar: Inicio y Ajustes también flotan (no se pierde el Radar).
+    if (screen === 'home' || screen === 'ajustes') return cur === 'radar' || cur === 'mapa';
     // Herramientas: flotan si la base es Radar, Mapa o Circulación (mismo uso).
     if (FLOAT_BASE_KEEP_[cur]) return true;
     // Desde Inicio/otras: también flotan (no quitan el contexto).
@@ -1236,7 +1240,7 @@
     document.body.classList.add('has-turnio-float');
     wireFloatDrag_(win, head);
 
-    if (screen === 'trafico' || screen === 'radar') {
+    if (screen === 'trafico' || screen === 'radar' || screen === 'home' || screen === 'ajustes') {
       document.querySelectorAll('.nav-item').forEach(function (b) {
         b.classList.toggle('active', b.dataset.go === screen);
       });
