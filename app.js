@@ -776,7 +776,8 @@
     var inp = document.getElementById('pantallas-buscar');
     var digits = String((inp && inp.value) || '').replace(/\D/g, '');
     if (digits.length >= 4) return digits.replace(/^0+(?=\d)/, '') || digits;
-    return '51003';
+    // Por defecto Atocha: más tráfico nocturno que Santa Justa.
+    return '18000';
   }
 
   function resumirMensajeAdif_(mensajeCrudo) {
@@ -845,10 +846,13 @@
           if (canales.indexOf(ch) < 0) canales.push(ch);
         });
       });
-      // Controles: Atocha con prefijo nuevo y antiguo.
+      // Control cruzado: si prueba Atocha, también Santa Justa; y al revés.
       if (codigo !== '18000') {
         canales.push('PRO-ECM-18000');
         canales.push('ECM-18000');
+      } else {
+        canales.push('PRO-ECM-51003');
+        canales.push('ECM-51003');
       }
       for (var i = 0; i < canales.length; i++) {
         var canal = canales[i];
@@ -915,7 +919,7 @@
       }
       log('1) Cargando SignalR…');
       var signalR = await cargarSignalRAdif_();
-      log('2) Estación ' + codigo + (codigo === '51003' ? ' (Santa Justa)' : '') + '. Probando modos…');
+      log('2) Estación ' + codigo + (codigo === '18000' ? ' (Atocha)' : codigo === '51003' ? ' (Santa Justa)' : '') + '. Probando modos…');
       var modos = [
         {
           label: 'WS skipNegotiation (GAS)',
