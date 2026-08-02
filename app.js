@@ -739,6 +739,134 @@
     window.open(pantallasOficialUrl_(codigo, modo), '_blank', 'noopener');
   }
 
+  var adifInfoStationProbe_ = null;
+  var adifSignalRLoading_ = null;
+
+  function setAdifProbeStatus_(text, state) {
+    var el = document.getElementById('adif-infostation-status');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('is-ok', 'is-err', 'is-run');
+    if (state) el.classList.add(state);
+  }
+
+  function cargarSignalRAdif_() {
+    if (window.signalR && window.signalR.HubConnectionBuilder) {
+      return Promise.resolve(window.signalR);
+    }
+    if (adifSignalRLoading_) return adifSignalRLoading_;
+    adifSignalRLoading_ = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js';
+      s.async = true;
+      s.onload = function () {
+        if (window.signalR && window.signalR.HubConnectionBuilder) resolve(window.signalR);
+        else reject(new Error('SignalR cargado sin HubConnectionBuilder.'));
+      };
+      s.onerror = function () {
+        adifSignalRLoading_ = null;
+        reject(new Error('No se pudo cargar la librería SignalR (CDN).'));
+      };
+      document.head.appendChild(s);
+    });
+    return adifSignalRLoading_;
+  }
+
+  function codigoEstacionProbeAdif_() {
+    var inp = document.getElementById('pantallas-buscar');
+    var digits = String((inp && inp.value) || '').replace(/\D/g, '');
+    if (digits.length >= 4) return digits.replace(/^0+(?=\d)/, '') || digits;
+    return '51003';
+  }
+
+  async function probarInfoStationAdif_() {
+    var btn = document.getElementById('btn-probar-infostation');
+    var codigo = codigoEstacionProbeAdif_();
+    var canal = 'ECM-' + codigo;
+    var lines = [];
+    function log(line) {
+      lines.push(line);
+      setAdifProbeStatus_(lines.join('\n'), 'is-run');
+    }
+    if (btn) btn.disabled = true;
+    try {
+      if (adifInfoStationProbe_) {
+        try { await adifInfoStationProbe_.stop(); } catch (_) {}
+        adifInfoStationProbe_ = null;
+      }
+      log('1) Cargando SignalR…');
+      var signalR = await cargarSignalRAdif_();
+      log('2) Conectando a info.adif.es/InfoStation…');
+      log('   Canal: ' + canal + (codigo === '51003' ? ' (Santa Justa por defecto)' : ''));
+      var conn = new signalR.HubConnectionBuilder()
+        .withUrl('https://info.adif.es/InfoStation', {
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets
+        })
+        .withAutomaticReconnect()
+        .build();
+      adifInfoStationProbe_ = conn;
+      var gotMessage = false;
+      var sample = null;
+      conn.on('ReceiveMessage', function (mensajeCrudo) {
+        gotMessage = true;
+        try {
+          var datos = typeof mensajeCrudo === 'string' ? JSON.parse(mensajeCrudo) : mensajeCrudo;
+          var trenes = Array.isArray(datos && datos.trains) ? datos.trains : [];
+          sample = trenes[0] || null;
+          var conVia = trenes.filter(function (t) {
+            return t && (t.platform || t.platform_in);
+          }).length;
+          lines.push('4) Mensaje recibido: ' + trenes.length + ' tren(es), ' + conVia + ' con vía.');
+          if (sample) {
+            var num =
+              (sample.commercial_id && sample.commercial_id[0] && sample.commercial_id[0].number) ||
+              sample.technical_number_planif ||
+              sample.id ||
+              '?';
+            var via = sample.platform || sample.platform_in || '—';
+            lines.push('   Ejemplo: tren ' + num + ' · vía ' + via);
+          }
+          setAdifProbeStatus_(lines.join('\n'), 'is-ok');
+        } catch (parseErr) {
+          lines.push('4) Mensaje recibido, pero no se pudo parsear JSON.');
+          setAdifProbeStatus_(lines.join('\n'), 'is-ok');
+        }
+      });
+      await conn.start();
+      log('3) Conexión OK. JoinInfo + GetLastMessage…');
+      await conn.invoke('JoinInfo', canal);
+      await conn.invoke('GetLastMessage', canal);
+      var t0 = Date.now();
+      while (!gotMessage && Date.now() - t0 < 12000) {
+        await new Promise(function (r) { setTimeout(r, 250); });
+      }
+      if (!gotMessage) {
+        lines.push('4) Timeout (12 s): conectó, pero no llegó mensaje del canal.');
+        lines.push('   Puede ser estación sin tráfico o filtro de red parcial.');
+        setAdifProbeStatus_(lines.join('\n'), 'is-err');
+        toast('InfoStation: conectó sin datos', 'error');
+      } else {
+        toast('InfoStation OK · ' + codigo, 'success');
+      }
+      try { await conn.stop(); } catch (_) {}
+      adifInfoStationProbe_ = null;
+    } catch (err) {
+      var msg = String((err && err.message) || err || 'Error desconocido');
+      lines.push('ERROR: ' + msg);
+      lines.push('En redes Renfe/Zscaler a menudo falla el WebSocket; el panel web sí puede abrir.');
+      setAdifProbeStatus_(lines.join('\n'), 'is-err');
+      toast('InfoStation no disponible aquí', 'error');
+      if (adifInfoStationProbe_) {
+        try { await adifInfoStationProbe_.stop(); } catch (_) {}
+        adifInfoStationProbe_ = null;
+      }
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+  window.TurnioProbarInfoStation = probarInfoStationAdif_;
+
   function asegurarEstacionesPantallas_() {
     if (pantallasEstaciones) return Promise.resolve(pantallasEstaciones);
     if (pantallasCarga) return pantallasCarga;
@@ -853,6 +981,12 @@
         var btn = ev.target.closest('[data-adif-code]');
         if (!btn) return;
         abrirAdifPantallas_(btn.getAttribute('data-adif-code'), btn.getAttribute('data-adif-modo'));
+      });
+    }
+    var btnProbe = document.getElementById('btn-probar-infostation');
+    if (btnProbe) {
+      btnProbe.addEventListener('click', function () {
+        probarInfoStationAdif_();
       });
     }
   }

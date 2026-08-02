@@ -987,6 +987,15 @@ body.monitor-mode #screen-mapa{display:none!important}
 .pantallas-monit--al{background:#1d4ed8}
 .pantallas-monit:active{transform:scale(.97)}
 .pantallas-res-empty{padding:14px;font-size:13px;color:var(--muted)}
+.pantallas-probe{margin:14px 0 0;padding:12px;border:1px dashed rgba(45,127,249,.35);border-radius:12px;background:rgba(45,127,249,.05)}
+.pantallas-probe-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 6px}
+.pantallas-probe-head strong{font-size:13px;color:var(--primary-dark)}
+.pantallas-probe-head .btn{margin:0;width:auto;padding:8px 12px;font-size:12px}
+.pantallas-probe-note{margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.4}
+.pantallas-probe-status{margin:0;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:11px;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:var(--text);max-height:220px;overflow:auto}
+.pantallas-probe-status.is-ok{border-color:rgba(20,164,77,.45);background:rgba(20,164,77,.08)}
+.pantallas-probe-status.is-err{border-color:rgba(217,48,37,.4);background:rgba(217,48,37,.06)}
+.pantallas-probe-status.is-run{border-color:rgba(45,127,249,.4);background:rgba(45,127,249,.08)}
 
 /* Calcular kms */
 .kms-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin:12px 0}
