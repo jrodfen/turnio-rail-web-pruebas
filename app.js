@@ -3239,7 +3239,7 @@
       ? ('+' + retraso + ' min' + (m.hDestPrevista && m.destino
         ? ' · Llegada prevista a ' + m.destino + ': ' + m.hDestPrevista + 'h' : ''))
       : 'Puntual');
-    var rows = paradas.slice(0, 24).map(function (p) {
+    var rows = paradas.map(function (p) {
       var cl = p.esActual ? 'actual' : p.esPasada ? 'pasada' : '';
       var icon = p.esActual ? '&#128205;' : p.esPasada ? '&#10003;' : '&#9675;';
       var dMin = Number(p.delayMin || 0);
