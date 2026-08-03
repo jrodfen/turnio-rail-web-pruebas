@@ -758,6 +758,75 @@
     }
   }
 
+  var adminAccesosSoloDenegados_ = false;
+
+  function fmtAccesoHora_(iso) {
+    var s = String(iso || '');
+    if (!s) return '—';
+    return s.replace('T', ' ').replace(/\.\d+Z?$/, '').slice(0, 19);
+  }
+
+  function etiquetaMotivoAcceso_(motivo) {
+    var m = String(motivo || '');
+    var mapa = {
+      maintenance_mode: 'Mantenimiento',
+      turnio_profile_inactive: 'Perfil inactivo',
+      turnio_profile_expired: 'Acceso caducado',
+      turnio_profile_unavailable: 'Sin perfil',
+      supabase_auth_required: 'Sin sesión',
+      supabase_session_invalid: 'Sesión inválida'
+    };
+    return mapa[m] || m || '—';
+  }
+
+  function pintarAdminAccesos_(lista) {
+    var box = document.getElementById('admin-accesos-lista');
+    var meta = document.getElementById('admin-accesos-meta');
+    if (!box) return;
+    var rows = Array.isArray(lista) ? lista : [];
+    if (meta) {
+      meta.textContent = rows.length
+        ? (rows.length + ' registro' + (rows.length === 1 ? '' : 's') +
+          (adminAccesosSoloDenegados_ ? ' · solo denegados' : ''))
+        : (adminAccesosSoloDenegados_ ? 'No hay denegaciones recientes.' : 'Aún no hay accesos registrados.');
+    }
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty" style="padding:8px;">Sin datos.</div>';
+      return;
+    }
+    box.innerHTML = rows.map(function (a) {
+      var ok = !!a.ok;
+      var where = (a.country ? (a.country + ' · ') : '') + (a.ip || 'IP —');
+      return '<article class="admin-acceso-item' + (ok ? '' : ' is-denied') + '">' +
+        '<div class="admin-acceso-top">' +
+          '<b>' + esc(a.email || '—') + '</b>' +
+          '<span class="admin-acceso-badge ' + (ok ? 'ok' : 'no') + '">' + (ok ? 'OK' : 'DENEGADO') + '</span>' +
+        '</div>' +
+        '<p class="admin-acceso-meta">' +
+          esc(fmtAccesoHora_(a.created_at)) +
+          ' · ' + esc(a.role || '—') +
+          ' · ' + esc(a.via || '—') +
+          (ok ? '' : (' · ' + esc(etiquetaMotivoAcceso_(a.motivo)))) +
+          '<br>' + esc(where) +
+        '</p></article>';
+    }).join('');
+  }
+
+  async function cargarAdminAccesos_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-accesos-meta');
+    if (meta) meta.textContent = 'Cargando…';
+    try {
+      var d = await call('admin_listar_accesos', {
+        limit: 80,
+        solo_denegados: adminAccesosSoloDenegados_
+      });
+      pintarAdminAccesos_(d && d.accesos);
+    } catch (err) {
+      if (meta) meta.textContent = 'Error: ' + String(err.message || err);
+    }
+  }
+
   function manejarMantenimientoBloqueo_(d) {
     if (mantBloqueoEnCurso_) return;
     if (sessionProfile && sessionProfile.is_admin) return;
@@ -2545,6 +2614,7 @@
       cargarAdminAviso_();
       cargarAdminSugerencias_();
       cargarAdminMantenimiento_();
+      cargarAdminAccesos_();
     }
   }
 
@@ -5646,9 +5716,20 @@
     cargarAdminAviso_();
     cargarAdminSugerencias_();
     cargarAdminMantenimiento_();
+    cargarAdminAccesos_();
   });
   var btnAdminMant = document.getElementById('btn-admin-mant-toggle');
   if (btnAdminMant) btnAdminMant.addEventListener('click', toggleAdminMantenimiento_);
+  var btnAccesosRef = document.getElementById('btn-admin-accesos-refrescar');
+  if (btnAccesosRef) btnAccesosRef.addEventListener('click', cargarAdminAccesos_);
+  var btnAccesosDen = document.getElementById('btn-admin-accesos-denegados');
+  if (btnAccesosDen) {
+    btnAccesosDen.addEventListener('click', function () {
+      adminAccesosSoloDenegados_ = !adminAccesosSoloDenegados_;
+      btnAccesosDen.setAttribute('aria-pressed', adminAccesosSoloDenegados_ ? 'true' : 'false');
+      cargarAdminAccesos_();
+    });
+  }
   var adminBuscar = document.getElementById('admin-buscar');
   if (adminBuscar) {
     adminBuscar.addEventListener('input', function () { pintarAdminLista_(); });
