@@ -2218,6 +2218,7 @@
     loadRadar();
     // Un perfil de consulta no puede arrancar un Vigilante aunque el
     // cuadrante heredado de GAS estuviera configurado para activarlo.
+    // Auto-ON siempre con retardo (evita modales de críticos al entrar).
     if (puedeEscribir) arrancarVigilanteDesdeCuadrante();
     else setVigilanteState(false, true);
     gestionarAutoRadar();
@@ -2478,9 +2479,8 @@
     if (!puedeEscribir || vigilanteActivo) return;
     timerVigilanteAutoOn_ = setTimeout(function () {
       timerVigilanteAutoOn_ = null;
-      // Solo si seguimos en Radar y el usuario no lo ha tocado a mano.
+      // Solo si el usuario no lo ha tocado a mano.
       if (!puedeEscribir || vigilanteActivo) return;
-      if (typeof pantallaActivaId_ === 'function' && pantallaActivaId_() !== 'radar') return;
       setVigilanteState(true, true);
     }, VIGILANTE_AUTO_ON_DELAY_MS_);
   }
@@ -2684,8 +2684,10 @@
   async function arrancarVigilanteDesdeCuadrante() {
     try {
       var res = await call('vigilante_cuadrante');
-      if (res && res.activar) setVigilanteState(true, true);
-      else if (res && res.motivo) {
+      if (res && res.activar) {
+        // Nunca encender al instante: mismos 60 s que al entrar en Radar.
+        programarVigilanteAutoOn_();
+      } else if (res && res.motivo) {
         console.warn('[Vigilante cuadrante] no auto-ON:', res.motivo, res.turno || '');
       }
     } catch (err) {
