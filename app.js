@@ -1594,8 +1594,8 @@
       '    return ws;',
       '  };',
       '  window.WebSocket.prototype = OrigWS.prototype;',
-      '  push("Hook WS listo. Recarga F5 esta pestaña (info.adif.es) y espera 10s con pantallas visibles.");',
-      '  push("Luego ejecuta: copy(__TURNIO_ADIF_LOG.join(\"\\n\")) y pégalo en el chat.");',
+      '  push("Hook WS listo. Recarga F5 esta pestana (info.adif.es) y espera 10s con pantallas visibles.");',
+      '  push("Luego ejecuta: copy(__TURNIO_ADIF_LOG.join(String.fromCharCode(10))) y pegalo en el chat.");',
       '  window.__TURNIO_ADIF_LOG = log;',
       '  return "OK — ahora F5";',
       '})();'
