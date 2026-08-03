@@ -2831,6 +2831,32 @@
     }
   }
 
+  function etiquetaChipCirculando_(pos, m) {
+    var base = '🚆 CIRCULANDO';
+    var r = NaN;
+    if (m && typeof m.retrasoMin === 'number') r = Number(m.retrasoMin);
+    else if (pos && pos.retrasoNum != null) r = Number(pos.retrasoNum);
+    if (!(r > 0)) return base;
+    return base + ' · +' + Math.round(r) + ' min';
+  }
+
+  async function consultarMarchaMalla_(tren, tripPreferido) {
+    var region = regionMarchaActual_();
+    var trip = String(tripPreferido || '').trim();
+    var data = await call('marcha', {
+      codTren: tren,
+      tripId: trip,
+      region: region
+    });
+    if (data && data.marcha && data.marcha.ok) return data.marcha;
+    // Si el trip de malla no casa con GTFS-RT, reintenta solo por número.
+    if (trip) {
+      data = await call('marcha', { codTren: tren, tripId: '', region: region });
+      if (data && data.marcha && data.marcha.ok) return data.marcha;
+    }
+    return (data && data.marcha) || null;
+  }
+
   async function abrirDetalleMalla(item) {
     var abierto = item.classList.contains('open');
     document.querySelectorAll('.malla-item.open').forEach(function (el) {
@@ -2842,17 +2868,15 @@
     if (!panel) return;
     var tren = item.getAttribute('data-tren') || '';
     var trip = item.getAttribute('data-trip') || '';
+    var idx = indiceFlotaParaMallas_(flotaMapa);
+    var pos = matchFlotaMalla_(trip, tren, idx);
+    if (pos && pos.tripId) trip = String(pos.tripId);
     panel.innerHTML = '<div class="marcha-empty">Consultando marcha / itinerario en vivo…</div>';
     try {
-      var data = await call('marcha', {
-        codTren: tren,
-        tripId: trip,
-        region: regionMarchaActual_()
-      });
-      var m = data.marcha;
+      var m = await consultarMarchaMalla_(tren, trip);
       if (m && m.ok) {
         item.classList.add('live');
-        asegurarChipCirculando_(item.querySelector('.malla-meta'), '🚆 CIRCULANDO');
+        asegurarChipCirculando_(item.querySelector('.malla-meta'), etiquetaChipCirculando_(pos, m));
         renderMarcha(panel, m);
       } else {
         panel.innerHTML =
@@ -2860,6 +2884,38 @@
       }
     } catch (err) {
       panel.innerHTML = '<div class="marcha-empty error-text">' + esc(err.message || err) + '</div>';
+    }
+  }
+
+  async function cargarMarchaVivoEnTarjetaMalla_(card) {
+    if (!card || card.getAttribute('data-marcha-live') === '1') return;
+    var slot = card.querySelector('.marcha-panel-live');
+    if (!slot) return;
+    var tren = limpiarNumTrenMalla(card.getAttribute('data-num') || '');
+    var trip = card.getAttribute('data-tid') || '';
+    var idx = indiceFlotaParaMallas_(flotaMapa);
+    var pos = matchFlotaMalla_(trip, tren, idx);
+    if (pos && pos.tripId) trip = String(pos.tripId);
+    if (!tren && !trip) return;
+    card.setAttribute('data-marcha-live', 'loading');
+    slot.hidden = false;
+    slot.innerHTML = '<div class="marcha-empty">Consultando marcha en vivo…</div>';
+    var labelEst = card.querySelector('.marcha-label--estatica');
+    try {
+      var m = await consultarMarchaMalla_(tren, trip);
+      if (m && m.ok) {
+        card.classList.add('live');
+        card.setAttribute('data-marcha-live', '1');
+        asegurarChipCirculando_(card.querySelector('.trip-info'), etiquetaChipCirculando_(pos, m));
+        renderMarcha(slot, m);
+        if (labelEst) labelEst.textContent = 'Marcha programada (malla)';
+      } else {
+        card.removeAttribute('data-marcha-live');
+        slot.innerHTML = '<div class="marcha-empty">Sin marcha en vivo ahora. Se muestra la operativa diaria.</div>';
+      }
+    } catch (err) {
+      card.removeAttribute('data-marcha-live');
+      slot.innerHTML = '<div class="marcha-empty error-text">' + esc(err.message || err) + '</div>';
     }
   }
 
@@ -4226,7 +4282,7 @@
       var tripInfo = card.querySelector('.trip-info');
       if (pos) {
         card.classList.add('live');
-        asegurarChipCirculando_(tripInfo, '🚆 CIRCULANDO');
+        asegurarChipCirculando_(tripInfo, etiquetaChipCirculando_(pos));
       } else {
         card.classList.remove('live');
         quitarChipCirculando_(tripInfo);
@@ -4239,7 +4295,7 @@
       if (legacy) legacy.remove();
       if (pos) {
         item.classList.add('live');
-        asegurarChipCirculando_(meta, '🚆 CIRCULANDO');
+        asegurarChipCirculando_(meta, etiquetaChipCirculando_(pos));
       } else {
         item.classList.remove('live');
         quitarChipCirculando_(meta);
@@ -5912,7 +5968,11 @@
     document.getElementById('resultadosGTFS').addEventListener('click', function (e) {
       var card = e.target.closest('.flip-card');
       if (!card) return;
+      var wasFlipped = card.classList.contains('is-flipped');
       gtfs.flipCard(card);
+      if (!wasFlipped && card.classList.contains('is-flipped') && card.classList.contains('live')) {
+        cargarMarchaVivoEnTarjetaMalla_(card);
+      }
     });
     document.addEventListener('click', function (e) {
       var lista = document.getElementById('listaEstacionesCustom');
