@@ -369,7 +369,7 @@
   }
   function pantallaPermitidaComercial_(screen) {
     return ({
-      home: 1, mapa: 1, conexiones: 1, trafico: 1, perfil: 1, ajustes: 1
+      home: 1, mapa: 1, conexiones: 1, perfil: 1, ajustes: 1
     })[screen] === 1;
   }
   function textoPermisoPerfil_(perfil) {
