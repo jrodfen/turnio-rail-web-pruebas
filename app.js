@@ -3728,12 +3728,20 @@
       if (dMin > 0) {
         var etiqueta = p.retrasoLlegada || p.esPasada
           ? ('llegó +' + dMin + ' min')
-          : ('previsto +' + dMin + ' min');
-        delayHtml = ' <em>' + etiqueta + '</em>';
-      } else if (p.retrasoLlegada) {
-        delayHtml = ' <em>puntual</em>';
+          : ('+' + dMin + ' min');
+        delayHtml = ' <em class="marcha-delay">' + etiqueta + '</em>';
+      } else if (p.esPasada || p.retrasoLlegada) {
+        delayHtml = ' <em class="marcha-ontime">puntual</em>';
+      } else {
+        delayHtml = ' <em class="marcha-ontime">en hora</em>';
       }
-      return '<div class="marcha-step ' + cl + '"><b>' + esc(p.horaEst || p.horaProgramada || '--:--') +
+      var horaProg = String(p.horaProgramada || '').trim();
+      var horaEst = String(p.horaEst || p.horaEstimada || '').trim();
+      var horaTxt = horaEst || horaProg || '--:--';
+      if (horaProg && horaEst && horaProg !== horaEst) {
+        horaTxt = horaProg + '\u2192' + horaEst;
+      }
+      return '<div class="marcha-step ' + cl + '"><b>' + esc(horaTxt) +
         '</b><span>' + icon + ' ' + esc(p.nombre || 'Parada') + delayHtml + '</span></div>';
     }).join('');
     var viaLive = lookupViaAdif_(m.numTren);
@@ -4700,8 +4708,6 @@
       var data = await call('marcha', {
         codTren: String(tren || ''),
         tripId: String(trip || ft.tripId || ''),
-        omitirMallaPesada: true,
-        rapida: true,
         modo: String(ft.modo || ''),
         region: regionMarchaActual_()
       });
