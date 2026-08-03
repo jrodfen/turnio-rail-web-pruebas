@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.7">
+    <link rel="stylesheet" href="./styles.css?v=V.8">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.7</strong></span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.8</strong></span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -34,7 +34,7 @@
         <div class="top-bar">
           <div class="top-brand">
             <h1>TURNIO RAIL</h1>
-            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.7</span></span>
+            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.8</span></span>
           </div>
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
@@ -303,11 +303,15 @@
           <div id="pantallas-resultados" class="pantallas-resultados" role="listbox" aria-label="Resultados de estaciones" hidden></div>
           <div class="pantallas-probe" id="pantallas-probe">
             <div class="pantallas-probe-head">
-              <strong>Prueba InfoStation (ADIF)</strong>
-              <button type="button" class="btn secondary" id="btn-probar-infostation">Probar conexi&oacute;n</button>
+              <strong>V&iacute;a ADIF (InfoStation)</strong>
+              <div class="pantallas-probe-actions">
+                <button type="button" class="btn secondary" id="btn-escuchar-infostation">Escuchar v&iacute;a</button>
+                <button type="button" class="btn secondary" id="btn-probar-infostation">Diagn&oacute;stico</button>
+              </div>
             </div>
-            <p class="pantallas-probe-note">Prueba profunda InfoStation (varios modos/canales). Usa el c&oacute;digo del buscador o Atocha (18000) por defecto. Si conecta sin datos, pega aqu&iacute; el RESUMEN.</p>
-            <pre id="adif-infostation-status" class="pantallas-probe-status" aria-live="polite">Sin probar a&uacute;n.</pre>
+            <p class="pantallas-probe-note">Canal <code>PRO-ECM-{c&oacute;digo}</code>. Al abrir Mallas se suscribe solo (p. ej. Santa Justa 51003). Usa el buscador o Atocha (18000) por defecto. De madrugada el hub puede estar vac&iacute;o.</p>
+            <pre id="adif-live-status" class="pantallas-probe-status" aria-live="polite">Sin escuchar a&uacute;n. Abre Mallas o pulsa Escuchar v&iacute;a.</pre>
+            <pre id="adif-infostation-status" class="pantallas-probe-status pantallas-probe-status--diag" aria-live="polite">Diagn&oacute;stico: sin ejecutar.</pre>
           </div>
         </div>
       </section>
@@ -535,7 +539,7 @@
           <span class="ajustes-card-body">
             <b>Obtener nueva actualizaci&oacute;n</b>
             <span>Descarga el c&oacute;digo m&aacute;s reciente y recarga la app. Ideal en m&oacute;vil cuando TURNIO est&aacute; anclado al inicio y la cach&eacute; no se limpia sola.</span>
-            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.7</span></span>
+            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.8</span></span>
           </span>
         </button>
         <button type="button" class="ajustes-card" id="btn-ayuda-app">
@@ -982,7 +986,7 @@
               <div class="cx-hi-icon">&#128646;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Mallas y horarios</div>
-                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong> (misma flota que el Mapa; se refresca peri&oacute;dicamente).</div>
+                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong>. Si InfoStation ADIF entrega datos, aparece el chip <strong>V&Iacute;A</strong> (canal PRO-ECM de la estaci&oacute;n del cuadro).</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1210,12 +1214,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.7"></script>
-    <script src="./conexiones.js?v=V.7"></script>
+    <script src="./turnio-config.js?v=V.8"></script>
+    <script src="./conexiones.js?v=V.8"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
-    <script src="./mallas-gtfs.js?v=mallas6"></script>
-    <script src="./app.js?v=V.7"></script>
+    <script src="./mallas-gtfs.js?v=mallas7"></script>
+    <script src="./app.js?v=V.8"></script>
   </body>
 </html>
 

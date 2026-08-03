@@ -563,6 +563,7 @@
         '<div class="back-detail"><span><strong>Origen:</strong> ' + esc(s.org) + '</span><span><strong>Serv:</strong> ' + esc(s.prod) + '</span></div>' +
         '<div class="back-detail"><span><strong>Tu andén:</strong> ' + esc(s.hora_llegada_estacion) + '</span><span><strong>Fin:</strong> ' + esc(s.dest) + ' (' + esc(s.hora_llegada_destino) + ')</span></div>' +
         '<div class="back-detail"><span><strong>Acceso:</strong> ' + esc(s.acc) + '</span><span><strong>Nº:</strong> ' + esc(s.num || 'N/D') + '</span></div>' +
+        '<div class="back-detail" data-via-adif-slot></div>' +
         '<div class="back-detail back-detail--col"><span><strong>Siguientes a ' + esc(s.dest) + ':</strong></span><div class="prox-row">' + pxHtml + '</div></div>' +
         '<div class="marcha-label">Marcha (operativa diaria)</div>' +
         '<div class="malla-timeline malla-timeline--compact">' + (s.marchaStepsHtml || '<div class="empty">Sin itinerario.</div>') + '</div>' +

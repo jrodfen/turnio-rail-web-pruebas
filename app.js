@@ -741,6 +741,12 @@
 
   var adifInfoStationProbe_ = null;
   var adifSignalRLoading_ = null;
+  // Cliente persistente vía ADIF (InfoStation / Gravita). Topic: PRO-ECM-{código}.
+  var adifLiveConn_ = null;
+  var adifLiveStation_ = '';
+  var adifLiveCache_ = Object.create(null);
+  var adifLiveStarting_ = null;
+  var adifLiveLastMsgAt_ = 0;
 
   function setAdifProbeStatus_(text, state) {
     var el = document.getElementById('adif-infostation-status');
@@ -988,6 +994,236 @@
   }
   window.TurnioProbarInfoStation = probarInfoStationAdif_;
 
+  function adifNormalizarCodigoEst_(codigo) {
+    var digits = String(codigo == null ? '' : codigo).replace(/\D/g, '');
+    if (!digits) return '';
+    return digits.replace(/^0+(?=\d)/, '') || digits;
+  }
+
+  function adifNumTrenDePayload_(t) {
+    if (!t || typeof t !== 'object') return '';
+    var raw =
+      (t.commercial_id && t.commercial_id[0] && t.commercial_id[0].number) ||
+      t.technical_number_planif ||
+      t.technical_number_in ||
+      t.id ||
+      '';
+    return String(raw).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+  }
+
+  function adifViaDePayload_(t) {
+    if (!t || typeof t !== 'object') return '';
+    var v = t.platform != null && String(t.platform).trim() !== '' ? t.platform : t.platform_in;
+    return v != null ? String(v).trim() : '';
+  }
+
+  function adifAccesoDePayload_(t) {
+    if (!t || typeof t !== 'object') return '';
+    var keys = ['access_in', 'access_out', 'access', 'passenger_access', 'hall', 'boarding_access', 'entry'];
+    for (var i = 0; i < keys.length; i++) {
+      var v = t[keys[i]];
+      if (v != null && String(v).trim() !== '') return String(v).trim();
+    }
+    return '';
+  }
+
+  function setAdifLiveStatusUi_(text, state) {
+    var el = document.getElementById('adif-live-status');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('is-ok', 'is-err', 'is-run');
+    if (state) el.classList.add(state);
+  }
+
+  function aplicarCacheAdifDesdePayload_(mensajeCrudo) {
+    var datos = typeof mensajeCrudo === 'string' ? JSON.parse(mensajeCrudo) : mensajeCrudo;
+    if (datos == null) return 0;
+    var trenes = Array.isArray(datos.trains) ? datos.trains
+      : (Array.isArray(datos) ? datos : null);
+    if (!trenes) return 0;
+    var next = Object.create(null);
+    var n = 0;
+    trenes.forEach(function (t) {
+      var num = adifNumTrenDePayload_(t);
+      if (!num) return;
+      next[num] = {
+        via: adifViaDePayload_(t),
+        acceso: adifAccesoDePayload_(t),
+        raw: t,
+        ts: Date.now()
+      };
+      n++;
+    });
+    adifLiveCache_ = next;
+    adifLiveLastMsgAt_ = Date.now();
+    return n;
+  }
+
+  function lookupViaAdif_(numTren) {
+    var num = String(numTren == null ? '' : numTren).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    if (!num) return null;
+    return adifLiveCache_[num] || null;
+  }
+
+  function asegurarChipViaAdif_(host, via, acceso) {
+    if (!host) return;
+    var chip = host.querySelector('.chip-via-adif');
+    if (!via) {
+      if (chip) chip.remove();
+      return;
+    }
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'chip-via-adif';
+      host.insertBefore(chip, host.firstChild);
+    }
+    chip.textContent = '📡 VÍA ' + via + (acceso ? ' · Acc. ' + acceso : '');
+  }
+
+  function inyectarViaAdifEnMallas_() {
+    document.querySelectorAll('#resultadosGTFS .flip-card').forEach(function (card) {
+      var info = lookupViaAdif_(card.getAttribute('data-num'));
+      var tripInfo = card.querySelector('.trip-info');
+      asegurarChipViaAdif_(tripInfo, info && info.via, info && info.acceso);
+      if (info && info.via) card.classList.add('has-via-adif');
+      else card.classList.remove('has-via-adif');
+      var backVia = card.querySelector('[data-via-adif-slot]');
+      if (backVia) {
+        backVia.textContent = info && info.via
+          ? ('Vía ADIF: ' + info.via + (info.acceso ? ' · Acceso ' + info.acceso : ''))
+          : '';
+      }
+    });
+    document.querySelectorAll('#mallas-resultados .malla-item').forEach(function (item) {
+      var info = lookupViaAdif_(item.getAttribute('data-tren'));
+      var meta = item.querySelector('.malla-meta');
+      asegurarChipViaAdif_(meta, info && info.via, info && info.acceso);
+    });
+  }
+
+  function codigoEstacionMallasActual_() {
+    var input = document.getElementById('inputEstacionBuscar');
+    var name = String((input && input.value) || '').trim();
+    var mapa = window.mapaEstacionesGlobal || {};
+    if (name) {
+      var key = Object.keys(mapa).find(function (k) {
+        return String(k).toLowerCase() === name.toLowerCase();
+      });
+      var ids = key ? mapa[key] : null;
+      if (ids && ids.length) {
+        var code = adifNormalizarCodigoEst_(ids[0]);
+        if (code) return code;
+      }
+    }
+    return '51003';
+  }
+
+  async function adifJoinTopics_(conn, codigo) {
+    var padded = String(codigo);
+    while (padded.length < 5) padded = '0' + padded;
+    var topics = [];
+    [codigo, padded].forEach(function (c) {
+      ['PRO-ECM-' + c, 'ECM-' + c].forEach(function (ch) {
+        if (topics.indexOf(ch) < 0) topics.push(ch);
+      });
+    });
+    for (var i = 0; i < topics.length; i++) {
+      try {
+        await conn.invoke('JoinInfo', topics[i]);
+      } catch (_) {}
+      try {
+        var ret = await conn.invoke('GetLastMessage', topics[i]);
+        if (ret != null && ret !== '') onAdifLiveMessage_(ret);
+      } catch (_) {}
+    }
+    return topics;
+  }
+
+  function onAdifLiveMessage_(mensajeCrudo) {
+    try {
+      var n = aplicarCacheAdifDesdePayload_(mensajeCrudo);
+      var conVia = 0;
+      Object.keys(adifLiveCache_).forEach(function (k) {
+        if (adifLiveCache_[k] && adifLiveCache_[k].via) conVia++;
+      });
+      setAdifLiveStatusUi_(
+        'Escuchando PRO-ECM-' + adifLiveStation_ + ' · ' + n + ' tren(es), ' + conVia + ' con vía' +
+          (adifLiveLastMsgAt_ ? ' · ' + new Date(adifLiveLastMsgAt_).toLocaleTimeString('es-ES') : ''),
+        n ? 'is-ok' : 'is-run'
+      );
+      inyectarViaAdifEnMallas_();
+    } catch (err) {
+      setAdifLiveStatusUi_('Mensaje ADIF no parseable: ' + String(err.message || err), 'is-err');
+    }
+  }
+
+  async function escucharInfoStationEstacion_(codigo) {
+    var code = adifNormalizarCodigoEst_(codigo) || '51003';
+    if (adifLiveStarting_) return adifLiveStarting_;
+    adifLiveStarting_ = (async function () {
+      var signalR = await cargarSignalRAdif_();
+      var Connected = signalR.HubConnectionState && signalR.HubConnectionState.Connected;
+      if (adifLiveConn_ && Connected != null && adifLiveConn_.state === Connected && adifLiveStation_ === code) {
+        await adifJoinTopics_(adifLiveConn_, code);
+        setAdifLiveStatusUi_('Re-suscrito PRO-ECM-' + code + ' (cache ' + Object.keys(adifLiveCache_).length + ')', 'is-run');
+        inyectarViaAdifEnMallas_();
+        return;
+      }
+      if (adifLiveConn_) {
+        try { await adifLiveConn_.stop(); } catch (_) {}
+        adifLiveConn_ = null;
+      }
+      setAdifLiveStatusUi_('Conectando InfoStation · PRO-ECM-' + code + '…', 'is-run');
+      var conn = new signalR.HubConnectionBuilder()
+        .withUrl('https://info.adif.es/InfoStation', {
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets
+        })
+        .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
+        .build();
+      conn.on('ReceiveMessage', onAdifLiveMessage_);
+      conn.onreconnected(function () {
+        adifJoinTopics_(conn, adifLiveStation_).catch(function () {});
+      });
+      conn.onclose(function () {
+        setAdifLiveStatusUi_('InfoStation desconectado.', 'is-err');
+      });
+      await conn.start();
+      adifLiveConn_ = conn;
+      adifLiveStation_ = code;
+      adifLiveCache_ = Object.create(null);
+      var topics = await adifJoinTopics_(conn, code);
+      setAdifLiveStatusUi_(
+        'Conectado · ' + topics[0] + ' (y fallbacks). Esperando trenes…',
+        'is-run'
+      );
+      // Como Gravita: segundo GetLast a +1s por si el snapshot tarda.
+      setTimeout(function () {
+        if (adifLiveConn_ !== conn) return;
+        adifJoinTopics_(conn, code).catch(function () {});
+      }, 1000);
+    })();
+    try {
+      await adifLiveStarting_;
+    } finally {
+      adifLiveStarting_ = null;
+    }
+  }
+
+  async function asegurarInfoStationParaMallas_() {
+    var a = document.getElementById('screen-mallas');
+    var vis = a && (a.classList.contains('active') || a.classList.contains('screen--in-float'));
+    if (!vis) return;
+    try {
+      await escucharInfoStationEstacion_(codigoEstacionMallasActual_());
+    } catch (err) {
+      setAdifLiveStatusUi_('InfoStation: ' + String(err.message || err), 'is-err');
+    }
+  }
+
+  window.TurnioEscucharInfoStation = escucharInfoStationEstacion_;
+  window.TurnioLookupViaAdif = lookupViaAdif_;
+
   function asegurarEstacionesPantallas_() {
     if (pantallasEstaciones) return Promise.resolve(pantallasEstaciones);
     if (pantallasCarga) return pantallasCarga;
@@ -1108,6 +1344,21 @@
     if (btnProbe) {
       btnProbe.addEventListener('click', function () {
         probarInfoStationAdif_();
+      });
+    }
+    var btnLive = document.getElementById('btn-escuchar-infostation');
+    if (btnLive) {
+      btnLive.addEventListener('click', function () {
+        var codigo = codigoEstacionProbeAdif_();
+        btnLive.disabled = true;
+        escucharInfoStationEstacion_(codigo)
+          .then(function () {
+            toast('Escuchando vía ADIF · ' + codigo, 'success');
+          })
+          .catch(function (err) {
+            toast(String(err.message || err), 'error');
+          })
+          .then(function () { btnLive.disabled = false; });
       });
     }
   }
@@ -1472,6 +1723,7 @@
       precargarFlotaMapa();
       marcarMallasCirculandoDesdeFlota_();
       arrancarAutoFlota();
+      asegurarInfoStationParaMallas_();
     }
     if (screen === 'conexiones') {
       if (typeof pintarPanelConexiones_ === 'function') pintarPanelConexiones_();
@@ -2691,12 +2943,18 @@
       return '<div class="marcha-step ' + cl + '"><b>' + esc(p.horaEst || p.horaProgramada || '--:--') +
         '</b><span>' + icon + ' ' + esc(p.nombre || 'Parada') + delayHtml + '</span></div>';
     }).join('');
+    var viaLive = lookupViaAdif_(m.numTren);
+    var viaBanner = viaLive && viaLive.via
+      ? '<div class="marcha-via-adif">📡 EN VIVO – VÍA ' + esc(viaLive.via) +
+        (viaLive.acceso ? ' · Acceso ' + esc(viaLive.acceso) : '') + '</div>'
+      : '';
     panel.innerHTML = '<div class="marcha-head"><strong>&#128225; Marcha en vivo · Tren ' + esc(m.numTren || '') +
-      '</strong><span>' + labelStatus(m.status) + '</span></div>' + ruta +
+      '</strong><span>' + labelStatus(m.status) + '</span></div>' + viaBanner + ruta +
       '<div class="marcha-kpis"><span>' + (retraso > 0 ? '&#9201; ' + esc(retTxt) : '&#9989; Puntual') +
       '</span><span>' + esc(m.stopActualNombre || 'Posición disponible') + '</span></div>' +
       (rows ? '<div class="marcha-list">' + rows + '</div>' : '<div class="marcha-empty">Sin paradas disponibles en el feed.</div>') +
-      '<div class="marcha-source">Fuente: Renfe GTFS-RT · llegadas registradas en TURNIO</div>';
+      '<div class="marcha-source">Fuente: Renfe GTFS-RT · llegadas registradas en TURNIO' +
+      (viaLive && viaLive.via ? ' · vía ADIF InfoStation' : '') + '</div>';
   }
   async function abrirMarcha(card) {
     var panel = card.querySelector('.marcha-panel');
@@ -3182,6 +3440,8 @@
         quitarChipCirculando_(meta);
       }
     });
+    inyectarViaAdifEnMallas_();
+    asegurarInfoStationParaMallas_();
   }
   window.TurnioMarcarMallasCirculando = marcarMallasCirculandoDesdeFlota_;
 

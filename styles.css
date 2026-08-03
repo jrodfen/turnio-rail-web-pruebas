@@ -859,6 +859,18 @@ body.monitor-mode #screen-mapa{display:none!important}
 }
 .chip-circulando-front{animation:pulse-circulando 1.5s infinite}
 @keyframes pulse-circulando{0%,100%{opacity:1}50%{opacity:.4}}
+.chip-via-adif{
+  display:inline-flex;align-items:center;gap:4px;margin:0 0 6px;
+  background:#0f766e;color:#fff;font-size:11px;font-weight:900;
+  padding:3px 9px;border-radius:20px;animation:pulse-circulando 1.5s infinite
+}
+.flip-card.has-via-adif .flip-card-front{border-color:#0f766e}
+.marcha-via-adif{
+  margin:8px 0;padding:8px 10px;border-radius:10px;
+  background:#0f766e;color:#fff;font-size:13px;font-weight:800
+}
+.pantallas-probe-actions{display:flex;flex-wrap:wrap;gap:8px}
+.pantallas-probe-status--diag{margin-top:8px;opacity:.92}
 .malla-badge{display:inline-block;margin-left:6px;background:rgba(45,127,249,.12);color:var(--primary-dark);font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px}
 .malla-item-body{display:none;border-top:1px dashed var(--line);padding:12px;background:var(--card)}
 .malla-item.open .malla-item-body{display:block}
