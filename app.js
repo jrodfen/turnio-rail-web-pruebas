@@ -914,7 +914,9 @@
   }
   function setStatus(kind, text) {
     status.className = 'status ' + kind;
-    status.textContent = text;
+    status.textContent = text || '';
+    // El aviso técnico de "conexión preparada" no se muestra; errores/OTP sí.
+    status.hidden = kind === 'ready' && !text;
   }
   function toast(text, type) {
     var t = document.getElementById('toast');
@@ -4470,7 +4472,7 @@
       return;
     }
 
-    setStatus('ready', 'Conexión externa preparada. · build ' + FRONT_BUILD);
+    setStatus('ready', '');
     try {
       var auth = await supabase.auth.getUser();
       if (auth && auth.data && auth.data.user) {
