@@ -2460,7 +2460,7 @@
   var vigilanteActivo = false;
   var intervaloVigilante = null;
   var timerVigilanteAutoOn_ = null;
-  var VIGILANTE_AUTO_ON_DELAY_MS_ = 20000;
+  var VIGILANTE_AUTO_ON_DELAY_MS_ = 60000;
   var trenesYaAlertados = {};
   var trenesPendientesConfirmacion = [];
   var trenesPendientesDetencion = [];
