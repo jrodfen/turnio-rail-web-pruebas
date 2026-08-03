@@ -642,6 +642,7 @@
       combinados_sin_filas: 'No hay filas para publicar.',
       combinados_demasiado_grande: 'El fichero es demasiado grande.',
       combinados_publish_failed: 'No se pudo guardar el snapshot compartido.',
+      combinados_delete_failed: 'No se pudo borrar la publicación compartida.',
       combinados_unavailable: 'Servicio de combinados no disponible.'
     };
     var base = mapa[code] || code;
@@ -5203,10 +5204,13 @@
     else ind.classList.add('loading');
   }
 
+  var combinadosHayRemoto_ = false;
+
   function refrescarUiConexiones_() {
     var cx = window.TurnioConexiones;
     var st = cx ? cx.estado() : { cargado: false, total: 0, meta: {} };
     var puedePublicar = !!(sessionProfile && sessionProfile.can_write);
+    if (st.cargado && st.meta && st.meta.compartido) combinadosHayRemoto_ = true;
     ['cx-status-chip', 'cx-panel-chip'].forEach(function (id) {
       var chip = document.getElementById(id);
       if (!chip) return;
@@ -5218,6 +5222,8 @@
       txt = (st.meta && st.meta.compartido ? 'Compartido hoy' : 'Cargado hoy') +
         ' · ' + ((st.meta && st.meta.nombre) || 'fichero') + ' · ' + st.total + ' conexiones';
       if (st.meta && st.meta.publicado_por) txt += ' · ' + st.meta.publicado_por;
+    } else if (puedePublicar && combinadosHayRemoto_) {
+      txt = 'Hay una publicación en el servidor. Puedes borrarla o cargar otro Excel y republicar.';
     } else {
       txt = puedePublicar
         ? 'Ningún fichero hoy. Carga el Excel y pulsa Publicar para todos.'
@@ -5228,13 +5234,14 @@
       if (meta) meta.textContent = txt;
     });
     [
-      ['cx-upload-circ', 'btn-cx-cargar', 'btn-cx-limpiar', 'btn-cx-publicar'],
-      ['cx-upload-panel', 'btn-cx-cargar-panel', 'btn-cx-limpiar-panel', 'btn-cx-publicar-panel']
+      ['cx-upload-circ', 'btn-cx-cargar', 'btn-cx-limpiar', 'btn-cx-publicar', 'btn-cx-borrar-pub'],
+      ['cx-upload-panel', 'btn-cx-cargar-panel', 'btn-cx-limpiar-panel', 'btn-cx-publicar-panel', 'btn-cx-borrar-pub-panel']
     ].forEach(function (ids) {
       var row = document.getElementById(ids[0]);
       var loadBtn = document.getElementById(ids[1]);
       var clearBtn = document.getElementById(ids[2]);
       var pubBtn = document.getElementById(ids[3]);
+      var delBtn = document.getElementById(ids[4]);
       if (row) row.classList.toggle('cx-upload-row--ready', !!st.cargado);
       if (clearBtn) clearBtn.hidden = !st.cargado;
       if (loadBtn) {
@@ -5244,6 +5251,7 @@
         loadBtn.textContent = st.cargado ? ready : idle;
       }
       if (pubBtn) pubBtn.hidden = !(puedePublicar && st.cargado);
+      if (delBtn) delBtn.hidden = !(puedePublicar && combinadosHayRemoto_);
     });
     refrescarLiveIndCx_();
   }
@@ -5260,7 +5268,11 @@
       try {
         var data = await call('combinados_obtener', {});
         if (!data || data.ok === false) return false;
-        if (data.empty || !Array.isArray(data.filas) || !data.filas.length) return false;
+        if (data.empty || !Array.isArray(data.filas) || !data.filas.length) {
+          combinadosHayRemoto_ = false;
+          return false;
+        }
+        combinadosHayRemoto_ = true;
         var ok = cx.aplicarSnapshotCompartido(data);
         if (ok) {
           refrescarUiConexiones_();
@@ -5286,7 +5298,10 @@
       toast('Carga primero el Excel del día.', 'error');
       return;
     }
-    if (!confirm('¿Publicar ' + snap.filas.length + ' conexiones para todos los usuarios de hoy?')) return;
+    var msg = combinadosHayRemoto_
+      ? ('¿Sustituir la publicación de hoy por estas ' + snap.filas.length + ' conexiones?')
+      : ('¿Publicar ' + snap.filas.length + ' conexiones para todos los usuarios de hoy?');
+    if (!confirm(msg)) return;
     try {
       var data = await call('combinados_publicar', {
         filas: snap.filas,
@@ -5295,7 +5310,7 @@
       if (!data || data.ok === false) {
         throw new Error((data && (data.detail || data.error)) || 'No se pudo publicar');
       }
-      // Marca local como compartido.
+      combinadosHayRemoto_ = true;
       cx.aplicarSnapshotCompartido({
         fecha: data.fecha || snap.fecha,
         filas: snap.filas,
@@ -5304,6 +5319,26 @@
       refrescarUiConexiones_();
       pintarPanelConexiones_();
       toast('Publicado para todos · ' + (data.total || snap.filas.length) + ' filas', 'success');
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  async function borrarPublicacionConexionesUi_() {
+    if (!exigirEscritura_('Borrar publicación de combinados')) return;
+    if (!confirm('¿Borrar la publicación compartida de hoy para TODOS los usuarios?\n\nLuego puedes cargar el Excel correcto y volver a publicar.')) return;
+    try {
+      var data = await call('combinados_borrar', {});
+      if (!data || data.ok === false) {
+        throw new Error((data && (data.detail || data.error)) || 'No se pudo borrar');
+      }
+      combinadosHayRemoto_ = false;
+      var cx = window.TurnioConexiones;
+      if (cx) cx.limpiar();
+      refrescarUiConexiones_();
+      if (typeof render === 'function') render();
+      pintarPanelConexiones_();
+      toast('Publicación borrada. Ya no hay combinados compartidos hoy.', 'success');
     } catch (err) {
       toast(String(err.message || err), 'error');
     }
@@ -5609,7 +5644,11 @@
     var cx = window.TurnioConexiones;
     if (!cx) return;
     if (!cx.estado().cargado) { toast('No hay fichero cargado.'); return; }
-    if (!confirm('¿Quitar el Excel de conexiones de este dispositivo?')) return;
+    var eraCompartido = !!(cx.estado().meta && cx.estado().meta.compartido);
+    var msgQuitar = eraCompartido
+      ? '¿Quitar los datos solo de ESTE dispositivo?\n\nLa publicación del servidor sigue para los demás. Usa «Borrar publicación» si quieres quitarla para todos.'
+      : '¿Quitar el Excel de conexiones de este dispositivo?';
+    if (!confirm(msgQuitar)) return;
     cx.limpiar();
     cxFiltroTren_ = '';
     cxFiltroQ_ = '';
@@ -5654,6 +5693,10 @@
     ['btn-cx-publicar', 'btn-cx-publicar-panel'].forEach(function (id) {
       var btn = document.getElementById(id);
       if (btn) btn.addEventListener('click', function () { publicarConexionesUi_(); });
+    });
+    ['btn-cx-borrar-pub', 'btn-cx-borrar-pub-panel'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', function () { borrarPublicacionConexionesUi_(); });
     });
     var btnClear = document.getElementById('btn-cx-limpiar');
     if (btnClear) btnClear.addEventListener('click', limpiarConexionesUi_);

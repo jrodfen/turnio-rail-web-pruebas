@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.10">
+    <link rel="stylesheet" href="./styles.css?v=V.11">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.10</strong></span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.11</strong></span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -34,7 +34,7 @@
         <div class="top-bar">
           <div class="top-brand">
             <h1>TURNIO RAIL</h1>
-            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.10</span></span>
+            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.11</span></span>
           </div>
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
@@ -421,7 +421,8 @@
               <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
               <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar" data-cx-label-idle="Cargar Excel del d&iacute;a" data-cx-label-ready="Recargar">Cargar Excel del d&iacute;a</button>
               <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-publicar" hidden>Publicar para todos</button>
-              <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar" hidden>Quitar</button>
+              <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-borrar-pub" hidden title="Quita el snapshot del servidor para todos">Borrar publicaci&oacute;n</button>
+              <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar" hidden>Quitar aqu&iacute;</button>
             </div>
             <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
             <div class="cx-actions-row">
@@ -470,7 +471,8 @@
             <input type="file" id="cx-file-input-panel" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
             <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar-panel" data-cx-label-idle="Cargar Excel" data-cx-label-ready="Recargar">Cargar Excel</button>
             <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-publicar-panel" hidden>Publicar para todos</button>
-            <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar-panel" hidden>Quitar</button>
+            <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-borrar-pub-panel" hidden title="Quita el snapshot del servidor para todos">Borrar publicaci&oacute;n</button>
+            <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar-panel" hidden>Quitar aqu&iacute;</button>
           </div>
           <p class="cx-upload-meta" id="cx-panel-meta">Ning&uacute;n fichero cargado hoy.</p>
           <p class="cx-live-ind" id="cx-live-ind" title="Click para recargar retrasos">Cargando tiempo real&hellip;</p>
@@ -541,7 +543,7 @@
           <span class="ajustes-card-body">
             <b>Obtener nueva actualizaci&oacute;n</b>
             <span>Descarga el c&oacute;digo m&aacute;s reciente y recarga la app. Ideal en m&oacute;vil cuando TURNIO est&aacute; anclado al inicio y la cach&eacute; no se limpia sola.</span>
-            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.10</span></span>
+            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.11</span></span>
           </span>
         </button>
         <button type="button" class="ajustes-card" id="btn-ayuda-app">
@@ -1019,8 +1021,8 @@
             <div class="cx-help-item">
               <div class="cx-hi-icon">&#128228;</div>
               <div class="cx-hi-body">
-                <div class="cx-hi-title">Publicar para todos</div>
-                <div class="cx-hi-desc">Solo <span class="help-badge hb-blue">CGO</span> / <span class="help-badge hb-blue">ADMIN</span>: cargan el Excel/HTML de <em>Trenes Combinados</em> y pulsan <strong>Publicar para todos</strong>. Queda un snapshot del d&iacute;a en el servidor; LECTURA e INVITADO lo reciben solos al entrar (sin subir fichero). Caduca al cambiar de d&iacute;a; republicar sustituye el del d&iacute;a.</div>
+                <div class="cx-hi-title">Publicar / borrar compartido</div>
+                <div class="cx-hi-desc">Solo <span class="help-badge hb-blue">CGO</span> / <span class="help-badge hb-blue">ADMIN</span>: cargan el Excel y <strong>Publicar para todos</strong>. Si hay error: <strong>republicar</strong> (sustituye) o <strong>Borrar publicaci&oacute;n</strong> (quita el del servidor para todos). <em>Quitar aqu&iacute;</em> solo limpia este dispositivo. Caduca al cambiar de d&iacute;a.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1086,7 +1088,14 @@
               <div class="cx-hi-icon">&#128228;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Publicar para todos</div>
-                <div class="cx-hi-desc">Tras cargar el Excel, pulsa <strong>Publicar para todos</strong>. El snapshot del d&iacute;a queda en el servidor de pruebas: el resto de usuarios (LECTURA, INVITADO, otros CGO) lo reciben solos al entrar o al abrir Enlazados/Circulaci&oacute;n, <strong>sin volver a subir el fichero</strong>. Una nueva publicaci&oacute;n el mismo d&iacute;a sustituye la anterior. LECTURA/INVITADO no ven este bot&oacute;n.</div>
+                <div class="cx-hi-desc">Tras cargar el Excel, pulsa <strong>Publicar para todos</strong>. El snapshot del d&iacute;a queda en el servidor: el resto lo recibe solo. <strong>Si hay un error</strong>: carga el Excel correcto y vuelve a publicar (sustituye el del d&iacute;a), o usa <strong>Borrar publicaci&oacute;n</strong> para quitarlo del servidor para todos y luego publicar de nuevo. <span class="help-badge hb-red">Quitar aqu&iacute;</span> solo limpia este dispositivo.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128465;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Borrar publicaci&oacute;n</div>
+                <div class="cx-hi-desc">Solo CGO/ADMIN. Elimina el snapshot compartido de hoy en el servidor. Los dem&aacute;s usuarios dejar&aacute;n de verlo (al refrescar o reentrar). No borra el hist&oacute;rico de Cop&eacute;rnico; solo la copia en TURNIO.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1237,12 +1246,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.10"></script>
-    <script src="./conexiones.js?v=V.10"></script>
+    <script src="./turnio-config.js?v=V.11"></script>
+    <script src="./conexiones.js?v=V.11"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas7"></script>
-    <script src="./app.js?v=V.10"></script>
+    <script src="./app.js?v=V.11"></script>
   </body>
 </html>
 
