@@ -2815,7 +2815,12 @@
     modal.hidden = false;
   }
 
+  // Modal ámbar «Tren detenido»: OFF hasta que el detector funcione al 100%.
+  // El modal rojo de críticos (retraso grave) sigue activo.
+  var VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_ = false;
+
   function mostrarModalDetenciones(items) {
+    if (!VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) return;
     var lista = document.getElementById('lista-detenciones');
     var modal = document.getElementById('modal-detencion-grave');
     if (!lista || !modal) return;
@@ -2848,25 +2853,26 @@
       return !trenesYaAlertados[claveCritico(c)];
     });
     if (!nuevos.length) return criticos.length;
-    // ≥25 → modal rojo. <25 → naranja (sin salida / AVE 15-24).
-    // Detenciones del detector: silenciadas en UI hasta completar calibración
-    // (GAS: VIGILANTE_UI_MOSTRAR_DETENIDOS=false; categoría "detencion").
+    // Modal rojo: críticos por demora grave (≥25). Sin detenidos / sin_salida.
     var graves = nuevos.filter(function (c) {
       if (c && c.categoria === 'detencion') return false;
+      if (c && c.categoria === 'sin_salida') return false;
       return Number(c.retrasoNum || 0) >= 25;
     });
-    var detenidos = nuevos.filter(function (c) {
-      if (c && c.categoria === 'detencion') return false;
-      if (c && (c.categoria === 'sin_salida' || c.categoria === 'retraso')) {
-        return Number(c.retrasoNum || 0) < 25;
-      }
-      // Legacy sin categoría: no tratar "Parado…" como detenido de UI.
-      var et = String((c && c.etiquetaModal) || '');
-      if (/^Parado\b/i.test(et) || /·\s*parado\b/i.test(et)) return false;
-      return Number(c.retrasoNum || 0) < 25;
-    });
     if (graves.length) mostrarModalRetrasos(graves);
-    if (detenidos.length) mostrarModalDetenciones(detenidos);
+    // Modal ámbar «Tren detenido»: silenciado (flag arriba).
+    if (VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) {
+      var detenidos = nuevos.filter(function (c) {
+        if (c && c.categoria === 'detencion') return true;
+        if (c && (c.categoria === 'sin_salida' || c.categoria === 'retraso')) {
+          return Number(c.retrasoNum || 0) < 25;
+        }
+        var et = String((c && c.etiquetaModal) || '');
+        if (/^Parado\b/i.test(et) || /·\s*parado\b/i.test(et)) return true;
+        return Number(c.retrasoNum || 0) < 25;
+      });
+      if (detenidos.length) mostrarModalDetenciones(detenidos);
+    }
     return criticos.length;
   }
 
