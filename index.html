@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.29">
+    <link rel="stylesheet" href="./styles.css?v=V.30">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -57,7 +57,7 @@
             <h2 id="welcome-name">Hola</h2>
             <p id="welcome-sub">Bienvenido. Aqu&iacute; tienes un primer vistazo al Radar y a los avisos de red.</p>
           </div>
-          <div class="welcome-weather-cols">
+          <div class="welcome-weather-cols" data-ocultar-comercial>
             <div class="welcome-card" id="welcome-card-clima-ahora">
               <h3>
                 <span>&#127780;&#65039; Sevilla &middot; ahora</span>
@@ -75,7 +75,21 @@
           </div>
         </div>
 
-        <div class="home-glance">
+        <div class="home-comercial" data-solo-comercial hidden>
+          <h3 class="home-glance-title">Tus accesos</h3>
+          <div class="home-comercial-grid">
+            <button type="button" class="circ-tile circ-tile--mapa" data-go="mapa">
+              <b>&#128506; Mapa</b>
+              <span>Flota en vivo</span>
+            </button>
+            <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
+              <b>&#128279; Enlazados</b>
+              <span>Servicios enlazados</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="home-glance" data-ocultar-comercial>
           <h3 class="home-glance-title">Primer vistazo</h3>
           <article class="welcome-card radar-summary home-glance-card" id="home-card-radar">
             <h3>
@@ -94,7 +108,7 @@
           </article>
         </div>
 
-        <p class="foot-note">Radar, mapa, mallas, kms, pantallas, enlaces y accesos r&aacute;pidos est&aacute;n en <strong>Circulaci&oacute;n</strong>.</p>
+        <p class="foot-note" data-ocultar-comercial>Radar, mapa, mallas, kms, pantallas, enlaces y accesos r&aacute;pidos est&aacute;n en <strong>Circulaci&oacute;n</strong>.</p>
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
@@ -149,7 +163,8 @@
       </section>
       <section id="screen-mapa" class="screen">
         <div class="mapa-toolbar">
-          <button type="button" class="mapa-tool" data-go="radar">&#11013; Radar</button>
+          <button type="button" class="mapa-tool" data-go="radar" data-ocultar-comercial>&#11013; Radar</button>
+          <button type="button" class="mapa-tool" data-go="home" data-solo-comercial hidden>&#11013; Inicio</button>
           <h3>&#128506; Mapa flota</h3>
           <span id="mapa-region-label" class="mapa-region">Renfe en vivo</span>
           <div id="orm-wrapper" class="orm-wrapper">
@@ -407,7 +422,7 @@
           <div class="circ-group circ-group--turnio">
             <h3 class="circ-group-title">En TURNIO</h3>
             <div class="circ-grid circ-grid--turnio">
-              <button type="button" class="circ-tile circ-tile--radar" data-go="radar">
+              <button type="button" class="circ-tile circ-tile--radar" data-go="radar" data-ocultar-comercial>
                 <b>&#128225; Radar</b>
                 <span>Retrasos e incidencias</span>
               </button>
@@ -415,15 +430,15 @@
                 <b>&#128506; Mapa</b>
                 <span>Flota en vivo</span>
               </button>
-              <button type="button" class="circ-tile circ-tile--mallas" data-go="mallas">
+              <button type="button" class="circ-tile circ-tile--mallas" data-go="mallas" data-ocultar-comercial>
                 <b>&#128646; Mallas</b>
                 <span>Horarios y d&iacute;as</span>
               </button>
-              <button type="button" class="circ-tile circ-tile--kms" data-go="kms">
+              <button type="button" class="circ-tile circ-tile--kms" data-go="kms" data-ocultar-comercial>
                 <b>&#128207; Kms</b>
                 <span>Distancia entre estaciones</span>
               </button>
-              <button type="button" class="circ-tile circ-tile--pantallas" data-go="pantallas">
+              <button type="button" class="circ-tile circ-tile--pantallas" data-go="pantallas" data-ocultar-comercial>
                 <b>&#128421; Pantallas</b>
                 <span>Salidas / llegadas ADIF</span>
               </button>
@@ -434,7 +449,7 @@
             </div>
           </div>
 
-          <div class="circ-group circ-group--apps">
+          <div class="circ-group circ-group--apps" data-ocultar-comercial>
             <div class="home-apps" id="home-apps">
               <h3 class="circ-group-title">Accesos r&aacute;pidos</h3>
               <p class="home-apps-note circ-note">Enlaces de red Renfe / ADIF. En m&oacute;vil o fuera de intranet pueden pedir VPN o SSO.</p>
@@ -462,8 +477,9 @@
                 <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
               </div>
             </div>
-            <p class="circ-note">CGO/ADMIN carga el Excel, puede <b>Publicar para todos</b> y <b>Borrar publicaci&oacute;n</b> (quita el del servidor para todos). <em>Quitar aqu&iacute;</em> solo limpia este dispositivo. El resto recibe el snapshot al abrir Conexiones. <b>Copiar enlace</b> deja la URL de Cop&eacute;rnico.</p>
-            <div class="cx-upload-row" id="cx-upload-circ">
+            <p class="circ-note" data-ocultar-comercial>CGO/ADMIN carga el Excel, puede <b>Publicar para todos</b> y <b>Borrar publicaci&oacute;n</b> (quita el del servidor para todos). <em>Quitar aqu&iacute;</em> solo limpia este dispositivo. El resto recibe el snapshot al abrir Conexiones. <b>Copiar enlace</b> deja la URL de Cop&eacute;rnico.</p>
+            <p class="circ-note" data-solo-comercial hidden>Consulta las conexiones del d&iacute;a publicadas por operaci&oacute;n. Usa el panel de enlaces para buscar.</p>
+            <div class="cx-upload-row" id="cx-upload-circ" data-ocultar-comercial>
               <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
               <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar" data-cx-label-idle="Cargar Excel del d&iacute;a" data-cx-label-ready="Recargar">Cargar Excel del d&iacute;a</button>
               <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-publicar" hidden>Publicar para todos</button>
@@ -472,7 +488,7 @@
             </div>
             <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
             <div class="cx-actions-row">
-              <button type="button" class="btn secondary" id="btn-cx-abrir-coper" title="Copia el enlace del Excel de hoy">Copiar enlace</button>
+              <button type="button" class="btn secondary" id="btn-cx-abrir-coper" title="Copia el enlace del Excel de hoy" data-ocultar-comercial>Copiar enlace</button>
               <button type="button" class="btn secondary" id="btn-cx-abrir-panel">Panel de enlaces</button>
             </div>
             <div class="cx-coper-url-wrap" id="cx-coper-url-wrap" hidden>
@@ -687,6 +703,7 @@
               <select id="admin-nuevo-rol">
                 <option value="CGO" selected>CGO</option>
                 <option value="LECTURA">LECTURA</option>
+                <option value="COMERCIAL">COMERCIAL</option>
                 <option value="INVITADO">INVITADO</option>
                 <option value="ADMIN">ADMIN</option>
               </select>
@@ -719,8 +736,10 @@
     </main>
     <nav id="bottom-nav" class="fixed-nav" hidden>
       <button class="nav-item active" data-go="home" type="button"><span>&#127968;</span>Inicio</button>
-      <button class="nav-item" data-go="radar" type="button"><span>&#128225;</span>Radar</button>
-      <button class="nav-item" data-go="trafico" type="button"><span>&#128642;</span>Circulaci&oacute;n</button>
+      <button class="nav-item" data-go="radar" type="button" data-ocultar-comercial><span>&#128225;</span>Radar</button>
+      <button class="nav-item" data-go="mapa" type="button" data-solo-comercial hidden><span>&#128506;</span>Mapa</button>
+      <button class="nav-item" data-go="conexiones" type="button" data-solo-comercial hidden><span>&#128279;</span>Enlazados</button>
+      <button class="nav-item" data-go="trafico" type="button" data-ocultar-comercial><span>&#128642;</span>Circulaci&oacute;n</button>
       <button class="nav-item" data-go="ajustes" type="button"><span>&#9881;</span>Ajustes</button>
       <button class="nav-item" data-go="perfil" type="button"><span>&#128100;</span>Cuenta</button>
     </nav>
@@ -1399,12 +1418,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.29"></script>
-    <script src="./conexiones.js?v=V.29"></script>
+    <script src="./turnio-config.js?v=V.30"></script>
+    <script src="./conexiones.js?v=V.30"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas7"></script>
-    <script src="./app.js?v=V.29"></script>
+    <script src="./app.js?v=V.30"></script>
   </body>
 </html>
 

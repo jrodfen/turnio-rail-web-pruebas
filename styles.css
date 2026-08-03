@@ -317,7 +317,10 @@ body.monitor-mode #screen-mapa{display:none!important}
 .ajustes-card-body b{font-size:15px;color:var(--text)}
 .ajustes-card-body span{font-size:12px;color:var(--muted);line-height:1.4}
 .ajustes-danger{color:var(--red)!important}
-.ajustes-chip{display:inline-flex;align-self:flex-start;margin-top:4px;background:rgba(29,78,216,.1);color:#1d4ed8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid rgba(29,78,216,.2)}
+.home-comercial{margin:12px 0 20px}
+.home-comercial-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:420px){.home-comercial-grid{grid-template-columns:1fr}}
+html.turnio-es-comercial #fab-container{display:none!important}
 .ajustes-card--admin{border-color:rgba(5,150,105,.4);background:linear-gradient(135deg,rgba(5,150,105,.1),var(--card))}
 
 /* Administración (solo ADMIN) */

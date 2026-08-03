@@ -352,7 +352,7 @@
   function perfilSesion_(persona) {
     var p = persona || {};
     var role = String(p.role_code || p.roleCode || p.rol || 'LECTURA').toUpperCase();
-    if (['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].indexOf(role) < 0) role = 'LECTURA';
+    if (['ADMIN', 'CGO', 'LECTURA', 'INVITADO', 'COMERCIAL'].indexOf(role) < 0) role = 'LECTURA';
     var isAdmin = p.is_admin === true || p.isAdmin === true || role === 'ADMIN';
     return {
       id: p.id || '',
@@ -364,8 +364,17 @@
       display_name: p.display_name || p.displayName || p.nombre || ''
     };
   }
+  function esComercial_() {
+    return sessionProfile.role_code === 'COMERCIAL';
+  }
+  function pantallaPermitidaComercial_(screen) {
+    return ({
+      home: 1, mapa: 1, conexiones: 1, trafico: 1, perfil: 1, ajustes: 1
+    })[screen] === 1;
+  }
   function textoPermisoPerfil_(perfil) {
     if (perfil.role_code === 'ADMIN') return 'Administración: puedes gestionar usuarios y usar todas las funciones operativas.';
+    if (perfil.role_code === 'COMERCIAL') return 'Perfil comercial: acceso a Mapa en vivo y Servicios enlazados.';
     if (perfil.can_write) return 'Permiso operativo: puedes generar avisos y usar el Vigilante.';
     if (perfil.role_code === 'INVITADO') return 'Modo invitado: consulta de datos. No puedes generar avisos ni usar el Vigilante.';
     return 'Modo lectura: puedes consultar datos, sin generar avisos ni usar el Vigilante.';
@@ -376,6 +385,7 @@
     document.documentElement.classList.toggle('turnio-solo-lectura', !puedeEscribir);
     document.documentElement.classList.toggle('turnio-es-admin', !!sessionProfile.is_admin);
     document.documentElement.classList.toggle('turnio-es-invitado', sessionProfile.role_code === 'INVITADO');
+    document.documentElement.classList.toggle('turnio-es-comercial', esComercial_());
     document.querySelectorAll('[data-requiere-escritura]').forEach(function (el) {
       el.hidden = !puedeEscribir;
       el.disabled = !puedeEscribir;
@@ -385,7 +395,13 @@
       if ('disabled' in el) el.disabled = !sessionProfile.is_admin;
     });
     document.querySelectorAll('[data-ocultar-invitado]').forEach(function (el) {
-      el.hidden = sessionProfile.role_code === 'INVITADO';
+      el.hidden = sessionProfile.role_code === 'INVITADO' || esComercial_();
+    });
+    document.querySelectorAll('[data-ocultar-comercial]').forEach(function (el) {
+      el.hidden = esComercial_();
+    });
+    document.querySelectorAll('[data-solo-comercial]').forEach(function (el) {
+      el.hidden = !esComercial_();
     });
     var roleText = 'Rol: ' + sessionProfile.role_code;
     var badge = document.getElementById('user-role');
@@ -459,7 +475,7 @@
       var role = String(p.role_code || 'LECTURA').toUpperCase();
       var esYo = sessionProfile.id && String(sessionProfile.id) === String(p.id);
       var abierto = adminExpandidoId_ && String(adminExpandidoId_) === String(p.id);
-      var opts = ['ADMIN', 'CGO', 'LECTURA', 'INVITADO'].map(function (r) {
+      var opts = ['ADMIN', 'CGO', 'LECTURA', 'COMERCIAL', 'INVITADO'].map(function (r) {
         return '<option value="' + r + '"' + (r === role ? ' selected' : '') + '>' + r + '</option>';
       }).join('');
       return (
@@ -2243,6 +2259,10 @@
   }
 
   function go(screen) {
+    if (esComercial_() && !pantallaPermitidaComercial_(screen)) {
+      toast('Tu perfil COMERCIAL solo puede usar Mapa y Servicios enlazados.', 'error');
+      screen = 'home';
+    }
     // Toggle: si ese flotante ya está abierto, el mismo botón lo cierra.
     if (floatState_ && floatState_.screenId === screen) {
       cerrarVentanaFlotante_();
@@ -2572,7 +2592,9 @@
     document.getElementById('welcome-name').textContent = saludoBienvenida_(nombre);
     var welcomeSub = document.getElementById('welcome-sub');
     if (welcomeSub) {
-      welcomeSub.textContent = 'Bienvenido a TURNIO. Aquí tienes un primer vistazo al Radar y a los avisos de red.';
+      welcomeSub.textContent = esComercial_()
+        ? 'Perfil comercial: Mapa en vivo y Servicios enlazados.'
+        : 'Bienvenido a TURNIO. Aquí tienes un primer vistazo al Radar y a los avisos de red.';
     }
     document.getElementById('user-name').textContent = nombre;
     var emailEl = document.getElementById('user-email');
@@ -2583,6 +2605,17 @@
     document.getElementById('profile-email').textContent = email;
     var profileName = document.getElementById('profile-name');
     if (profileName) profileName.textContent = nombre;
+    // COMERCIAL: sin Radar/Vigilante/FAB; precarga mapa + combinados.
+    if (esComercial_()) {
+      mostrarFab_(false);
+      setVigilanteState(false, true);
+      precargarFlotaMapa();
+      asegurarCombinadosCompartidos_().finally(function () {
+        if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
+      });
+      go('home');
+      return;
+    }
     loadRadar();
     // Un perfil de consulta no puede arrancar un Vigilante aunque el
     // cuadrante heredado de GAS estuviera configurado para activarlo.
