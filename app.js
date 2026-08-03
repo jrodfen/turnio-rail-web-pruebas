@@ -760,8 +760,10 @@
 
   function cerrarModalAvisoApp_(soloCerrar) {
     var modal = document.getElementById('modal-aviso-app');
+    var estabaVisible = !!(modal && !modal.hidden);
     if (modal) modal.hidden = true;
     if (soloCerrar) avisoAppPendienteId_ = avisoAppPendienteId_ || '';
+    if (estabaVisible) comprobarSugerenciaAlEntrar_();
   }
 
   function mostrarModalAvisoApp_(aviso) {
@@ -798,7 +800,176 @@
   async function comprobarAvisoAppAlEntrar_() {
     try {
       var d = await call('aviso_app_pendiente', {});
-      if (d && d.pendiente && d.aviso) mostrarModalAvisoApp_(d.aviso);
+      if (d && d.pendiente && d.aviso) {
+        mostrarModalAvisoApp_(d.aviso);
+        return;
+      }
+    } catch (_) { /* no bloquear entrada */ }
+    comprobarSugerenciaAlEntrar_();
+  }
+
+  var sugerenciaPendienteId_ = '';
+  var sugerenciaCache_ = [];
+
+  function labelTipoSugerencia_(tipo) {
+    return String(tipo || '').toLowerCase() === 'fallo' ? 'Fallo' : 'Sugerencia';
+  }
+
+  function htmlSugerenciaItem_(item) {
+    if (!item || !item.id) return '';
+    var tipo = String(item.tipo || 'sugerencia').toLowerCase();
+    var meta = [];
+    var f = fmtAvisoFecha_(item.created_at);
+    if (f) meta.push(f);
+    if (item.created_by) meta.push(item.created_by);
+    var tipoCls = 'admin-sug-tipo' + (tipo === 'fallo' ? ' admin-sug-tipo--fallo' : '');
+    return '<article class="admin-aviso-item admin-sug-item' + (tipo === 'fallo' ? ' is-fallo' : '') +
+      '" data-sugerencia-id="' + esc(item.id) + '">' +
+      '<button type="button" class="aviso-item-toggle" data-sugerencia-toggle aria-expanded="false">' +
+        '<span class="aviso-item-toggle-main">' +
+          '<span class="' + tipoCls + '">' + esc(labelTipoSugerencia_(tipo)) + '</span>' +
+          '<b>' + esc(item.titulo || 'Sin título') + '</b>' +
+        '</span>' +
+        '<span class="aviso-item-chev" aria-hidden="true">▸</span>' +
+      '</button>' +
+      '<div class="aviso-item-panel" hidden>' +
+        (meta.length ? '<p class="admin-aviso-item-meta">' + esc(meta.join(' · ')) + '</p>' : '') +
+        '<p class="admin-aviso-item-body">' + esc(item.cuerpo || '') + '</p>' +
+        '<button type="button" class="btn secondary" data-sugerencia-borrar="' + esc(item.id) + '">Borrar</button>' +
+      '</div>' +
+      '</article>';
+  }
+
+  function pintarAdminSugerencias_(list) {
+    var box = document.getElementById('admin-sugerencia-lista');
+    var meta = document.getElementById('admin-sugerencia-meta');
+    var arr = Array.isArray(list) ? list : [];
+    sugerenciaCache_ = arr;
+    if (meta) {
+      meta.textContent = arr.length
+        ? (arr.length + ' mensaje' + (arr.length === 1 ? '' : 's') + ' recibido' + (arr.length === 1 ? '' : 's'))
+        : 'Aún no hay sugerencias ni fallos.';
+    }
+    if (!box) return;
+    if (!arr.length) {
+      box.innerHTML = '<div class="empty">Nadie ha enviado nada todavía.</div>';
+      return;
+    }
+    box.innerHTML = arr.map(htmlSugerenciaItem_).join('');
+  }
+
+  async function cargarAdminSugerencias_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-sugerencia-meta');
+    if (meta) meta.textContent = 'Cargando…';
+    try {
+      var d = await call('sugerencia_listar', {});
+      pintarAdminSugerencias_(d && d.sugerencias);
+    } catch (err) {
+      if (meta) meta.textContent = 'Error: ' + String(err.message || err);
+    }
+  }
+
+  async function enviarSugerencia_(ev) {
+    if (ev) ev.preventDefault();
+    if (sessionProfile.role_code === 'INVITADO') {
+      toast('Los invitados no pueden enviar sugerencias.', 'error');
+      return;
+    }
+    var tipoEl = document.getElementById('sugerencia-tipo');
+    var tit = document.getElementById('sugerencia-titulo');
+    var cue = document.getElementById('sugerencia-cuerpo');
+    var btn = document.getElementById('btn-enviar-sugerencia');
+    var tipo = String(tipoEl && tipoEl.value || 'sugerencia').trim().toLowerCase();
+    var titulo = String(tit && tit.value || '').trim();
+    var cuerpo = String(cue && cue.value || '').trim();
+    if (!titulo || !cuerpo) {
+      toast('Título y mensaje son obligatorios.', 'error');
+      return;
+    }
+    if (btn) btn.disabled = true;
+    try {
+      await call('sugerencia_enviar', { tipo: tipo, titulo: titulo, cuerpo: cuerpo });
+      toast('Enviado. Administración lo recibirá.', 'success');
+      if (tit) tit.value = '';
+      if (cue) cue.value = '';
+      if (tipoEl) tipoEl.value = 'sugerencia';
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function borrarAdminSugerencia_(id) {
+    if (!sessionProfile.is_admin) return;
+    var sid = String(id || '').trim();
+    if (!sid) return;
+    if (!confirm('¿Borrar este mensaje del historial?')) return;
+    try {
+      var d = await call('sugerencia_borrar', { id: sid });
+      toast('Borrado.', 'success');
+      pintarAdminSugerencias_(d && d.sugerencias);
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  function cerrarModalSugerencia_(soloCerrar) {
+    var modal = document.getElementById('modal-sugerencia');
+    if (modal) modal.hidden = true;
+    if (soloCerrar) sugerenciaPendienteId_ = sugerenciaPendienteId_ || '';
+  }
+
+  function mostrarModalSugerencia_(item) {
+    if (!item || !item.id) return;
+    sugerenciaPendienteId_ = String(item.id);
+    var modal = document.getElementById('modal-sugerencia');
+    var tit = document.getElementById('titulo-sugerencia');
+    var meta = document.getElementById('sugerencia-meta');
+    var cue = document.getElementById('sugerencia-cuerpo-modal');
+    var tipoLabel = labelTipoSugerencia_(item.tipo);
+    if (tit) tit.textContent = (tipoLabel + ': ' + (item.titulo || '')).trim();
+    if (meta) {
+      var bits = [];
+      var f = fmtAvisoFecha_(item.created_at);
+      if (f) bits.push(f);
+      if (item.created_by) bits.push(item.created_by);
+      meta.textContent = bits.join(' · ');
+      meta.hidden = !bits.length;
+    }
+    if (cue) cue.textContent = item.cuerpo || '';
+    if (modal) modal.hidden = false;
+  }
+
+  async function aceptarModalSugerencia_() {
+    var id = sugerenciaPendienteId_;
+    if (!id) {
+      cerrarModalSugerencia_(false);
+      return;
+    }
+    var btn = document.getElementById('btn-sugerencia-aceptar');
+    if (btn) btn.disabled = true;
+    try {
+      await call('sugerencia_aceptar', { id: id });
+      sugerenciaPendienteId_ = '';
+      cerrarModalSugerencia_(false);
+      toast('Mensaje aceptado.', 'success');
+      comprobarSugerenciaAlEntrar_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function comprobarSugerenciaAlEntrar_() {
+    if (!sessionProfile.is_admin) return;
+    var avisoModal = document.getElementById('modal-aviso-app');
+    if (avisoModal && !avisoModal.hidden) return;
+    try {
+      var d = await call('sugerencia_pendiente', {});
+      if (d && d.pendiente && d.sugerencia) mostrarModalSugerencia_(d.sugerencia);
     } catch (_) { /* no bloquear entrada */ }
   }
 
@@ -906,7 +1077,14 @@
       aviso_ack_failed: 'No se pudo guardar la aceptación.',
       aviso_app_unavailable: 'Avisos de app no disponibles.',
       aviso_no_encontrado: 'Ese aviso ya no existe.',
-      role_forbidden: 'Tu rol no puede ver el historial de avisos.'
+      role_forbidden: 'Tu rol no puede ver el historial de avisos.',
+      sugerencia_tipo_invalido: 'Elige Fallo o Sugerencia.',
+      sugerencia_titulo_requerido: 'Indica un título.',
+      sugerencia_cuerpo_requerido: 'Indica el mensaje.',
+      sugerencia_ack_failed: 'No se pudo guardar la aceptación.',
+      sugerencia_no_encontrada: 'Ese mensaje ya no existe.',
+      sugerencia_unavailable: 'Sugerencias no disponibles.',
+      sugerencias_kv_missing: 'Almacenamiento de sugerencias no disponible.'
     };
     var base = mapa[code] || code;
     if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
@@ -1928,7 +2106,7 @@
   /** Pantallas base desde las que Circulación/herramientas abren como flotante. */
   var FLOAT_BASE_KEEP_ = { radar: 1, mapa: 1 };
   /** Nunca flotan: siempre pantalla completa (como Inicio). */
-  var FLOAT_NUNCA_ = { home: 1, radar: 1, ajustes: 1, perfil: 1, admin: 1, 'avisos-app': 1 };
+  var FLOAT_NUNCA_ = { home: 1, radar: 1, ajustes: 1, perfil: 1, admin: 1, 'avisos-app': 1, sugerencias: 1 };
   var floatState_ = null;
   var floatZ_ = 3000;
   var floatMq_ = null;
@@ -1987,6 +2165,13 @@
       }
       cargarAvisosApp_(true);
     }
+    if (screen === 'sugerencias') {
+      if (sessionProfile.role_code === 'INVITADO') {
+        toast('Los invitados no pueden enviar sugerencias.', 'error');
+        go('ajustes');
+        return;
+      }
+    }
     if (screen === 'pantallas') abrirPantallas();
     if (screen === 'kms') abrirKms();
     if (screen === 'mapa') openMapa();
@@ -2037,6 +2222,7 @@
       }
       cargarAdminPerfiles_();
       cargarAdminAviso_();
+      cargarAdminSugerencias_();
     }
   }
 
@@ -4775,6 +4961,7 @@
   if (btnAdminRef) btnAdminRef.addEventListener('click', function () {
     cargarAdminPerfiles_();
     cargarAdminAviso_();
+    cargarAdminSugerencias_();
   });
   var adminBuscar = document.getElementById('admin-buscar');
   if (adminBuscar) {
@@ -4830,6 +5017,32 @@
   if (modalAv) {
     modalAv.addEventListener('click', function (e) {
       if (e.target === modalAv) cerrarModalAvisoApp_(true);
+    });
+  }
+  var formSug = document.getElementById('form-sugerencia');
+  if (formSug) formSug.addEventListener('submit', enviarSugerencia_);
+  var adminSugLista = document.getElementById('admin-sugerencia-lista');
+  if (adminSugLista) {
+    adminSugLista.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var btnDel = t.closest('[data-sugerencia-borrar]');
+      if (btnDel) {
+        borrarAdminSugerencia_(btnDel.getAttribute('data-sugerencia-borrar'));
+        return;
+      }
+      var btnToggle = t.closest('[data-sugerencia-toggle]');
+      if (btnToggle) toggleAvisoItem_(btnToggle);
+    });
+  }
+  var btnSugOk = document.getElementById('btn-sugerencia-aceptar');
+  if (btnSugOk) btnSugOk.addEventListener('click', aceptarModalSugerencia_);
+  var btnSugX = document.getElementById('btn-sugerencia-cerrar');
+  if (btnSugX) btnSugX.addEventListener('click', function () { cerrarModalSugerencia_(true); });
+  var modalSug = document.getElementById('modal-sugerencia');
+  if (modalSug) {
+    modalSug.addEventListener('click', function (e) {
+      if (e.target === modalSug) cerrarModalSugerencia_(true);
     });
   }
   var adminListaEl = document.getElementById('admin-lista');
