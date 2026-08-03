@@ -6866,10 +6866,8 @@
     if (btnClearP) btnClearP.addEventListener('click', limpiarConexionesUi_);
     var btnAbrir = document.getElementById('btn-cx-abrir-panel');
     if (btnAbrir) btnAbrir.addEventListener('click', function () { go('conexiones'); });
-    ['btn-cx-abrir-coper', 'btn-cx-modal-coper'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('click', abrirCopernicoCombinadosHoy_);
-    });
+    var btnAbrirCoper = document.getElementById('btn-cx-abrir-coper');
+    if (btnAbrirCoper) btnAbrirCoper.addEventListener('click', abrirCopernicoCombinadosHoy_);
     ['cx-coper-url', 'cx-coper-url-panel'].forEach(function (id) {
       var inp = document.getElementById(id);
       if (inp) inp.addEventListener('focus', function () { inp.select(); });
