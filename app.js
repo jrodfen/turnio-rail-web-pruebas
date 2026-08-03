@@ -4587,6 +4587,7 @@
       }
       return false;
     }
+    ocultarSugerenciasMapa_();
     var marker = mapIndex[num];
     if (!marker) {
       // Si el tren está en flota pero fuera del filtro actual, avisar con claridad.
@@ -4626,6 +4627,208 @@
     setTimeout(abrirPopup, 80);
     return true;
   }
+
+  var ORM_FACILITY_URL_ = 'https://api.openrailwaymap.org/v2/facility';
+  var mapaEnclaveMarker_ = null;
+  var mapaSugTimer_ = null;
+  var mapaSugReq_ = 0;
+  var mapaSugCache_ = [];
+
+  function ocultarSugerenciasMapa_() {
+    var box = document.getElementById('mapa-busqueda-sugerencias');
+    if (box) {
+      box.hidden = true;
+      box.innerHTML = '';
+    }
+    mapaSugCache_ = [];
+  }
+
+  function etiquetaTipoEnclave_(railway) {
+    var t = String(railway || '').toLowerCase();
+    if (t === 'station') return 'Estación';
+    if (t === 'halt') return 'Apeadero';
+    if (t === 'service_station') return 'Estación de servicio';
+    if (t === 'yard') return 'Playa / apartadero';
+    if (t === 'junction') return 'Bifurcación';
+    if (t === 'crossover') return 'Cruce';
+    if (t === 'tram_stop') return 'Parada tranvía';
+    if (t === 'subway_entrance') return 'Acceso metro';
+    return t ? t.replace(/_/g, ' ') : 'Enclave';
+  }
+
+  function enEspanaMapa_(lat, lon) {
+    return lat >= 35.9 && lat <= 43.9 && lon >= -9.6 && lon <= 4.6;
+  }
+
+  function ordenarEnclavesEspana_(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var aEs = enEspanaMapa_(Number(a.latitude), Number(a.longitude)) ? 1 : 0;
+      var bEs = enEspanaMapa_(Number(b.latitude), Number(b.longitude)) ? 1 : 0;
+      if (bEs !== aEs) return bEs - aEs;
+      var aAdif = /adif/i.test(String(a.operator || a.owner || '')) ? 1 : 0;
+      var bAdif = /adif/i.test(String(b.operator || b.owner || '')) ? 1 : 0;
+      if (bAdif !== aAdif) return bAdif - aAdif;
+      return Number(b.rank || 0) - Number(a.rank || 0);
+    });
+  }
+
+  async function buscarEnclavesOrm_(q, limit) {
+    var term = String(q || '').trim();
+    if (term.length < 2) return [];
+    var url = ORM_FACILITY_URL_ + '?q=' + encodeURIComponent(term) +
+      '&limit=' + encodeURIComponent(String(limit || 12));
+    var r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) throw new Error('orm_http_' + r.status);
+    var data = await r.json();
+    if (!Array.isArray(data)) return [];
+    return ordenarEnclavesEspana_(data).filter(function (x) {
+      return isFinite(Number(x.latitude)) && isFinite(Number(x.longitude)) && x.name;
+    });
+  }
+
+  function pintarSugerenciasEnclaves_(items) {
+    var box = document.getElementById('mapa-busqueda-sugerencias');
+    if (!box) return;
+    mapaSugCache_ = items || [];
+    if (!mapaSugCache_.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.innerHTML = mapaSugCache_.map(function (it, idx) {
+      var op = String(it.operator || it.owner || '').trim() || '—';
+      var tipo = etiquetaTipoEnclave_(it.railway);
+      var ref = String(it.ref || it['railway:ref'] || it.uic_ref || '').trim();
+      var meta = tipo + ' · ' + op + (ref ? (' · ' + ref) : '');
+      return '<button type="button" class="mapa-sug-item" role="option" data-sug-idx="' + idx + '">' +
+        '<b>' + esc(it.name) + '</b><span>' + esc(meta) + '</span></button>';
+    }).join('');
+    box.hidden = false;
+  }
+
+  function ubicarEnclaveEnMapa_(item) {
+    var map = window._mapaLeaflet;
+    var msg = document.getElementById('mapa-busqueda-msg');
+    if (!map || !item) return false;
+    var lat = Number(item.latitude);
+    var lon = Number(item.longitude);
+    if (!isFinite(lat) || !isFinite(lon)) return false;
+    ocultarSugerenciasMapa_();
+    if (mapaEnclaveMarker_) {
+      try { map.removeLayer(mapaEnclaveMarker_); } catch (_) {}
+      mapaEnclaveMarker_ = null;
+    }
+    var tipo = etiquetaTipoEnclave_(item.railway);
+    var op = String(item.operator || item.owner || '').trim();
+    var ref = String(item.ref || item['railway:ref'] || item.uic_ref || '').trim();
+    var osm = item.osm_id ? ('https://www.openstreetmap.org/node/' + item.osm_id) : '';
+    var ormLink = 'https://www.openrailwaymap.org/?lat=' + lat + '&lon=' + lon + '&zoom=16';
+    var html = '<div class="mapa-enclave-popup"><strong>' + esc(item.name) + '</strong>' +
+      '<small>' + esc(tipo + (op ? (' · ' + op) : '') + (ref ? (' · ' + ref) : '')) + '</small>' +
+      '<br><a href="' + esc(ormLink) + '" target="_blank" rel="noopener">OpenRailwayMap</a>' +
+      (osm ? (' · <a href="' + esc(osm) + '" target="_blank" rel="noopener">OSM</a>') : '') +
+      '</div>';
+    mapaEnclaveMarker_ = L.marker([lat, lon]).addTo(map).bindPopup(html);
+    map.setView([lat, lon], 15);
+    setTimeout(function () {
+      try { mapaEnclaveMarker_.openPopup(); } catch (_) {}
+    }, 80);
+    var input = document.getElementById('mapa-buscar-input');
+    if (input) input.value = item.name;
+    if (msg) {
+      msg.textContent = item.name + ' ubicado.';
+      msg.className = '';
+    }
+    return true;
+  }
+
+  async function buscarEnclaveEnMapa_(qForzado) {
+    var input = document.getElementById('mapa-buscar-input');
+    var msg = document.getElementById('mapa-busqueda-msg');
+    var q = String(qForzado != null ? qForzado : (input && input.value) || '').trim();
+    if (q.length < 2) {
+      if (msg) {
+        msg.textContent = 'Escribe al menos 2 caracteres de la estación o enclave.';
+        msg.className = 'err';
+      }
+      return false;
+    }
+    if (msg) {
+      msg.textContent = 'Buscando en OpenRailwayMap…';
+      msg.className = '';
+    }
+    try {
+      var items = await buscarEnclavesOrm_(q, 12);
+      if (!items.length) {
+        ocultarSugerenciasMapa_();
+        if (msg) {
+          msg.textContent = 'Sin enclaves para «' + q + '».';
+          msg.className = 'err';
+        }
+        return false;
+      }
+      // Si hay una coincidencia clara en España/Adif, ubicarla; si no, mostrar lista.
+      var top = items[0];
+      var qNorm = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var topNorm = String(top.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (items.length === 1 || topNorm.indexOf(qNorm) === 0 || qNorm.indexOf(topNorm) === 0) {
+        return ubicarEnclaveEnMapa_(top);
+      }
+      pintarSugerenciasEnclaves_(items);
+      if (msg) {
+        msg.textContent = items.length + ' enclaves · elige uno.';
+        msg.className = '';
+      }
+      return true;
+    } catch (e) {
+      if (msg) {
+        msg.textContent = 'No se pudo consultar OpenRailwayMap.';
+        msg.className = 'err';
+      }
+      return false;
+    }
+  }
+
+  function buscarEnMapa_() {
+    var input = document.getElementById('mapa-buscar-input');
+    var raw = String((input && input.value) || '').trim();
+    if (!raw) {
+      var msg = document.getElementById('mapa-busqueda-msg');
+      if (msg) {
+        msg.textContent = 'Introduce un número de tren o el nombre de una estación.';
+        msg.className = 'err';
+      }
+      return;
+    }
+    // Solo dígitos (y espacios) → tren; texto → enclave ORM.
+    if (/^[\d\s]+$/.test(raw)) {
+      buscarTrenEnMapa(raw);
+      return;
+    }
+    buscarEnclaveEnMapa_(raw);
+  }
+
+  function programarSugerenciasMapa_() {
+    var input = document.getElementById('mapa-buscar-input');
+    var raw = String((input && input.value) || '').trim();
+    if (mapaSugTimer_) clearTimeout(mapaSugTimer_);
+    if (!raw || /^[\d\s]+$/.test(raw) || raw.length < 2) {
+      ocultarSugerenciasMapa_();
+      return;
+    }
+    var req = ++mapaSugReq_;
+    mapaSugTimer_ = setTimeout(async function () {
+      try {
+        var items = await buscarEnclavesOrm_(raw, 10);
+        if (req !== mapaSugReq_) return;
+        pintarSugerenciasEnclaves_(items);
+      } catch (_) {
+        if (req !== mapaSugReq_) return;
+        ocultarSugerenciasMapa_();
+      }
+    }, 320);
+  }
+
   function abrirMapaTren(tren) {
     var num = String(tren || '').replace(/\D/g, '').replace(/^0+/, '');
     if (!num) { toast('No hay número de tren.'); return; }
@@ -5816,14 +6019,29 @@
   });
   document.getElementById('btn-ubicar-mapa').addEventListener('click', function (e) {
     e.preventDefault();
-    buscarTrenEnMapa();
+    buscarEnMapa_();
   });
   document.getElementById('mapa-buscar-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      buscarTrenEnMapa();
+      buscarEnMapa_();
+    } else if (e.key === 'Escape') {
+      ocultarSugerenciasMapa_();
     }
   });
+  document.getElementById('mapa-buscar-input').addEventListener('input', function () {
+    programarSugerenciasMapa_();
+  });
+  var sugBox = document.getElementById('mapa-busqueda-sugerencias');
+  if (sugBox) {
+    sugBox.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-sug-idx]');
+      if (!btn || !sugBox.contains(btn)) return;
+      var idx = Number(btn.getAttribute('data-sug-idx'));
+      var item = mapaSugCache_[idx];
+      if (item) ubicarEnclaveEnMapa_(item);
+    });
+  }
   list.addEventListener('click', function (e) {
     var mapBtn = e.target.closest('.map-btn');
     if (mapBtn) {

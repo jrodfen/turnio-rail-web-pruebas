@@ -122,6 +122,23 @@ body.monitor-mode #modal-aviso-manual{z-index:31000}
 .mapa-buscador-card button{border:0;background:var(--primary);color:#fff;border-radius:10px;padding:0 14px;height:40px;font-weight:800;cursor:pointer}
 #mapa-busqueda-msg{margin-top:6px;font-size:12px;font-weight:700;color:var(--primary-dark)}
 #mapa-busqueda-msg.err{color:var(--red)}
+.mapa-busqueda-sug{
+  margin-top:6px;max-height:240px;overflow:auto;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);padding:4px;
+}
+.mapa-busqueda-sug[hidden]{display:none!important}
+.mapa-sug-item{
+  display:block;width:100%;text-align:left;border:0;background:transparent;
+  border-radius:10px;padding:9px 10px;cursor:pointer;color:var(--text);
+}
+.mapa-sug-item:hover,.mapa-sug-item:focus{background:rgba(45,127,249,.1);outline:0}
+.mapa-sug-item b{display:block;font-size:13px;font-weight:800;line-height:1.25}
+.mapa-sug-item span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.mapa-enclave-popup{min-width:160px}
+.mapa-enclave-popup strong{display:block;font-size:13px;margin-bottom:4px}
+.mapa-enclave-popup small{color:#64748b;font-size:11px}
+.mapa-enclave-popup a{display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#2d7ff9}
 .mapa-empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:var(--card);border-radius:16px;padding:28px 24px;box-shadow:var(--shadow);z-index:500;max-width:280px}
 .mapa-empty-ico{font-size:36px;margin-bottom:10px}
 .mapa-empty p{margin:0 0 8px;font-size:13px;color:var(--muted)}

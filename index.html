@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.35">
+    <link rel="stylesheet" href="./styles.css?v=V.36">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -194,9 +194,10 @@
           <div class="mapa-buscador">
             <div class="mapa-buscador-card">
               <span aria-hidden="true">&#128269;</span>
-              <input id="mapa-buscar-input" type="search" inputmode="numeric" enterkeyhint="search" placeholder="Buscar tren por n&uacute;mero&hellip;" autocomplete="off" aria-label="Buscar tren por n&uacute;mero">
+              <input id="mapa-buscar-input" type="search" enterkeyhint="search" placeholder="Tren o estaci&oacute;n (p. ej. Antequera)&hellip;" autocomplete="off" aria-label="Buscar tren o enclave ferroviario" aria-autocomplete="list" aria-controls="mapa-busqueda-sugerencias">
               <button type="button" id="btn-ubicar-mapa">Ubicar</button>
             </div>
+            <div id="mapa-busqueda-sugerencias" class="mapa-busqueda-sug" hidden role="listbox" aria-label="Sugerencias de enclaves"></div>
             <div id="mapa-busqueda-msg" role="status" aria-live="polite"></div>
           </div>
           <div id="mapa-container"></div>
@@ -1419,12 +1420,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.35"></script>
-    <script src="./conexiones.js?v=V.35"></script>
+    <script src="./turnio-config.js?v=V.36"></script>
+    <script src="./conexiones.js?v=V.36"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas7"></script>
-    <script src="./app.js?v=V.35"></script>
+    <script src="./app.js?v=V.36"></script>
   </body>
 </html>
 
