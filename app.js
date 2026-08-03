@@ -1970,7 +1970,11 @@
 
   function entrarPantalla_(screen) {
     if (screen === 'radar' && !radar.length) loadRadar();
-    if (screen === 'radar') refrescarAvisosRed();
+    if (screen === 'radar') {
+      refrescarAvisosRed();
+      // CGO/ADMIN: Vigilante ON al entrar en Radar (LECTURA/INVITADO no aplica).
+      if (puedeEscribir && !vigilanteActivo) setVigilanteState(true, true);
+    }
     if (screen === 'avisos') cargarPantallaAvisos(true);
     if (screen === 'avisos-app') {
       if (sessionProfile.role_code === 'INVITADO') {
