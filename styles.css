@@ -359,6 +359,24 @@ html.turnio-es-comercial #fab-container{display:none!important}
 #screen-admin{max-width:640px;margin:0 auto}
 .admin-nuevo{background:var(--card);border:1px solid rgba(5,150,105,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
 .admin-clave-box{border-color:rgba(124,58,237,.35)}
+.admin-mant-box{border-color:rgba(185,28,28,.4);background:linear-gradient(135deg,rgba(185,28,28,.06),var(--card))}
+.admin-mant-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 8px}
+.admin-mant-head .admin-nuevo-title{margin:0 0 4px}
+.admin-mant-head .admin-nuevo-help{margin:0}
+.admin-mant-toggle{
+  flex-shrink:0;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(185,28,28,.35);
+  background:var(--card);color:var(--text);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:900;
+  cursor:pointer;min-width:92px;justify-content:center
+}
+.admin-mant-toggle.is-on{background:#b91c1c;color:#fff;border-color:#b91c1c}
+.admin-mant-led{width:10px;height:10px;border-radius:50%;background:#94a3b8;box-shadow:0 0 0 2px rgba(148,163,184,.25)}
+.admin-mant-toggle.is-on .admin-mant-led{background:#4ade80;box-shadow:0 0 8px #4ade80;animation:pulse-circulando 1.2s infinite}
+.login-mant{
+  margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(185,28,28,.35);
+  background:rgba(185,28,28,.08);color:#7f1d1d;display:flex;flex-direction:column;gap:4px
+}
+.login-mant b{font-size:14px}
+.login-mant span{font-size:12px;line-height:1.4;font-weight:600}
 .login-or{margin:12px 0 8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted)}
 .login-opt{font-weight:600;color:var(--muted);font-size:11px}
 .admin-aviso-box{background:var(--card);border:1px solid rgba(37,99,235,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}

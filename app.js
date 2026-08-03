@@ -674,6 +674,116 @@
     pintarAdminAvisoLista_(Array.isArray(avisos) ? avisos : avisoAppCache_);
   }
 
+  var mantEstadoOn_ = false;
+  var mantBloqueoEnCurso_ = false;
+
+  function pintarLoginMantenimiento_(mant) {
+    var box = document.getElementById('login-mantenimiento');
+    var msg = document.getElementById('login-mantenimiento-msg');
+    if (!box) return;
+    var on = !!(mant && mant.on);
+    box.hidden = !on;
+    if (msg) {
+      msg.textContent = on
+        ? String(mant.mensaje || 'TURNIO está en mantenimiento. Solo ADMIN puede entrar.')
+        : '';
+    }
+  }
+
+  async function refrescarBannerMantenimientoLogin_() {
+    try {
+      var r = await fetch(api + '/api/health', { cache: 'no-store' });
+      var d = await r.json();
+      pintarLoginMantenimiento_(d && d.mantenimiento);
+    } catch (_) {
+      pintarLoginMantenimiento_({ on: false });
+    }
+  }
+
+  function pintarAdminMantenimiento_(mant) {
+    mantEstadoOn_ = !!(mant && mant.on);
+    var btn = document.getElementById('btn-admin-mant-toggle');
+    var label = document.getElementById('admin-mant-label');
+    var meta = document.getElementById('admin-mant-meta');
+    if (btn) {
+      btn.classList.toggle('is-on', mantEstadoOn_);
+      btn.setAttribute('aria-pressed', mantEstadoOn_ ? 'true' : 'false');
+    }
+    if (label) label.textContent = mantEstadoOn_ ? 'ON' : 'OFF';
+    if (meta) {
+      if (mantEstadoOn_) {
+        meta.textContent = 'Activo' +
+          (mant.by_email ? (' · por ' + mant.by_email) : '') +
+          (mant.updated_at ? (' · ' + String(mant.updated_at).replace('T', ' ').slice(0, 19)) : '') +
+          '. Solo ADMIN puede usar TURNIO.';
+      } else {
+        meta.textContent = 'Inactivo. Todos los roles autorizados pueden entrar.';
+      }
+    }
+  }
+
+  async function cargarAdminMantenimiento_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-mant-meta');
+    if (meta) meta.textContent = 'Comprobando estado…';
+    try {
+      var d = await call('mantenimiento_estado', {});
+      pintarAdminMantenimiento_(d && d.mantenimiento);
+    } catch (err) {
+      if (meta) meta.textContent = 'Error: ' + String(err.message || err);
+    }
+  }
+
+  async function toggleAdminMantenimiento_() {
+    if (!sessionProfile.is_admin) return;
+    var btn = document.getElementById('btn-admin-mant-toggle');
+    if (btn) btn.disabled = true;
+    try {
+      var d;
+      if (mantEstadoOn_) {
+        if (!window.confirm('¿Desactivar el modo mantenimiento?\nTodos los usuarios autorizados podrán volver a entrar.')) return;
+        d = await call('mantenimiento_desactivar', {});
+        toast('Mantenimiento OFF', 'success');
+      } else {
+        if (!window.confirm('¿Activar modo mantenimiento?\nSolo ADMIN podrá entrar. El resto quedará bloqueado de inmediato.')) return;
+        d = await call('mantenimiento_activar', {});
+        toast('Mantenimiento ON · solo ADMIN', 'success');
+      }
+      pintarAdminMantenimiento_(d && d.mantenimiento);
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+      cargarAdminMantenimiento_();
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function manejarMantenimientoBloqueo_(d) {
+    if (mantBloqueoEnCurso_) return;
+    if (sessionProfile && sessionProfile.is_admin) return;
+    mantBloqueoEnCurso_ = true;
+    var msg = String((d && d.mensaje) || 'TURNIO está en mantenimiento. Solo ADMIN puede entrar.');
+    try { pintarLoginMantenimiento_({ on: true, mensaje: msg }); } catch (_) {}
+    try {
+      setVigilanteState(false, true);
+      if (intervaloAutoRadar) {
+        clearInterval(intervaloAutoRadar);
+        intervaloAutoRadar = null;
+      }
+      if (fabAbierto_) toggleFAB_(false);
+      mostrarFab_(false);
+      localStorage.removeItem(sessionKey);
+      if (supabase) supabase.auth.signOut();
+      appShell.hidden = true;
+      nav.hidden = true;
+      loginShell.hidden = false;
+      loginForm.hidden = false;
+    } catch (_) {}
+    setStatus('error', msg);
+    toast(msg, 'error');
+    setTimeout(function () { mantBloqueoEnCurso_ = false; }, 1500);
+  }
+
   async function cargarAdminAviso_() {
     if (!sessionProfile.is_admin) return;
     var el = document.getElementById('admin-aviso-estado');
@@ -1105,6 +1215,9 @@
     var d;
     try { d = await r.json(); } catch (_) { throw new Error('Respuesta no válida del servicio.'); }
     if (!r.ok || d.ok === false || d.exito === false) {
+      if (String(d && d.error || '') === 'maintenance_mode') {
+        manejarMantenimientoBloqueo_(d);
+      }
       throw new Error(mensajeErrorApi_(d) || 'No se pudo completar la operación.');
     }
     return d;
@@ -1113,6 +1226,9 @@
     if (!d || typeof d !== 'object') return '';
     var code = String(d.error || '');
     var mapa = {
+      maintenance_mode: String(d.mensaje || 'TURNIO está en mantenimiento. Solo ADMIN puede entrar.'),
+      mantenimiento_kv_missing: 'No hay almacenamiento para el modo mantenimiento.',
+      mantenimiento_write_failed: 'No se pudo cambiar el modo mantenimiento.',
       role_admin_required: 'Solo un ADMIN puede hacer esto.',
       role_read_only: 'Tu rol no permite esta acción.',
       admin_service_not_configured: 'Falta configurar el secreto de administración en el Worker.',
@@ -1161,7 +1277,8 @@
       supabase_session_invalid: 'Sesión no válida. Vuelve a entrar.'
     };
     var base = mapa[code] || code;
-    if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
+    if (code === 'maintenance_mode' && d.mensaje) base = String(d.mensaje);
+    else if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
     return base;
   }
   function setStatus(kind, text) {
@@ -2427,6 +2544,7 @@
       cargarAdminPerfiles_();
       cargarAdminAviso_();
       cargarAdminSugerencias_();
+      cargarAdminMantenimiento_();
     }
   }
 
@@ -5177,6 +5295,7 @@
           ' · ' + healthUrl + ' · build ' + FRONT_BUILD);
         return;
       }
+      pintarLoginMantenimiento_(d && d.mantenimiento);
     } catch (err) {
       setStatus('error',
         'Health falló: ' + String((err && err.message) || err) +
@@ -5199,9 +5318,15 @@
       loginForm.hidden = false;
     } catch (err) {
       loginForm.hidden = false;
-      setStatus('error',
-        'API lista, pero la sesión falló: ' + String((err && err.message) || err) +
-        ' · build ' + FRONT_BUILD);
+      var msg = String((err && err.message) || err);
+      if (/mantenimiento/i.test(msg)) {
+        pintarLoginMantenimiento_({ on: true, mensaje: msg });
+        setStatus('error', msg);
+      } else {
+        setStatus('error',
+          'API lista, pero la sesión falló: ' + msg +
+          ' · build ' + FRONT_BUILD);
+      }
     }
   }
 
@@ -5520,7 +5645,10 @@
     cargarAdminPerfiles_();
     cargarAdminAviso_();
     cargarAdminSugerencias_();
+    cargarAdminMantenimiento_();
   });
+  var btnAdminMant = document.getElementById('btn-admin-mant-toggle');
+  if (btnAdminMant) btnAdminMant.addEventListener('click', toggleAdminMantenimiento_);
   var adminBuscar = document.getElementById('admin-buscar');
   if (adminBuscar) {
     adminBuscar.addEventListener('input', function () { pintarAdminLista_(); });

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.41">
+    <link rel="stylesheet" href="./styles.css?v=V.42">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -16,6 +16,10 @@
     <section id="login-shell" class="login-shell">
       <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.13</strong></span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
+      <div id="login-mantenimiento" class="login-mant" hidden role="status">
+        <b>Modo mantenimiento</b>
+        <span id="login-mantenimiento-msg">TURNIO est&aacute; en mantenimiento. Solo ADMIN puede entrar.</span>
+      </div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
         <label for="email">Correo autorizado</label>
@@ -660,6 +664,20 @@
         <button type="button" class="back" data-go="ajustes">&larr; Ajustes</button>
         <h2 class="ajustes-title">Administraci&oacute;n</h2>
         <p class="ajustes-lead">Gestiona perfiles de pruebas y avisos al entrar. Los cambios se auditan. No puedes degradarte ni desactivarte a ti mismo.</p>
+
+        <div class="admin-aviso-box admin-mant-box" id="admin-mant-box">
+          <div class="admin-mant-head">
+            <div>
+              <h3 class="admin-nuevo-title">Modo mantenimiento</h3>
+              <p class="admin-nuevo-help">Apaga el acceso a todos los usuarios excepto ADMIN. &Uacute;til para deploys o labores t&eacute;cnicas.</p>
+            </div>
+            <button type="button" class="admin-mant-toggle" id="btn-admin-mant-toggle" aria-pressed="false">
+              <span class="admin-mant-led" id="admin-mant-led" aria-hidden="true"></span>
+              <span id="admin-mant-label">OFF</span>
+            </button>
+          </div>
+          <p id="admin-mant-meta" class="admin-meta">Comprobando estado&hellip;</p>
+        </div>
 
         <div class="admin-aviso-box" id="admin-aviso-box">
           <h3 class="admin-nuevo-title">Aviso al entrar</h3>
@@ -1446,12 +1464,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.41"></script>
-    <script src="./conexiones.js?v=V.41"></script>
+    <script src="./turnio-config.js?v=V.42"></script>
+    <script src="./conexiones.js?v=V.42"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas8"></script>
-    <script src="./app.js?v=V.41"></script>
+    <script src="./app.js?v=V.42"></script>
   </body>
 </html>
 
