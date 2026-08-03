@@ -323,6 +323,9 @@ body.monitor-mode #screen-mapa{display:none!important}
 /* Administración (solo ADMIN) */
 #screen-admin{max-width:640px;margin:0 auto}
 .admin-nuevo{background:var(--card);border:1px solid rgba(5,150,105,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.admin-clave-box{border-color:rgba(124,58,237,.35)}
+.login-or{margin:12px 0 8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted)}
+.login-opt{font-weight:600;color:var(--muted);font-size:11px}
 .admin-aviso-box{background:var(--card);border:1px solid rgba(37,99,235,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
 .admin-sugerencia-box{border-color:rgba(180,83,9,.35)}
 .admin-aviso-label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted);margin:0 0 10px}

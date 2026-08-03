@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.26">
+    <link rel="stylesheet" href="./styles.css?v=V.27">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -20,7 +20,11 @@
         <h2>Acceder a TURNIO</h2>
         <label for="email">Correo autorizado</label>
         <input id="email" name="email" type="email" autocomplete="email" required>
-        <button id="btn-recibir-otp" type="button" class="btn primary">Recibir c&oacute;digo</button>
+        <label for="password">Clave de acceso <span class="login-opt">(ADMIN, opcional)</span></label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="72" placeholder="Si tienes clave, no hace falta el correo">
+        <button id="btn-entrar-clave" type="button" class="btn primary">Entrar con clave</button>
+        <p class="login-or">o con c&oacute;digo por correo</p>
+        <button id="btn-recibir-otp" type="button" class="btn secondary">Recibir c&oacute;digo</button>
         <div id="otp-wrap" hidden>
           <label for="otp">C&oacute;digo de seis cifras</label>
           <input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}">
@@ -658,9 +662,23 @@
           <div id="admin-sugerencia-lista" class="admin-aviso-lista" aria-live="polite"></div>
         </div>
 
+        <form id="admin-form-clave" class="admin-nuevo admin-clave-box" autocomplete="off">
+          <h3 class="admin-nuevo-title">Clave de acceso ADMIN</h3>
+          <p class="admin-nuevo-help">Define una contrase&ntilde;a para entrar sin c&oacute;digo por correo. Solo perfiles ADMIN. M&iacute;nimo 8 caracteres. La primera vez puedes entrar con OTP y luego fijar la clave aqu&iacute;.</p>
+          <div class="admin-nuevo-grid">
+            <label>Clave nueva
+              <input type="password" id="admin-clave-pass" minlength="8" maxlength="72" required autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+            </label>
+            <label>Repetir clave
+              <input type="password" id="admin-clave-pass2" minlength="8" maxlength="72" required autocomplete="new-password" placeholder="Repite la clave">
+            </label>
+          </div>
+          <button type="submit" class="btn primary admin-nuevo-btn" id="btn-admin-clave">Guardar clave</button>
+        </form>
+
         <form id="admin-form-nuevo" class="admin-nuevo" autocomplete="off">
           <h3 class="admin-nuevo-title">A&ntilde;adir usuario</h3>
-          <p class="admin-nuevo-help">Crea el perfil y el acceso OTP. La persona podr&aacute; entrar con ese correo.</p>
+          <p class="admin-nuevo-help">Crea el perfil y el acceso OTP. Si el rol es ADMIN puedes fijar ya una clave de acceso.</p>
           <div class="admin-nuevo-grid">
             <label>Email<input type="email" id="admin-nuevo-email" required placeholder="usuario@ejemplo.com" maxlength="120"></label>
             <label>Nombre<input type="text" id="admin-nuevo-nombre" placeholder="Nombre visible" maxlength="80"></label>
@@ -674,6 +692,9 @@
             </label>
             <label id="admin-nuevo-exp-wrap" class="admin-nuevo-exp" hidden>Caduca
               <input type="date" id="admin-nuevo-caduca">
+            </label>
+            <label id="admin-nuevo-clave-wrap" class="admin-nuevo-exp" hidden>Clave ADMIN
+              <input type="password" id="admin-nuevo-clave" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Opcional · mín. 8">
             </label>
           </div>
           <button type="submit" class="btn primary admin-nuevo-btn" id="btn-admin-crear">A&ntilde;adir</button>
@@ -1377,12 +1398,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.26"></script>
-    <script src="./conexiones.js?v=V.26"></script>
+    <script src="./turnio-config.js?v=V.27"></script>
+    <script src="./conexiones.js?v=V.27"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas7"></script>
-    <script src="./app.js?v=V.26"></script>
+    <script src="./app.js?v=V.27"></script>
   </body>
 </html>
 

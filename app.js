@@ -549,8 +549,17 @@
   function syncAdminNuevoCaduca_() {
     var rol = document.getElementById('admin-nuevo-rol');
     var wrap = document.getElementById('admin-nuevo-exp-wrap');
-    if (!rol || !wrap) return;
-    wrap.hidden = String(rol.value || '').toUpperCase() !== 'INVITADO';
+    var claveWrap = document.getElementById('admin-nuevo-clave-wrap');
+    if (!rol) return;
+    var role = String(rol.value || '').toUpperCase();
+    if (wrap) wrap.hidden = role !== 'INVITADO';
+    if (claveWrap) {
+      claveWrap.hidden = role !== 'ADMIN';
+      if (role !== 'ADMIN') {
+        var c = document.getElementById('admin-nuevo-clave');
+        if (c) c.value = '';
+      }
+    }
   }
   var avisoAppPendienteId_ = '';
   var avisoAppCache_ = [];
@@ -980,26 +989,37 @@
     var nombreEl = document.getElementById('admin-nuevo-nombre');
     var rolEl = document.getElementById('admin-nuevo-rol');
     var cadEl = document.getElementById('admin-nuevo-caduca');
+    var claveEl = document.getElementById('admin-nuevo-clave');
     var btn = document.getElementById('btn-admin-crear');
     var email = String(emailEl && emailEl.value || '').trim().toLowerCase();
     var role = String(rolEl && rolEl.value || 'CGO').toUpperCase();
+    var clave = String(claveEl && claveEl.value || '');
     if (!email) {
       toast('Indica un email.', 'error');
       return;
     }
+    if (role === 'ADMIN' && clave && clave.length < 8) {
+      toast('La clave ADMIN debe tener al menos 8 caracteres.', 'error');
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = 'Creando…'; }
     try {
-      await call('admin_crear_perfil', {
+      var payload = {
         email: email,
         display_name: String(nombreEl && nombreEl.value || '').trim(),
         role_code: role,
         active: true,
         expires_at: role === 'INVITADO' ? (fechaInputAIso_(cadEl && cadEl.value) || null) : null
-      });
-      toast('Usuario añadido. Ya puede entrar con OTP.', 'success');
+      };
+      if (role === 'ADMIN' && clave.length >= 8) payload.password = clave;
+      await call('admin_crear_perfil', payload);
+      toast(role === 'ADMIN' && clave.length >= 8
+        ? 'ADMIN añadido con clave de acceso.'
+        : 'Usuario añadido. Ya puede entrar con OTP.', 'success');
       if (emailEl) emailEl.value = '';
       if (nombreEl) nombreEl.value = '';
       if (cadEl) cadEl.value = '';
+      if (claveEl) claveEl.value = '';
       if (rolEl) rolEl.value = 'CGO';
       syncAdminNuevoCaduca_();
       await cargarAdminPerfiles_();
@@ -1009,6 +1029,37 @@
       if (btn) { btn.disabled = false; btn.textContent = 'Añadir'; }
     }
   }
+
+  async function definirAdminClave_(ev) {
+    if (ev) ev.preventDefault();
+    if (!sessionProfile.is_admin) return;
+    var p1 = document.getElementById('admin-clave-pass');
+    var p2 = document.getElementById('admin-clave-pass2');
+    var btn = document.getElementById('btn-admin-clave');
+    var a = String(p1 && p1.value || '');
+    var b = String(p2 && p2.value || '');
+    if (a.length < 8 || a.length > 72) {
+      toast('La clave debe tener entre 8 y 72 caracteres.', 'error');
+      return;
+    }
+    if (a !== b) {
+      toast('Las claves no coinciden.', 'error');
+      return;
+    }
+    if (!confirm('¿Guardar esta clave para tu cuenta ADMIN? Podrás entrar sin código por correo.')) return;
+    if (btn) btn.disabled = true;
+    try {
+      await call('admin_definir_clave', { password: a });
+      toast('Clave guardada. Ya puedes entrar con email + clave.', 'success');
+      if (p1) p1.value = '';
+      if (p2) p2.value = '';
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function clientId() {
     var id = localStorage.getItem(clientKey) || '';
     if (!/^[A-Za-z0-9_-]{24,128}$/.test(id)) {
@@ -1063,6 +1114,9 @@
       admin_auth_user_failed: 'No se pudo crear el acceso Auth del usuario.',
       admin_auth_unavailable: 'Auth de Supabase no disponible.',
       admin_create_failed: 'No se pudo crear el perfil.',
+      admin_clave_invalida: 'La clave debe tener entre 8 y 72 caracteres.',
+      admin_clave_solo_admin: 'Solo se puede definir clave en perfiles ADMIN.',
+      admin_clave_failed: 'No se pudo guardar la clave de acceso.',
       role_write_required: 'Solo CGO o ADMIN pueden publicar combinados.',
       combinados_sin_filas: 'No hay filas para publicar.',
       combinados_demasiado_grande: 'El fichero es demasiado grande.',
@@ -4695,6 +4749,30 @@
     return t.length > 140 ? (t.slice(0, 140) + '…') : t;
   }
 
+  async function entrarTrasAuth_(email) {
+    var d = await call('iniciar_pruebas', { email: email });
+    if (!d.token) throw new Error('No se ha creado la sesión.');
+    localStorage.setItem(sessionKey, d.token);
+    setStatus('ready', 'Sesión iniciada.');
+    showApp(d.persona);
+  }
+
+  document.getElementById('btn-entrar-clave').addEventListener('click', async function () {
+    var email = String(document.getElementById('email').value || '').trim().toLowerCase();
+    var pass = String(document.getElementById('password').value || '');
+    if (!email) { setStatus('error', 'Introduce tu correo autorizado.'); return; }
+    if (!pass) { setStatus('error', 'Introduce tu clave de acceso.'); return; }
+    if (pass.length < 8) { setStatus('error', 'La clave debe tener al menos 8 caracteres.'); return; }
+    setStatus('pending', 'Validando clave...');
+    try {
+      var login = await supabase.auth.signInWithPassword({ email: email, password: pass });
+      if (login.error) throw login.error;
+      await entrarTrasAuth_(email);
+    } catch (err) {
+      setStatus('error', normalizarErrorClave_(err));
+    }
+  });
+
   document.getElementById('btn-recibir-otp').addEventListener('click', async function () {
     var email = String(document.getElementById('email').value || '').trim().toLowerCase();
     if (!email) { setStatus('error', 'Introduce tu correo autorizado.'); return; }
@@ -4712,21 +4790,24 @@
 
   loginForm.addEventListener('submit', async function (e) {
     e.preventDefault();
+    var email = String(document.getElementById('email').value || '').trim().toLowerCase();
+    var pass = String(document.getElementById('password').value || '');
+    var otpWrap = document.getElementById('otp-wrap');
+    var codigo = String(document.getElementById('otp').value || '').replace(/\D/g, '');
+    // Enter en clave: preferir password si hay clave y aún no hay OTP visible/completo.
+    if (pass && (!otpWrap || otpWrap.hidden || !codigo)) {
+      document.getElementById('btn-entrar-clave').click();
+      return;
+    }
     setStatus('pending', 'Validando acceso...');
     try {
-      var email = String(document.getElementById('email').value || '').trim().toLowerCase();
-      var codigo = String(document.getElementById('otp').value || '').replace(/\D/g, '');
       var verificado = await supabase.auth.verifyOtp({
         email: email,
         token: codigo,
         type: 'email'
       });
       if (verificado.error) throw verificado.error;
-      var d = await call('iniciar_pruebas', { email: email });
-      if (!d.token) throw new Error('No se ha creado la sesión.');
-      localStorage.setItem(sessionKey, d.token);
-      setStatus('ready', 'Sesión iniciada.');
-      showApp(d.persona);
+      await entrarTrasAuth_(email);
     } catch (err) {
       setStatus('error', err.message);
     }
@@ -4735,7 +4816,9 @@
   document.getElementById('btn-cambiar-email').addEventListener('click', function () {
     document.getElementById('otp-wrap').hidden = true;
     document.getElementById('otp').value = '';
-    setStatus('ready', 'Introduce el correo autorizado para recibir otro código.');
+    var pass = document.getElementById('password');
+    if (pass) pass.value = '';
+    setStatus('ready', 'Introduce el correo autorizado.');
     document.getElementById('email').focus();
   });
 
@@ -4743,6 +4826,15 @@
     var texto = String((err && err.message) || err || 'No se pudo completar el acceso.');
     if (/rate limit|60 seconds|too many/i.test(texto)) return 'Espera un minuto antes de solicitar otro código.';
     if (/expired|invalid|token/i.test(texto)) return 'El código no es válido o ha caducado. Solicita uno nuevo.';
+    return texto;
+  }
+
+  function normalizarErrorClave_(err) {
+    var texto = String((err && err.message) || err || 'No se pudo completar el acceso.');
+    if (/invalid login|invalid credentials|email not confirmed|invalid_grant/i.test(texto)) {
+      return 'Correo o clave incorrectos. Si aún no tienes clave, entra con OTP y defínela en Administración.';
+    }
+    if (/rate limit|too many/i.test(texto)) return 'Demasiados intentos. Espera un minuto.';
     return texto;
   }
 
@@ -4969,6 +5061,8 @@
   }
   var adminFormNuevo = document.getElementById('admin-form-nuevo');
   if (adminFormNuevo) adminFormNuevo.addEventListener('submit', crearAdminPerfil_);
+  var adminFormClave = document.getElementById('admin-form-clave');
+  if (adminFormClave) adminFormClave.addEventListener('submit', definirAdminClave_);
   var adminNuevoRol = document.getElementById('admin-nuevo-rol');
   if (adminNuevoRol) {
     adminNuevoRol.addEventListener('change', syncAdminNuevoCaduca_);
