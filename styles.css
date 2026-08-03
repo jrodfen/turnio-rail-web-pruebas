@@ -323,6 +323,13 @@ body.monitor-mode #screen-mapa{display:none!important}
 /* Administraci?n (solo ADMIN) */
 #screen-admin{max-width:640px;margin:0 auto}
 .admin-nuevo{background:var(--card);border:1px solid rgba(5,150,105,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.admin-aviso-box{background:var(--card);border:1px solid rgba(37,99,235,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.admin-aviso-label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted);margin:0 0 10px}
+.admin-aviso-label input,.admin-aviso-label textarea{width:100%;border:1px solid #dce3ec;border-radius:10px;padding:10px;font-size:14px;background:var(--card);color:var(--text);font-family:inherit;resize:vertical}
+.admin-aviso-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.aviso-app-card{max-width:min(420px,94vw)}
+.aviso-app-cuerpo{white-space:pre-wrap;color:var(--text)!important;font-size:14px!important;line-height:1.45!important;margin:0 0 8px!important}
+.aviso-app-hint{font-size:12px!important;color:var(--muted)!important;margin:0 0 12px!important}
 .admin-nuevo-title{margin:0 0 4px;font-size:15px}
 .admin-nuevo-help{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.4}
 .admin-nuevo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}

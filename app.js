@@ -548,6 +548,121 @@
     if (!rol || !wrap) return;
     wrap.hidden = String(rol.value || '').toUpperCase() !== 'INVITADO';
   }
+  var avisoAppPendienteId_ = '';
+
+  function pintarAdminAvisoEstado_(aviso) {
+    var el = document.getElementById('admin-aviso-estado');
+    var btnOff = document.getElementById('btn-admin-aviso-desactivar');
+    var tit = document.getElementById('admin-aviso-titulo');
+    var cue = document.getElementById('admin-aviso-cuerpo');
+    if (!el) return;
+    if (aviso && aviso.id) {
+      el.textContent = 'Activo · ' + (aviso.titulo || 'Aviso') +
+        (aviso.created_by ? ' · ' + aviso.created_by : '') +
+        (aviso.created_at ? ' · ' + new Date(aviso.created_at).toLocaleString('es-ES') : '');
+      if (btnOff) btnOff.hidden = false;
+      if (tit && !tit.value) tit.value = aviso.titulo || '';
+      if (cue && !cue.value) cue.value = aviso.cuerpo || '';
+    } else {
+      el.textContent = 'No hay aviso activo ahora.';
+      if (btnOff) btnOff.hidden = true;
+    }
+  }
+
+  async function cargarAdminAviso_() {
+    if (!sessionProfile.is_admin) return;
+    var el = document.getElementById('admin-aviso-estado');
+    if (el) el.textContent = 'Comprobando aviso activo…';
+    try {
+      var d = await call('aviso_app_estado', {});
+      pintarAdminAvisoEstado_(d && d.aviso);
+    } catch (err) {
+      if (el) el.textContent = 'Error: ' + String(err.message || err);
+    }
+  }
+
+  async function publicarAdminAviso_() {
+    if (!sessionProfile.is_admin) return;
+    var tit = document.getElementById('admin-aviso-titulo');
+    var cue = document.getElementById('admin-aviso-cuerpo');
+    var btn = document.getElementById('btn-admin-aviso-publicar');
+    var titulo = String(tit && tit.value || '').trim();
+    var cuerpo = String(cue && cue.value || '').trim();
+    if (!titulo || !cuerpo) {
+      toast('Título y mensaje son obligatorios.', 'error');
+      return;
+    }
+    if (!confirm('¿Publicar este aviso? Lo verán todos los usuarios al entrar hasta que lo acepten.')) return;
+    if (btn) btn.disabled = true;
+    try {
+      var d = await call('aviso_app_publicar', { titulo: titulo, cuerpo: cuerpo });
+      toast('Aviso publicado.', 'success');
+      pintarAdminAvisoEstado_(d && d.aviso);
+      if (tit) tit.value = '';
+      if (cue) cue.value = '';
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function desactivarAdminAviso_() {
+    if (!sessionProfile.is_admin) return;
+    if (!confirm('¿Desactivar el aviso actual? Ya no se mostrará a quien aún no lo haya aceptado.')) return;
+    try {
+      await call('aviso_app_desactivar', {});
+      toast('Aviso desactivado.', 'success');
+      pintarAdminAvisoEstado_(null);
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  function cerrarModalAvisoApp_(soloCerrar) {
+    var modal = document.getElementById('modal-aviso-app');
+    if (modal) modal.hidden = true;
+    if (soloCerrar) avisoAppPendienteId_ = avisoAppPendienteId_ || '';
+  }
+
+  function mostrarModalAvisoApp_(aviso) {
+    if (!aviso || !aviso.id) return;
+    avisoAppPendienteId_ = String(aviso.id);
+    var modal = document.getElementById('modal-aviso-app');
+    var tit = document.getElementById('titulo-aviso-app');
+    var cue = document.getElementById('aviso-app-cuerpo');
+    if (tit) tit.textContent = aviso.titulo || 'Aviso';
+    if (cue) cue.textContent = aviso.cuerpo || '';
+    if (modal) modal.hidden = false;
+  }
+
+  async function aceptarModalAvisoApp_() {
+    var id = avisoAppPendienteId_;
+    if (!id) {
+      cerrarModalAvisoApp_(false);
+      return;
+    }
+    var btn = document.getElementById('btn-aviso-app-aceptar');
+    if (btn) btn.disabled = true;
+    try {
+      await call('aviso_app_aceptar', { id: id });
+      avisoAppPendienteId_ = '';
+      cerrarModalAvisoApp_(false);
+      toast('Aviso aceptado.', 'success');
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function comprobarAvisoAppAlEntrar_() {
+    try {
+      var d = await call('aviso_app_pendiente', {});
+      if (d && d.pendiente && d.aviso) mostrarModalAvisoApp_(d.aviso);
+    } catch (_) { /* no bloquear entrada */ }
+  }
+
   async function crearAdminPerfil_(ev) {
     if (ev) ev.preventDefault();
     if (!sessionProfile.is_admin) return;
@@ -643,7 +758,14 @@
       combinados_demasiado_grande: 'El fichero es demasiado grande.',
       combinados_publish_failed: 'No se pudo guardar el snapshot compartido.',
       combinados_delete_failed: 'No se pudo borrar la publicación compartida.',
-      combinados_unavailable: 'Servicio de combinados no disponible.'
+      combinados_unavailable: 'Servicio de combinados no disponible.',
+      aviso_titulo_requerido: 'Indica un título para el aviso.',
+      aviso_cuerpo_requerido: 'Indica el texto del aviso.',
+      aviso_publish_failed: 'No se pudo publicar el aviso.',
+      aviso_desactivar_failed: 'No se pudo desactivar el aviso.',
+      aviso_no_activo: 'Ese aviso ya no está activo.',
+      aviso_ack_failed: 'No se pudo guardar la aceptación.',
+      aviso_app_unavailable: 'Avisos de app no disponibles.'
     };
     var base = mapa[code] || code;
     if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
@@ -1756,6 +1878,7 @@
         return;
       }
       cargarAdminPerfiles_();
+      cargarAdminAviso_();
     }
   }
 
@@ -1950,6 +2073,8 @@
     asegurarCombinadosCompartidos_().finally(function () {
       if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
     });
+    // Aviso ADMIN: aceptar = no volver; cerrar X = sale otra vez.
+    comprobarAvisoAppAlEntrar_();
   }
 
   // ========== MALLAS Y HORARIOS ==========
@@ -4450,7 +4575,10 @@
     });
   }
   var btnAdminRef = document.getElementById('btn-admin-refrescar');
-  if (btnAdminRef) btnAdminRef.addEventListener('click', function () { cargarAdminPerfiles_(); });
+  if (btnAdminRef) btnAdminRef.addEventListener('click', function () {
+    cargarAdminPerfiles_();
+    cargarAdminAviso_();
+  });
   var adminBuscar = document.getElementById('admin-buscar');
   if (adminBuscar) {
     adminBuscar.addEventListener('input', function () { pintarAdminLista_(); });
@@ -4461,6 +4589,20 @@
   if (adminNuevoRol) {
     adminNuevoRol.addEventListener('change', syncAdminNuevoCaduca_);
     syncAdminNuevoCaduca_();
+  }
+  var btnAvPub = document.getElementById('btn-admin-aviso-publicar');
+  if (btnAvPub) btnAvPub.addEventListener('click', publicarAdminAviso_);
+  var btnAvOff = document.getElementById('btn-admin-aviso-desactivar');
+  if (btnAvOff) btnAvOff.addEventListener('click', desactivarAdminAviso_);
+  var btnAvOk = document.getElementById('btn-aviso-app-aceptar');
+  if (btnAvOk) btnAvOk.addEventListener('click', aceptarModalAvisoApp_);
+  var btnAvX = document.getElementById('btn-aviso-app-cerrar');
+  if (btnAvX) btnAvX.addEventListener('click', function () { cerrarModalAvisoApp_(true); });
+  var modalAv = document.getElementById('modal-aviso-app');
+  if (modalAv) {
+    modalAv.addEventListener('click', function (e) {
+      if (e.target === modalAv) cerrarModalAvisoApp_(true);
+    });
   }
   var adminListaEl = document.getElementById('admin-lista');
   if (adminListaEl) {

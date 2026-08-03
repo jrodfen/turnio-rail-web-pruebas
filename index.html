@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.11">
+    <link rel="stylesheet" href="./styles.css?v=V.12">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.11</strong></span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.12</strong></span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -34,7 +34,7 @@
         <div class="top-bar">
           <div class="top-brand">
             <h1>TURNIO RAIL</h1>
-            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.11</span></span>
+            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.12</span></span>
           </div>
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
@@ -543,7 +543,7 @@
           <span class="ajustes-card-body">
             <b>Obtener nueva actualizaci&oacute;n</b>
             <span>Descarga el c&oacute;digo m&aacute;s reciente y recarga la app. Ideal en m&oacute;vil cuando TURNIO est&aacute; anclado al inicio y la cach&eacute; no se limpia sola.</span>
-            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.11</span></span>
+            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.12</span></span>
           </span>
         </button>
         <button type="button" class="ajustes-card" id="btn-ayuda-app">
@@ -565,7 +565,24 @@
       <section id="screen-admin" class="screen">
         <button type="button" class="back" data-go="ajustes">&larr; Ajustes</button>
         <h2 class="ajustes-title">Administraci&oacute;n</h2>
-        <p class="ajustes-lead">Gestiona perfiles de pruebas. Los cambios se auditan. No puedes degradarte ni desactivarte a ti mismo.</p>
+        <p class="ajustes-lead">Gestiona perfiles de pruebas y avisos al entrar. Los cambios se auditan. No puedes degradarte ni desactivarte a ti mismo.</p>
+
+        <div class="admin-aviso-box" id="admin-aviso-box">
+          <h3 class="admin-nuevo-title">Aviso al entrar</h3>
+          <p class="admin-nuevo-help">Mensaje que ver&aacute;n los usuarios al abrir TURNIO. Si solo cierran (X), les vuelve a salir; si pulsan <strong>Aceptar</strong>, no vuelve a mostrarse.</p>
+          <p id="admin-aviso-estado" class="admin-meta">Comprobando aviso activo&hellip;</p>
+          <label class="admin-aviso-label">T&iacute;tulo
+            <input type="text" id="admin-aviso-titulo" maxlength="120" placeholder="Ej. Cambio de turno / aviso operativo">
+          </label>
+          <label class="admin-aviso-label">Mensaje
+            <textarea id="admin-aviso-cuerpo" rows="4" maxlength="4000" placeholder="Texto del aviso para todos los usuarios"></textarea>
+          </label>
+          <div class="admin-aviso-actions">
+            <button type="button" class="btn primary" id="btn-admin-aviso-publicar">Publicar aviso</button>
+            <button type="button" class="btn secondary" id="btn-admin-aviso-desactivar" hidden>Desactivar aviso</button>
+          </div>
+        </div>
+
         <form id="admin-form-nuevo" class="admin-nuevo" autocomplete="off">
           <h3 class="admin-nuevo-title">A&ntilde;adir usuario</h3>
           <p class="admin-nuevo-help">Crea el perfil y el acceso OTP. La persona podr&aacute; entrar con ese correo.</p>
@@ -649,6 +666,19 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="float-windows-host" aria-live="polite"></div>
     <div id="vig-modals-host">
+    <div id="modal-aviso-app" class="vig-modal aviso-app-modal" hidden>
+      <div class="vig-modal-card aviso-app-card" role="dialog" aria-modal="true" aria-labelledby="titulo-aviso-app">
+        <div class="aviso-modal-head">
+          <h2 id="titulo-aviso-app">Aviso</h2>
+          <button type="button" class="aviso-close" id="btn-aviso-app-cerrar" aria-label="Cerrar">&times;</button>
+        </div>
+        <p id="aviso-app-cuerpo" class="aviso-app-cuerpo"></p>
+        <p class="aviso-app-hint">Si cierras sin aceptar, este aviso volver&aacute; a salir la pr&oacute;xima vez.</p>
+        <div class="vig-modal-actions">
+          <button type="button" class="btn primary" id="btn-aviso-app-aceptar">Aceptar</button>
+        </div>
+      </div>
+    </div>
     <div id="modal-regiones" class="vig-modal region-modal" hidden>
       <div class="vig-modal-card region-modal-card" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-regiones">
         <div class="aviso-modal-head">
@@ -1037,6 +1067,13 @@
           <div class="cx-help-section">
             <h3>Ajustes y Cuenta</h3>
             <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128226;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Avisos al entrar</div>
+                <div class="cx-hi-desc">ADMIN puede publicar un mensaje desde Administraci&oacute;n. Al abrir la app te sale un aviso: <strong>Aceptar</strong> = no vuelve a salir; cerrar con <strong>X</strong> = te lo muestra otra vez.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
               <div class="cx-hi-icon">&#9881;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Obtener nueva actualizaci&oacute;n</div>
@@ -1246,12 +1283,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.11"></script>
-    <script src="./conexiones.js?v=V.11"></script>
+    <script src="./turnio-config.js?v=V.12"></script>
+    <script src="./conexiones.js?v=V.12"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas7"></script>
-    <script src="./app.js?v=V.11"></script>
+    <script src="./app.js?v=V.12"></script>
   </body>
 </html>
 
