@@ -758,7 +758,7 @@
     }
   }
 
-  var adminAccesosSoloDenegados_ = false;
+  var adminAccesosTimer_ = null;
 
   function fmtAccesoHora_(iso) {
     var s = String(iso || '');
@@ -779,24 +779,61 @@
     return mapa[m] || m || '—';
   }
 
-  function pintarAdminAccesos_(lista) {
+  function lugarAccesoTxt_(a) {
+    var parts = [];
+    if (a.city) parts.push(a.city);
+    if (a.region && a.region !== a.city) parts.push(a.region);
+    if (a.country) parts.push(a.country);
+    var lugar = parts.join(', ');
+    if (lugar && a.ip) return lugar + ' · ' + a.ip;
+    if (lugar) return lugar;
+    return a.ip ? ('IP ' + a.ip) : 'Ubicación no disponible';
+  }
+
+  function leerFiltrosAccesos_() {
+    return {
+      periodo: String((document.getElementById('admin-accesos-periodo') || {}).value || '7d'),
+      resultado: String((document.getElementById('admin-accesos-resultado') || {}).value || 'todos'),
+      email: String((document.getElementById('admin-accesos-email') || {}).value || '').trim(),
+      ciudad: String((document.getElementById('admin-accesos-ciudad') || {}).value || '').trim()
+    };
+  }
+
+  function pintarResumenCiudadesAccesos_(resumen) {
+    var box = document.getElementById('admin-accesos-resumen');
+    if (!box) return;
+    var rows = Array.isArray(resumen) ? resumen : [];
+    if (!rows.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = rows.slice(0, 12).map(function (r) {
+      var q = r.city || r.region || r.country || '';
+      return '<button type="button" class="admin-acceso-chip" data-acceso-ciudad="' + esc(q) + '">' +
+        '<span>' + esc(r.lugar || '—') + '</span><b>' + esc(String(r.n || 0)) + '</b></button>';
+    }).join('');
+  }
+
+  function pintarAdminAccesos_(lista, resumen) {
     var box = document.getElementById('admin-accesos-lista');
     var meta = document.getElementById('admin-accesos-meta');
     if (!box) return;
     var rows = Array.isArray(lista) ? lista : [];
+    var f = leerFiltrosAccesos_();
     if (meta) {
       meta.textContent = rows.length
-        ? (rows.length + ' registro' + (rows.length === 1 ? '' : 's') +
-          (adminAccesosSoloDenegados_ ? ' · solo denegados' : ''))
-        : (adminAccesosSoloDenegados_ ? 'No hay denegaciones recientes.' : 'Aún no hay accesos registrados.');
+        ? (rows.length + ' registro' + (rows.length === 1 ? '' : 's'))
+        : 'Sin accesos con estos filtros.';
     }
+    pintarResumenCiudadesAccesos_(resumen);
     if (!rows.length) {
       box.innerHTML = '<div class="empty" style="padding:8px;">Sin datos.</div>';
       return;
     }
     box.innerHTML = rows.map(function (a) {
       var ok = !!a.ok;
-      var where = (a.country ? (a.country + ' · ') : '') + (a.ip || 'IP —');
       return '<article class="admin-acceso-item' + (ok ? '' : ' is-denied') + '">' +
         '<div class="admin-acceso-top">' +
           '<b>' + esc(a.email || '—') + '</b>' +
@@ -807,7 +844,7 @@
           ' · ' + esc(a.role || '—') +
           ' · ' + esc(a.via || '—') +
           (ok ? '' : (' · ' + esc(etiquetaMotivoAcceso_(a.motivo)))) +
-          '<br>' + esc(where) +
+          '<br>📍 ' + esc(lugarAccesoTxt_(a)) +
         '</p></article>';
     }).join('');
   }
@@ -816,15 +853,28 @@
     if (!sessionProfile.is_admin) return;
     var meta = document.getElementById('admin-accesos-meta');
     if (meta) meta.textContent = 'Cargando…';
+    var f = leerFiltrosAccesos_();
     try {
       var d = await call('admin_listar_accesos', {
-        limit: 80,
-        solo_denegados: adminAccesosSoloDenegados_
+        limit: 100,
+        periodo: f.periodo,
+        resultado: f.resultado,
+        email: f.email,
+        ciudad: f.ciudad,
+        solo_denegados: f.resultado === 'denegados'
       });
-      pintarAdminAccesos_(d && d.accesos);
+      pintarAdminAccesos_(d && d.accesos, d && d.resumen_ciudades);
     } catch (err) {
       if (meta) meta.textContent = 'Error: ' + String(err.message || err);
     }
+  }
+
+  function programarCargaAdminAccesos_() {
+    if (adminAccesosTimer_) clearTimeout(adminAccesosTimer_);
+    adminAccesosTimer_ = setTimeout(function () {
+      adminAccesosTimer_ = null;
+      cargarAdminAccesos_();
+    }, 280);
   }
 
   function manejarMantenimientoBloqueo_(d) {
@@ -5722,12 +5772,24 @@
   if (btnAdminMant) btnAdminMant.addEventListener('click', toggleAdminMantenimiento_);
   var btnAccesosRef = document.getElementById('btn-admin-accesos-refrescar');
   if (btnAccesosRef) btnAccesosRef.addEventListener('click', cargarAdminAccesos_);
-  var btnAccesosDen = document.getElementById('btn-admin-accesos-denegados');
-  if (btnAccesosDen) {
-    btnAccesosDen.addEventListener('click', function () {
-      adminAccesosSoloDenegados_ = !adminAccesosSoloDenegados_;
-      btnAccesosDen.setAttribute('aria-pressed', adminAccesosSoloDenegados_ ? 'true' : 'false');
-      cargarAdminAccesos_();
+  ['admin-accesos-periodo', 'admin-accesos-resultado'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', cargarAdminAccesos_);
+  });
+  ['admin-accesos-email', 'admin-accesos-ciudad'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', programarCargaAdminAccesos_);
+  });
+  var accesosResumen = document.getElementById('admin-accesos-resumen');
+  if (accesosResumen) {
+    accesosResumen.addEventListener('click', function (e) {
+      var chip = e.target.closest('[data-acceso-ciudad]');
+      if (!chip) return;
+      var inp = document.getElementById('admin-accesos-ciudad');
+      if (inp) {
+        inp.value = chip.getAttribute('data-acceso-ciudad') || '';
+        cargarAdminAccesos_();
+      }
     });
   }
   var adminBuscar = document.getElementById('admin-buscar');
