@@ -1250,6 +1250,69 @@
   var adifLiveCache_ = Object.create(null);
   var adifLiveStarting_ = null;
   var adifLiveLastMsgAt_ = 0;
+  var adifLivePollTimer_ = null;
+  var ADIF_EVENTOS_ = [
+    'ReceiveMessage', 'receiveMessage', 'SendMessage', 'sendMessage',
+    'Receive', 'Update', 'Info', 'StationInfo', 'LastMessage', 'Broadcast'
+  ];
+
+  function adifExtraerPayloadMsg_() {
+    var args = Array.prototype.slice.call(arguments);
+    if (!args.length) return null;
+    // Firmas vistas / sospechadas: (payload) | (topic, payload) | (payload, topic)
+    for (var i = 0; i < args.length; i++) {
+      var a = args[i];
+      if (a == null || a === '') continue;
+      if (typeof a === 'string') {
+        var t = a.trim();
+        if (!t) continue;
+        if (t.charAt(0) === '{' || t.charAt(0) === '[') return t;
+        // topic tipo PRO-ECM-18000 → seguir buscando payload
+        if (/^(PRO-)?ECM[-_]?\d+$/i.test(t) || /^\d{4,5}$/.test(t)) continue;
+        return t;
+      }
+      if (typeof a === 'object') return a;
+    }
+    return args.length === 1 ? args[0] : args;
+  }
+
+  function adifRegistrarHandlers_(conn, onMsg) {
+    ADIF_EVENTOS_.forEach(function (ev) {
+      try {
+        conn.on(ev, function () {
+          var payload = adifExtraerPayloadMsg_.apply(null, arguments);
+          if (payload != null) onMsg(payload, ev);
+        });
+      } catch (_) {}
+    });
+    if (typeof conn.onany === 'function') {
+      try {
+        conn.onany(function (evName) {
+          var args = Array.prototype.slice.call(arguments, 1);
+          var payload = adifExtraerPayloadMsg_.apply(null, args);
+          if (payload != null) onMsg(payload, String(evName || 'onany'));
+        });
+      } catch (_) {}
+    }
+  }
+
+  function adifPararPoll_() {
+    if (adifLivePollTimer_) {
+      clearInterval(adifLivePollTimer_);
+      adifLivePollTimer_ = null;
+    }
+  }
+
+  function adifArrancarPoll_(conn, codigo) {
+    adifPararPoll_();
+    adifLivePollTimer_ = setInterval(function () {
+      if (!conn || adifLiveConn_ !== conn) {
+        adifPararPoll_();
+        return;
+      }
+      adifJoinTopics_(conn, codigo).catch(function () {});
+    }, 8000);
+  }
 
   function setAdifProbeStatus_(text, state) {
     var el = document.getElementById('adif-infostation-status');
@@ -1322,26 +1385,15 @@
     var conn = new signalR.HubConnectionBuilder()
       .withUrl('https://info.adif.es/InfoStation', opts.urlOpts)
       .build();
+    try {
+      conn.keepAliveIntervalInMilliseconds = 10000;
+      conn.serverTimeoutInMilliseconds = 120000;
+    } catch (_) {}
     adifInfoStationProbe_ = conn;
     var got = [];
-    var eventNames = [
-      'ReceiveMessage', 'receiveMessage', 'SendMessage', 'sendMessage',
-      'Receive', 'Update', 'Info', 'StationInfo', 'LastMessage'
-    ];
-    eventNames.forEach(function (ev) {
-      conn.on(ev, function () {
-        var args = Array.prototype.slice.call(arguments);
-        got.push({ ev: ev, args: args });
-      });
+    adifRegistrarHandlers_(conn, function (payload, ev) {
+      got.push({ ev: ev || 'handler', args: [payload] });
     });
-    if (typeof conn.onany === 'function') {
-      conn.onany(function (evName) {
-        var args = Array.prototype.slice.call(arguments, 1);
-        if (!got.some(function (g) { return g.ev === evName; })) {
-          got.push({ ev: String(evName), args: args });
-        }
-      });
-    }
     try {
       await conn.start();
       result.connected = true;
@@ -1349,13 +1401,11 @@
       var padded = String(codigo);
       while (padded.length < 5) padded = '0' + padded;
       var canales = [];
-      // Panel actual (Gravita): PRO-ECM-{código}. GAS antiguo usaba ECM-{código}.
       [codigo, padded].forEach(function (c) {
         ['PRO-ECM-' + c, 'ECM-' + c, c, 'ECM' + c].forEach(function (ch) {
           if (canales.indexOf(ch) < 0) canales.push(ch);
         });
       });
-      // Control cruzado: si prueba Atocha, también Santa Justa; y al revés.
       if (codigo !== '18000') {
         canales.push('PRO-ECM-18000');
         canales.push('ECM-18000');
@@ -1385,8 +1435,20 @@
           log('   GetLastMessage FAIL · ' + canal + ' · ' + String(eGet.message || eGet));
         }
       }
+      // Segunda pasada GetLast a +2s (a veces el snapshot llega tras Join).
+      await new Promise(function (r) { setTimeout(r, 2000); });
+      for (var j = 0; j < Math.min(4, canales.length); j++) {
+        try {
+          var ret2 = await conn.invoke('GetLastMessage', canales[j]);
+          if (ret2 != null && ret2 !== '') {
+            got.push({ ev: 'GetLastMessage:retry', args: [ret2], canal: canales[j] });
+            log('   GetLastMessage retry OK · ' + canales[j]);
+            break;
+          }
+        } catch (_) {}
+      }
       var t0 = Date.now();
-      while (!got.length && Date.now() - t0 < 10000) {
+      while (!got.length && Date.now() - t0 < 12000) {
         await new Promise(function (r) { setTimeout(r, 250); });
       }
       if (got.length) {
@@ -1402,7 +1464,7 @@
           log('   DATOS vía ' + first.ev + ' no parseables');
         }
       } else {
-        result.detail = 'sin push ni retorno en 10 s';
+        result.detail = 'sin push ni retorno en ~14 s';
         log('   sin mensajes en este modo');
       }
     } finally {
@@ -1496,6 +1558,53 @@
     }
   }
   window.TurnioProbarInfoStation = probarInfoStationAdif_;
+
+  function scriptCapturaAdif_() {
+    return [
+      '(async () => {',
+      '  const log = [];',
+      '  const push = (...a) => { const line = a.map(x => typeof x === "string" ? x : JSON.stringify(x)).join(" "); log.push(line); console.log("[TURNIO-ADIF]", ...a); };',
+      '  const OrigWS = window.WebSocket;',
+      '  window.WebSocket = function (url, protocols) {',
+      '    push("WS open", url);',
+      '    const ws = protocols ? new OrigWS(url, protocols) : new OrigWS(url);',
+      '    const origSend = ws.send.bind(ws);',
+      '    ws.send = (data) => { push("WS SEND", String(data).slice(0, 400)); return origSend(data); };',
+      '    ws.addEventListener("message", (ev) => {',
+      '      const t = String(ev.data);',
+      '      if (/platform|trains|Receive|JoinInfo|GetLast|ECM/i.test(t)) push("WS HIT", t.slice(0, 1200));',
+      '      else push("WS RECV", t.slice(0, 200));',
+      '    });',
+      '    return ws;',
+      '  };',
+      '  window.WebSocket.prototype = OrigWS.prototype;',
+      '  push("Hook WS listo. Recarga F5 esta pestaña (info.adif.es) y espera 10s con pantallas visibles.");',
+      '  push("Luego ejecuta: copy(__TURNIO_ADIF_LOG.join(\"\\n\")) y pégalo en el chat.");',
+      '  window.__TURNIO_ADIF_LOG = log;',
+      '  return "OK — ahora F5";',
+      '})();'
+    ].join('\n');
+  }
+
+  async function copiarScriptCapturaAdif_() {
+    var txt = scriptCapturaAdif_();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(txt);
+      } else {
+        throw new Error('no clipboard');
+      }
+      toast('Script copiado. Pégalo en la consola de info.adif.es y pulsa F5.', 'success');
+      setAdifProbeStatus_(
+        'Script de captura copiado.\n1) Abre https://info.adif.es/?s=18000\n2) F12 → Consola → pega (Ctrl+V) → Enter\n3) F5\n4) Espera 10 s con salidas visibles\n5) En consola: copy(__TURNIO_ADIF_LOG.join("\\n"))\n6) Pega el resultado aquí en el chat',
+        'is-run'
+      );
+    } catch (_) {
+      setAdifProbeStatus_('No se pudo copiar. Script:\n\n' + txt, 'is-err');
+      toast('No se pudo copiar al portapapeles; mira el cuadro de diagnóstico.', 'error');
+    }
+  }
+  window.TurnioScriptCapturaAdif = scriptCapturaAdif_;
 
   function adifNormalizarCodigoEst_(codigo) {
     var digits = String(codigo == null ? '' : codigo).replace(/\D/g, '');
@@ -1642,7 +1751,7 @@
     return topics;
   }
 
-  function onAdifLiveMessage_(mensajeCrudo) {
+  function onAdifLiveMessage_(mensajeCrudo, evName) {
     try {
       var n = aplicarCacheAdifDesdePayload_(mensajeCrudo);
       var conVia = 0;
@@ -1651,6 +1760,7 @@
       });
       setAdifLiveStatusUi_(
         'Escuchando PRO-ECM-' + adifLiveStation_ + ' · ' + n + ' tren(es), ' + conVia + ' con vía' +
+          (evName ? ' · ' + evName : '') +
           (adifLiveLastMsgAt_ ? ' · ' + new Date(adifLiveLastMsgAt_).toLocaleTimeString('es-ES') : ''),
         n ? 'is-ok' : 'is-run'
       );
@@ -1668,11 +1778,13 @@
       var Connected = signalR.HubConnectionState && signalR.HubConnectionState.Connected;
       if (adifLiveConn_ && Connected != null && adifLiveConn_.state === Connected && adifLiveStation_ === code) {
         await adifJoinTopics_(adifLiveConn_, code);
+        adifArrancarPoll_(adifLiveConn_, code);
         setAdifLiveStatusUi_('Re-suscrito PRO-ECM-' + code + ' (cache ' + Object.keys(adifLiveCache_).length + ')', 'is-run');
         inyectarViaAdifEnMallas_();
         return;
       }
       if (adifLiveConn_) {
+        adifPararPoll_();
         try { await adifLiveConn_.stop(); } catch (_) {}
         adifLiveConn_ = null;
       }
@@ -1684,11 +1796,19 @@
         })
         .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
         .build();
-      conn.on('ReceiveMessage', onAdifLiveMessage_);
+      try {
+        conn.keepAliveIntervalInMilliseconds = 10000;
+        conn.serverTimeoutInMilliseconds = 120000;
+      } catch (_) {}
+      adifRegistrarHandlers_(conn, function (payload, ev) {
+        onAdifLiveMessage_(payload, ev);
+      });
       conn.onreconnected(function () {
         adifJoinTopics_(conn, adifLiveStation_).catch(function () {});
+        adifArrancarPoll_(conn, adifLiveStation_);
       });
       conn.onclose(function () {
+        adifPararPoll_();
         setAdifLiveStatusUi_('InfoStation desconectado.', 'is-err');
       });
       await conn.start();
@@ -1696,11 +1816,11 @@
       adifLiveStation_ = code;
       adifLiveCache_ = Object.create(null);
       var topics = await adifJoinTopics_(conn, code);
+      adifArrancarPoll_(conn, code);
       setAdifLiveStatusUi_(
         'Conectado · ' + topics[0] + ' (y fallbacks). Esperando trenes…',
         'is-run'
       );
-      // Como Gravita: segundo GetLast a +1s por si el snapshot tarda.
       setTimeout(function () {
         if (adifLiveConn_ !== conn) return;
         adifJoinTopics_(conn, code).catch(function () {});
@@ -1862,6 +1982,12 @@
             toast(String(err.message || err), 'error');
           })
           .then(function () { btnLive.disabled = false; });
+      });
+    }
+    var btnCap = document.getElementById('btn-captura-adif-script');
+    if (btnCap) {
+      btnCap.addEventListener('click', function () {
+        copiarScriptCapturaAdif_();
       });
     }
   }
