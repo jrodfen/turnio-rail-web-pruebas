@@ -3156,7 +3156,7 @@
     return (hh < 10 ? '0' : '') + hh + ':' + m[2];
   }
   function extraerHorasRuta(texto) {
-    var parts = String(texto || '').split('➞');
+    var parts = String(texto || '').split(/\s*(?:➞|→|->|➔|➜)\s*/);
     if (parts.length < 2) return { hO: '', hD: '' };
     var m0 = parts[0].match(/\((\d{1,2}:\d{2})\)/);
     var m1 = parts[1].match(/\((\d{1,2}:\d{2})\)/);
@@ -3240,14 +3240,20 @@
     var matchTren = textoLinea.match(/Circ\.?\s*([a-zA-Z0-9]+)/i);
     if (matchTren) trenNum = matchTren[1];
     var origen = String(alerta.nombreOrig || '').trim() || 'ORIGEN';
-    var destino = 'DESTINO';
-    var partesRuta = textoLinea.split('|');
-    if (partesRuta.length > 1) {
-      var ruta = partesRuta[1].split('➞');
-      if (ruta.length === 2) {
-        origen = ruta[0].replace(/\(.*?\)/g, '').trim() || origen;
-        destino = ruta[1].replace(/\(.*?\)/g, '').trim() || destino;
-      }
+    var destino = String(alerta.nombreDest || '').trim() || 'DESTINO';
+    var trozoRuta = textoLinea;
+    var partesPipe = textoLinea.split('|');
+    if (partesPipe.length > 1) trozoRuta = partesPipe.slice(1).join('|');
+    else {
+      var mPunto = textoLinea.match(/·\s*(.+)$/);
+      if (mPunto) trozoRuta = mPunto[1];
+    }
+    var ruta = String(trozoRuta || '').split(/\s*(?:➞|→|->|➔|➜)\s*/);
+    if (ruta.length === 2) {
+      var oR = ruta[0].replace(/\(.*?\)/g, '').trim();
+      var dR = ruta[1].replace(/\(.*?\)/g, '').trim();
+      if (oR && (origen === 'ORIGEN' || !origen)) origen = oR;
+      if (dR && (destino === 'DESTINO' || !destino)) destino = dR;
     }
     var matTexto = (alerta.matLabel && alerta.matLabel !== '')
       ? alerta.matLabel
@@ -3308,7 +3314,28 @@
       });
     }).catch(function () {});
   }
-  function abrirAvisoDesdeAlerta(alerta) {
+  async function completarIdentidadAviso_(id) {
+    var faltaHora = !id.hO || id.hO === '[HH:MM]' || !id.hD || id.hD === '[HH:MM]';
+    var faltaOd = !id.origen || id.origen === 'ORIGEN' || !id.destino || id.destino === 'DESTINO';
+    if (!faltaHora && !faltaOd) return id;
+    try {
+      var data = await call('tren_manual', { codTren: String(id.tren || '').replace(/^0+/, '') });
+      if (data && data.encontrado && data.datos) {
+        var d = data.datos;
+        if ((!id.origen || id.origen === 'ORIGEN') && d.origen) id.origen = d.origen;
+        if ((!id.destino || id.destino === 'DESTINO') && d.destino) id.destino = d.destino;
+        if ((!id.hO || id.hO === '[HH:MM]') && d.hOrig && d.hOrig !== 'S/H') {
+          id.hO = normalizarHHMMAviso(d.hOrig);
+        }
+        if ((!id.hD || id.hD === '[HH:MM]') && d.hDest && d.hDest !== 'S/H') {
+          id.hD = normalizarHHMMAviso(d.hDest);
+        }
+        if (d.tipo) id.tipo = d.tipo;
+      }
+    } catch (_) { /* best-effort */ }
+    return id;
+  }
+  async function abrirAvisoDesdeAlerta(alerta) {
     if (!exigirEscritura_('Generar avisos')) return;
     if (!alerta) { toast('No hay datos de la alerta.'); return; }
     if (!cacheClavero.length) cargarClavero();
@@ -3320,6 +3347,11 @@
     document.getElementById('cg-buscador').value = '';
     document.getElementById('cg-resultados').hidden = true;
     abrirModalAviso();
+    id = await completarIdentidadAviso_(id);
+    document.getElementById('cg-mensaje').value = construirMensajeAviso({
+      tipo: id.tipo, tren: id.tren, origen: id.origen, destino: id.destino,
+      hO: id.hO, hD: id.hD, matPart: id.matPart, situacion: situacionDesdeAlerta(alerta)
+    });
     enriquecerAvisoConContexto(id);
   }
   function encontrarAlertaAviso(tren, trip) {
@@ -3626,6 +3658,23 @@
       var tren = String(x.codTren || '').replace(/[^0-9]/g, '');
       var trip = String(x.tripId || x.trip_id || '');
       var linea = plainText(x.linea || ('Circ. ' + tren));
+      // Si el Worker no metió horas en linea, completar desde hOrig/hDest.
+      if (x.hOrig || x.hDest) {
+        var tieneHorasLinea = /\(\d{1,2}:\d{2}\)/.test(linea);
+        if (!tieneHorasLinea) {
+          var oNom = String(x.nombreOrig || '').trim();
+          var dNom = String(x.nombreDest || '').trim();
+          if (oNom || dNom || x.hOrig || x.hDest) {
+            var oTxt = oNom || '?';
+            var dTxt = dNom || '?';
+            if (x.hOrig) oTxt += ' (' + x.hOrig + ')';
+            if (x.hDest) dTxt += ' (' + x.hDest + ')';
+            var base = linea.replace(/\s*[·|]\s*.+$/, '').trim() ||
+              ((x.producto ? x.producto + ' ' : '') + tren).trim();
+            linea = base + ' · ' + oTxt + ' → ' + dTxt;
+          }
+        }
+      }
       var tieneGps = x.lat && x.lon && Math.abs(x.lat) > 0.1 && Math.abs(x.lon) > 0.1;
       return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '">' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
