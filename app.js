@@ -1099,8 +1099,7 @@
       cache: 'no-store',
       body: JSON.stringify(Object.assign({
         accion: accion,
-        clientId: clientId(),
-        sessionToken: localStorage.getItem(sessionKey) || ''
+        clientId: clientId()
       }, extra || {}))
     });
     var d;
@@ -1154,7 +1153,12 @@
       sugerencia_ack_failed: 'No se pudo guardar la aceptación.',
       sugerencia_no_encontrada: 'Ese mensaje ya no existe.',
       sugerencia_unavailable: 'Sugerencias no disponibles.',
-      sugerencias_kv_missing: 'Almacenamiento de sugerencias no disponible.'
+      sugerencias_kv_missing: 'Almacenamiento de sugerencias no disponible.',
+      turnio_profile_inactive: 'Tu perfil TURNIO está desactivado.',
+      turnio_profile_expired: 'Tu acceso temporal ha caducado.',
+      turnio_profile_unavailable: 'No hay perfil TURNIO para este correo. Pide alta a un ADMIN.',
+      supabase_auth_required: 'Tu sesión ha caducado. Vuelve a entrar.',
+      supabase_session_invalid: 'Sesión no válida. Vuelve a entrar.'
     };
     var base = mapa[code] || code;
     if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
@@ -4937,18 +4941,12 @@
       var auth = await supabase.auth.getUser();
       if (auth && auth.data && auth.data.user) {
         sessionEmail = String(auth.data.user.email || '').trim().toLowerCase();
-        try {
-          var x = await call('sesion');
-          showApp(x.persona);
-          return;
-        } catch (_) {
-          localStorage.removeItem(sessionKey);
-          var inicio = await call('iniciar_pruebas', { email: sessionEmail });
-          if (!inicio.token) throw new Error('No se pudo iniciar la sesión TURNIO.');
-          localStorage.setItem(sessionKey, inicio.token);
-          showApp(inicio.persona);
-          return;
-        }
+        // Sesión TURNIO = JWT Supabase + perfil activo (sin token GAS / PERSONAS).
+        var x = await call('sesion');
+        if (!x || !x.persona) throw new Error('No se pudo cargar el perfil TURNIO.');
+        localStorage.setItem(sessionKey, 'supabase');
+        showApp(x.persona);
+        return;
       }
       loginForm.hidden = false;
     } catch (err) {
@@ -4971,8 +4969,8 @@
 
   async function entrarTrasAuth_(email) {
     var d = await call('iniciar_pruebas', { email: email });
-    if (!d.token) throw new Error('No se ha creado la sesión.');
-    localStorage.setItem(sessionKey, d.token);
+    if (!d || !d.persona) throw new Error('No se ha creado la sesión.');
+    localStorage.setItem(sessionKey, d.token || 'supabase');
     setStatus('ready', 'Sesión iniciada.');
     showApp(d.persona);
   }
