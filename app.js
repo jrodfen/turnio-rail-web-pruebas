@@ -4661,10 +4661,9 @@
   }
 
   function ordenarEnclavesEspana_(list) {
-    return (list || []).slice().sort(function (a, b) {
-      var aEs = enEspanaMapa_(Number(a.latitude), Number(a.longitude)) ? 1 : 0;
-      var bEs = enEspanaMapa_(Number(b.latitude), Number(b.longitude)) ? 1 : 0;
-      if (bEs !== aEs) return bEs - aEs;
+    return (list || []).filter(function (a) {
+      return enEspanaMapa_(Number(a.latitude), Number(a.longitude));
+    }).sort(function (a, b) {
       var aAdif = /adif/i.test(String(a.operator || a.owner || '')) ? 1 : 0;
       var bAdif = /adif/i.test(String(b.operator || b.owner || '')) ? 1 : 0;
       if (bAdif !== aAdif) return bAdif - aAdif;
@@ -4675,15 +4674,16 @@
   async function buscarEnclavesOrm_(q, limit) {
     var term = String(q || '').trim();
     if (term.length < 2) return [];
+    // Pedimos más y filtramos a España (la API ORM no tiene país).
     var url = ORM_FACILITY_URL_ + '?q=' + encodeURIComponent(term) +
-      '&limit=' + encodeURIComponent(String(limit || 12));
+      '&limit=' + encodeURIComponent(String(Math.max(40, (limit || 12) * 4)));
     var r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error('orm_http_' + r.status);
     var data = await r.json();
     if (!Array.isArray(data)) return [];
     return ordenarEnclavesEspana_(data).filter(function (x) {
       return isFinite(Number(x.latitude)) && isFinite(Number(x.longitude)) && x.name;
-    });
+    }).slice(0, limit || 12);
   }
 
   function pintarSugerenciasEnclaves_(items) {
@@ -4714,29 +4714,18 @@
     var lon = Number(item.longitude);
     if (!isFinite(lat) || !isFinite(lon)) return false;
     ocultarSugerenciasMapa_();
+    // Sin marcador: solo centrar el mapa en el enclave.
     if (mapaEnclaveMarker_) {
       try { map.removeLayer(mapaEnclaveMarker_); } catch (_) {}
       mapaEnclaveMarker_ = null;
     }
-    var tipo = etiquetaTipoEnclave_(item.railway);
-    var op = String(item.operator || item.owner || '').trim();
-    var ref = String(item.ref || item['railway:ref'] || item.uic_ref || '').trim();
-    var osm = item.osm_id ? ('https://www.openstreetmap.org/node/' + item.osm_id) : '';
-    var ormLink = 'https://www.openrailwaymap.org/?lat=' + lat + '&lon=' + lon + '&zoom=16';
-    var html = '<div class="mapa-enclave-popup"><strong>' + esc(item.name) + '</strong>' +
-      '<small>' + esc(tipo + (op ? (' · ' + op) : '') + (ref ? (' · ' + ref) : '')) + '</small>' +
-      '<br><a href="' + esc(ormLink) + '" target="_blank" rel="noopener">OpenRailwayMap</a>' +
-      (osm ? (' · <a href="' + esc(osm) + '" target="_blank" rel="noopener">OSM</a>') : '') +
-      '</div>';
-    mapaEnclaveMarker_ = L.marker([lat, lon]).addTo(map).bindPopup(html);
-    map.setView([lat, lon], 15);
-    setTimeout(function () {
-      try { mapaEnclaveMarker_.openPopup(); } catch (_) {}
-    }, 80);
+    map.setView([lat, lon], Math.max(map.getZoom(), 15));
     var input = document.getElementById('mapa-buscar-input');
     if (input) input.value = item.name;
     if (msg) {
-      msg.textContent = item.name + ' ubicado.';
+      var tipo = etiquetaTipoEnclave_(item.railway);
+      var op = String(item.operator || item.owner || '').trim();
+      msg.textContent = item.name + (tipo || op ? (' · ' + tipo + (op ? (' · ' + op) : '')) : '');
       msg.className = '';
     }
     return true;
@@ -4762,7 +4751,7 @@
       if (!items.length) {
         ocultarSugerenciasMapa_();
         if (msg) {
-          msg.textContent = 'Sin enclaves para «' + q + '».';
+          msg.textContent = 'Sin enclaves en España para «' + q + '».';
           msg.className = 'err';
         }
         return false;
