@@ -85,7 +85,7 @@
             <div id="home-avisos" class="welcome-muted">Cargando avisos de red&hellip;</div>
           </article>
           <article class="welcome-card home-glance-card" data-go="avisos-app" role="button" tabindex="0" data-ocultar-invitado>
-            <h3><span>&#128276; Avisos TURNIO</span><button type="button" class="text-btn">Ver</button></h3>
+            <h3><span>&#128276; TURNIO RAIL</span><button type="button" class="text-btn">Ver</button></h3>
             <div id="home-avisos-app" class="welcome-muted">Avisos publicados por Administraci&oacute;n.</div>
           </article>
         </div>
@@ -297,10 +297,10 @@
         <button class="back" type="button" data-go="home">&#11013; Volver al inicio</button>
         <div class="avisos-card">
           <div class="avisos-card-head">
-            <h3>&#128276; Avisos TURNIO</h3>
+            <h3>&#128276; TURNIO RAIL</h3>
             <button type="button" class="btn secondary" id="btn-refrescar-avisos-app">&#8635; Actualizar</button>
           </div>
-          <p class="avisos-lead">Historial de avisos publicados por Administraci&oacute;n. El marcado como <strong>al entrar</strong> es el que sale en el modal hasta aceptarlo.</p>
+          <p class="avisos-lead">Avisos de Administraci&oacute;n. Pulsa un t&iacute;tulo para leer el mensaje. El marcado <strong>al entrar</strong> es el del modal hasta aceptarlo.</p>
           <div id="avisos-app-lista" class="avisos-app-lista" aria-live="polite">
             <div class="empty">Cargando&hellip;</div>
           </div>
@@ -558,9 +558,9 @@
         <button type="button" class="ajustes-card" id="btn-ir-avisos-app" data-go="avisos-app" data-ocultar-invitado>
           <span class="ajustes-card-ico" aria-hidden="true">&#128276;</span>
           <span class="ajustes-card-body">
-            <b>Avisos TURNIO</b>
-            <span>Consulta los avisos publicados por Administraci&oacute;n (historial completo).</span>
-            <span class="ajustes-chip">Publicados</span>
+            <b>TURNIO RAIL</b>
+            <span>Consulta los avisos publicados por Administraci&oacute;n.</span>
+            <span class="ajustes-chip">Avisos</span>
           </span>
         </button>
         <button type="button" class="ajustes-card ajustes-card--update" id="btn-obtener-actualizacion">
@@ -594,19 +594,26 @@
 
         <div class="admin-aviso-box" id="admin-aviso-box">
           <h3 class="admin-nuevo-title">Aviso al entrar</h3>
-          <p class="admin-nuevo-help">Mensaje que ver&aacute;n los usuarios al abrir TURNIO. Si solo cierran (X), les vuelve a salir; si pulsan <strong>Aceptar</strong>, no vuelve a mostrarse. Queda en el historial hasta que lo borres.</p>
+          <p class="admin-nuevo-help">Mensaje al abrir TURNIO. Cerrar (X) = vuelve a salir; <strong>Aceptar</strong> = no se repite. Queda en publicados hasta borrarlo.</p>
           <p id="admin-aviso-estado" class="admin-meta">Comprobando aviso activo&hellip;</p>
-          <label class="admin-aviso-label">T&iacute;tulo
-            <input type="text" id="admin-aviso-titulo" maxlength="120" placeholder="Ej. Cambio de turno / aviso operativo">
-          </label>
-          <label class="admin-aviso-label">Mensaje
-            <textarea id="admin-aviso-cuerpo" rows="4" maxlength="4000" placeholder="Texto del aviso para todos los usuarios"></textarea>
-          </label>
           <div class="admin-aviso-actions">
-            <button type="button" class="btn primary" id="btn-admin-aviso-publicar">Publicar aviso</button>
+            <button type="button" class="btn primary" id="btn-admin-aviso-abrir-form">A&ntilde;adir aviso</button>
             <button type="button" class="btn secondary" id="btn-admin-aviso-desactivar" hidden>Desactivar modal</button>
           </div>
+          <div id="admin-aviso-form" class="admin-aviso-form" hidden>
+            <label class="admin-aviso-label">T&iacute;tulo
+              <input type="text" id="admin-aviso-titulo" maxlength="120" placeholder="Ej. Cambio de turno / aviso operativo">
+            </label>
+            <label class="admin-aviso-label">Mensaje
+              <textarea id="admin-aviso-cuerpo" rows="4" maxlength="4000" placeholder="Texto del aviso para todos los usuarios"></textarea>
+            </label>
+            <div class="admin-aviso-actions">
+              <button type="button" class="btn primary" id="btn-admin-aviso-publicar">Publicar</button>
+              <button type="button" class="btn secondary" id="btn-admin-aviso-cancelar-form">Cancelar</button>
+            </div>
+          </div>
           <h4 class="admin-aviso-hist-title">Publicados</h4>
+          <p class="admin-nuevo-help">Pulsa un t&iacute;tulo para ver el mensaje y borrarlo.</p>
           <div id="admin-aviso-lista" class="admin-aviso-lista" aria-live="polite"></div>
         </div>
 

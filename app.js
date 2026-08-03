@@ -576,20 +576,50 @@
     if (f) meta.push(f);
     if (aviso.created_by) meta.push(aviso.created_by);
     if (aviso.active) meta.push('al entrar');
-    return '<article class="' + (conBorrar ? 'admin-aviso-item' : 'avisos-app-item') +
-      (aviso.active ? ' is-active' : '') + '" data-aviso-id="' + esc(aviso.id) + '">' +
-      '<div class="' + (conBorrar ? 'admin-aviso-item-top' : 'avisos-app-item-top') + '">' +
-        '<b>' + esc(aviso.titulo || 'Aviso') + '</b>' +
-        (aviso.active ? '<span class="admin-pill admin-pill--role">Al entrar</span>' : '') +
+    var cls = conBorrar ? 'admin-aviso-item' : 'avisos-app-item';
+    return '<article class="' + cls + (aviso.active ? ' is-active' : '') +
+      '" data-aviso-id="' + esc(aviso.id) + '">' +
+      '<button type="button" class="aviso-item-toggle" data-aviso-toggle aria-expanded="false">' +
+        '<span class="aviso-item-toggle-main">' +
+          '<b>' + esc(aviso.titulo || 'Aviso') + '</b>' +
+          (aviso.active ? '<span class="admin-pill admin-pill--role">Al entrar</span>' : '') +
+        '</span>' +
+        '<span class="aviso-item-chev" aria-hidden="true">▸</span>' +
+      '</button>' +
+      '<div class="aviso-item-panel" hidden>' +
+        (meta.length ? '<p class="' + cls + '-meta">' + esc(meta.join(' · ')) + '</p>' : '') +
+        '<p class="' + cls + '-body">' + esc(aviso.cuerpo || '') + '</p>' +
+        (conBorrar
+          ? '<button type="button" class="btn secondary" data-aviso-borrar="' + esc(aviso.id) + '">Borrar</button>'
+          : '') +
       '</div>' +
-      (meta.length ? '<p class="' + (conBorrar ? 'admin-aviso-item-meta' : 'avisos-app-item-meta') + '">' +
-        esc(meta.join(' · ')) + '</p>' : '') +
-      '<p class="' + (conBorrar ? 'admin-aviso-item-body' : 'avisos-app-item-body') + '">' +
-        esc(aviso.cuerpo || '') + '</p>' +
-      (conBorrar
-        ? '<button type="button" class="btn secondary" data-aviso-borrar="' + esc(aviso.id) + '">Borrar</button>'
-        : '') +
       '</article>';
+  }
+
+  function toggleAvisoItem_(btn) {
+    if (!btn) return;
+    var item = btn.closest('.admin-aviso-item, .avisos-app-item');
+    if (!item) return;
+    var panel = item.querySelector('.aviso-item-panel');
+    var chev = btn.querySelector('.aviso-item-chev');
+    var open = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    if (panel) panel.hidden = open;
+    if (chev) chev.textContent = open ? '▸' : '▾';
+    item.classList.toggle('is-open', !open);
+  }
+
+  function setAdminAvisoFormVisible_(visible) {
+    var form = document.getElementById('admin-aviso-form');
+    var btnOpen = document.getElementById('btn-admin-aviso-abrir-form');
+    if (form) form.hidden = !visible;
+    if (btnOpen) btnOpen.hidden = !!visible;
+    if (!visible) {
+      var tit = document.getElementById('admin-aviso-titulo');
+      var cue = document.getElementById('admin-aviso-cuerpo');
+      if (tit) tit.value = '';
+      if (cue) cue.value = '';
+    }
   }
 
   function pintarAdminAvisoLista_(avisos) {
@@ -606,19 +636,14 @@
   function pintarAdminAvisoEstado_(aviso, avisos) {
     var el = document.getElementById('admin-aviso-estado');
     var btnOff = document.getElementById('btn-admin-aviso-desactivar');
-    var tit = document.getElementById('admin-aviso-titulo');
-    var cue = document.getElementById('admin-aviso-cuerpo');
     if (Array.isArray(avisos)) avisoAppCache_ = avisos;
     if (!el) return;
     if (aviso && aviso.id) {
       el.textContent = 'Modal activo · ' + (aviso.titulo || 'Aviso') +
-        (aviso.created_by ? ' · ' + aviso.created_by : '') +
         (aviso.created_at ? ' · ' + fmtAvisoFecha_(aviso.created_at) : '');
       if (btnOff) btnOff.hidden = false;
-      if (tit && !tit.value) tit.value = aviso.titulo || '';
-      if (cue && !cue.value) cue.value = aviso.cuerpo || '';
     } else {
-      el.textContent = 'No hay modal activo (el historial sigue visible para usuarios).';
+      el.textContent = 'No hay modal activo (el historial sigue visible).';
       if (btnOff) btnOff.hidden = true;
     }
     pintarAdminAvisoLista_(Array.isArray(avisos) ? avisos : avisoAppCache_);
@@ -652,9 +677,8 @@
     try {
       var d = await call('aviso_app_publicar', { titulo: titulo, cuerpo: cuerpo });
       toast('Aviso publicado.', 'success');
+      setAdminAvisoFormVisible_(false);
       pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos);
-      if (tit) tit.value = '';
-      if (cue) cue.value = '';
     } catch (err) {
       toast(String(err.message || err), 'error');
     } finally {
@@ -1897,7 +1921,7 @@
     pantallas: 'Pantallas estación',
     conexiones: 'Servicios enlazados',
     avisos: 'Avisos de red',
-    'avisos-app': 'Avisos TURNIO'
+    'avisos-app': 'TURNIO RAIL'
   };
   /** Pantallas base desde las que Circulación/herramientas abren como flotante. */
   var FLOAT_BASE_KEEP_ = { radar: 1, mapa: 1 };
@@ -1950,7 +1974,7 @@
     if (screen === 'avisos') cargarPantallaAvisos(true);
     if (screen === 'avisos-app') {
       if (sessionProfile.role_code === 'INVITADO') {
-        toast('Los invitados no tienen acceso al historial de avisos TURNIO.', 'error');
+        toast('Los invitados no tienen acceso a los avisos TURNIO RAIL.', 'error');
         go('home');
         return;
       }
@@ -4721,12 +4745,33 @@
   if (btnAvPub) btnAvPub.addEventListener('click', publicarAdminAviso_);
   var btnAvOff = document.getElementById('btn-admin-aviso-desactivar');
   if (btnAvOff) btnAvOff.addEventListener('click', desactivarAdminAviso_);
+  var btnAvOpenForm = document.getElementById('btn-admin-aviso-abrir-form');
+  if (btnAvOpenForm) {
+    btnAvOpenForm.addEventListener('click', function () { setAdminAvisoFormVisible_(true); });
+  }
+  var btnAvCancelForm = document.getElementById('btn-admin-aviso-cancelar-form');
+  if (btnAvCancelForm) {
+    btnAvCancelForm.addEventListener('click', function () { setAdminAvisoFormVisible_(false); });
+  }
   var adminAvLista = document.getElementById('admin-aviso-lista');
   if (adminAvLista) {
     adminAvLista.addEventListener('click', function (ev) {
-      var btn = ev.target && ev.target.closest && ev.target.closest('[data-aviso-borrar]');
-      if (!btn) return;
-      borrarAdminAviso_(btn.getAttribute('data-aviso-borrar'));
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var btnDel = t.closest('[data-aviso-borrar]');
+      if (btnDel) {
+        borrarAdminAviso_(btnDel.getAttribute('data-aviso-borrar'));
+        return;
+      }
+      var btnToggle = t.closest('[data-aviso-toggle]');
+      if (btnToggle) toggleAvisoItem_(btnToggle);
+    });
+  }
+  var avisosAppLista = document.getElementById('avisos-app-lista');
+  if (avisosAppLista) {
+    avisosAppLista.addEventListener('click', function (ev) {
+      var btnToggle = ev.target && ev.target.closest && ev.target.closest('[data-aviso-toggle]');
+      if (btnToggle) toggleAvisoItem_(btnToggle);
     });
   }
   var btnAvAppRef = document.getElementById('btn-refrescar-avisos-app');
