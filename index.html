@@ -20,9 +20,9 @@
         <h2>Acceder a TURNIO</h2>
         <label for="email">Correo autorizado</label>
         <input id="email" name="email" type="email" autocomplete="email" required>
-        <button id="btn-recibir-otp" type="button" class="btn primary">Recibir c?digo</button>
+        <button id="btn-recibir-otp" type="button" class="btn primary">Recibir c&oacute;digo</button>
         <div id="otp-wrap" hidden>
-          <label for="otp">C?digo de seis cifras</label>
+          <label for="otp">C&oacute;digo de seis cifras</label>
           <input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}">
           <button type="submit" class="btn primary">Entrar en TURNIO</button>
           <button id="btn-cambiar-email" type="button" class="text-btn">Usar otro correo</button>
@@ -604,9 +604,9 @@
           <button type="submit" class="btn primary admin-nuevo-btn" id="btn-admin-crear">A&ntilde;adir</button>
         </form>
         <div class="admin-toolbar">
-          <input type="search" id="admin-buscar" class="admin-buscar" placeholder="Buscar nombre o email?" autocomplete="off">
+          <input type="search" id="admin-buscar" class="admin-buscar" placeholder="Buscar nombre o email&hellip;" autocomplete="off">
           <button type="button" class="action-btn" id="btn-admin-refrescar">Actualizar</button>
-          <span id="admin-meta" class="admin-meta">?</span>
+          <span id="admin-meta" class="admin-meta">&mdash;</span>
         </div>
         <div id="admin-lista" class="admin-lista" aria-live="polite"></div>
       </section>
@@ -1053,10 +1053,10 @@
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Publicar / borrar compartido</div>
                 <div class="cx-hi-desc">Solo <span class="help-badge hb-blue">CGO</span> / <span class="help-badge hb-blue">ADMIN</span>:<br>
-                  <strong>Publicar para todos</strong> ? sube el Excel del d&iacute;a al servidor; LECTURA/INVITADO lo reciben solos.<br>
-                  <strong>Borrar publicaci&oacute;n</strong> ? elimina el snapshot del servidor para todos (si hubo error o hay que retirar datos).<br>
-                  <strong>Republicar</strong> ? carga otro Excel y publica de nuevo (sustituye el del d&iacute;a).<br>
-                  <em>Quitar aqu&iacute;</em> ? solo limpia este dispositivo; no toca lo compartido.<br>
+                  <strong>Publicar para todos</strong> &rarr; sube el Excel del d&iacute;a al servidor; LECTURA/INVITADO lo reciben solos.<br>
+                  <strong>Borrar publicaci&oacute;n</strong> &rarr; elimina el snapshot del servidor para todos (si hubo error o hay que retirar datos).<br>
+                  <strong>Republicar</strong> &rarr; carga otro Excel y publica de nuevo (sustituye el del d&iacute;a).<br>
+                  <em>Quitar aqu&iacute;</em> &rarr; solo limpia este dispositivo; no toca lo compartido.<br>
                   Caduca al cambiar de d&iacute;a.</div>
               </div>
             </div>
@@ -1170,10 +1170,10 @@
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Filtro de estaci&oacute;n</div>
                 <div class="cx-hi-desc">
-                  <span class="help-badge hb-blue">Todas</span> ? Todo el fichero del d&iacute;a.<br>
-                  <span class="help-badge hb-amber">Todas preferidas</span> ? Solo enlaces en Sevilla SJ, C&oacute;rdoba, M&aacute;laga MZ, Antequera AV, Granada y Dos Hermanas.<br>
-                  Chips de estaci&oacute;n ? Filtra por esa parada como origen, enlace o destino.<br>
-                  Campo <strong>Otra</strong> ? Escribe cualquier estaci&oacute;n del Excel.
+                  <span class="help-badge hb-blue">Todas</span> &rarr; Todo el fichero del d&iacute;a.<br>
+                  <span class="help-badge hb-amber">Todas preferidas</span> &rarr; Solo enlaces en Sevilla SJ, C&oacute;rdoba, M&aacute;laga MZ, Antequera AV, Granada y Dos Hermanas.<br>
+                  Chips de estaci&oacute;n &rarr; Filtra por esa parada como origen, enlace o destino.<br>
+                  Campo <strong>Otra</strong> &rarr; Escribe cualquier estaci&oacute;n del Excel.
                 </div>
               </div>
             </div>
@@ -1183,9 +1183,9 @@
                 <div class="cx-hi-title">Filtro por rol de la estaci&oacute;n</div>
                 <div class="cx-hi-desc">
                   Visible al elegir una estaci&oacute;n concreta.<br>
-                  <span class="help-badge hb-green">Como Origen</span> ? La estaci&oacute;n es salida del tren principal.<br>
-                  <span class="help-badge hb-yellow">Como Enlace</span> ? Es donde se produce el transbordo. <em>Activo por defecto.</em><br>
-                  <span class="help-badge hb-purple">Como Destino</span> ? Es el destino final del viajero.
+                  <span class="help-badge hb-green">Como Origen</span> &rarr; La estaci&oacute;n es salida del tren principal.<br>
+                  <span class="help-badge hb-yellow">Como Enlace</span> &rarr; Es donde se produce el transbordo. <em>Activo por defecto.</em><br>
+                  <span class="help-badge hb-purple">Como Destino</span> &rarr; Es el destino final del viajero.
                 </div>
               </div>
             </div>
@@ -1218,9 +1218,9 @@
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Destacadas y riesgo</div>
                 <div class="cx-hi-desc">
-                  <span class="help-badge hb-amber">Ajustada</span> ? Espera planificada &lt; 30 min.<br>
-                  <span class="help-badge hb-amber">Alta ocup.</span> ? M&aacute;s de 15 viajeros.<br>
-                  <span class="help-badge hb-red">Enlace en riesgo</span> ? El retraso del tren que llega se come el margen.<br>
+                  <span class="help-badge hb-amber">Ajustada</span> &rarr; Espera planificada &lt; 30 min.<br>
+                  <span class="help-badge hb-amber">Alta ocup.</span> &rarr; M&aacute;s de 15 viajeros.<br>
+                  <span class="help-badge hb-red">Enlace en riesgo</span> &rarr; El retraso del tren que llega se come el margen.<br>
                   Burbuja central: espera <strong>plan</strong> vs <strong>real</strong> si hay demora.
                 </div>
               </div>
@@ -1251,9 +1251,9 @@
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Franja horaria</div>
                 <div class="cx-hi-desc">
-                  <span class="help-badge hb-blue">Todo el d&iacute;a</span> ? Todas las conexiones.<br>
-                  <span class="help-badge hb-yellow">Ma&ntilde;ana</span> ? Salida enlace entre <strong>06:00 y 14:30</strong>.<br>
-                  <span class="help-badge hb-purple">Tarde</span> ? Entre <strong>14:30 y 22:30</strong>.
+                  <span class="help-badge hb-blue">Todo el d&iacute;a</span> &rarr; Todas las conexiones.<br>
+                  <span class="help-badge hb-yellow">Ma&ntilde;ana</span> &rarr; Salida enlace entre <strong>06:00 y 14:30</strong>.<br>
+                  <span class="help-badge hb-purple">Tarde</span> &rarr; Entre <strong>14:30 y 22:30</strong>.
                 </div>
               </div>
             </div>
