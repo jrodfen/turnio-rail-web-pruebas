@@ -327,6 +327,15 @@ body.monitor-mode #screen-mapa{display:none!important}
 .admin-aviso-label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted);margin:0 0 10px}
 .admin-aviso-label input,.admin-aviso-label textarea{width:100%;border:1px solid #dce3ec;border-radius:10px;padding:10px;font-size:14px;background:var(--card);color:var(--text);font-family:inherit;resize:vertical}
 .admin-aviso-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.admin-aviso-hist-title{margin:16px 0 8px;font-size:13px;font-weight:800}
+.admin-aviso-lista,.avisos-app-lista{display:flex;flex-direction:column;gap:8px}
+.admin-aviso-item,.avisos-app-item{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card)}
+.admin-aviso-item.is-active,.avisos-app-item.is-active{border-color:rgba(37,99,235,.45);background:linear-gradient(135deg,rgba(37,99,235,.08),var(--card))}
+.admin-aviso-item-top,.avisos-app-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 0 6px}
+.admin-aviso-item-top b,.avisos-app-item-top b{font-size:14px;line-height:1.3}
+.admin-aviso-item-meta,.avisos-app-item-meta{font-size:11px;color:var(--muted);margin:0 0 8px}
+.admin-aviso-item-body,.avisos-app-item-body{margin:0;font-size:13px;line-height:1.45;white-space:pre-wrap;color:var(--text)}
+.admin-aviso-item .btn{width:auto;margin:8px 0 0;padding:8px 12px;font-size:12px}
 .aviso-app-card{max-width:min(420px,94vw)}
 .aviso-app-cuerpo{white-space:pre-wrap;color:var(--text)!important;font-size:14px!important;line-height:1.45!important;margin:0 0 8px!important}
 .aviso-app-hint{font-size:12px!important;color:var(--muted)!important;margin:0 0 12px!important}

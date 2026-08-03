@@ -375,6 +375,7 @@
     puedeEscribir = !!sessionProfile.can_write;
     document.documentElement.classList.toggle('turnio-solo-lectura', !puedeEscribir);
     document.documentElement.classList.toggle('turnio-es-admin', !!sessionProfile.is_admin);
+    document.documentElement.classList.toggle('turnio-es-invitado', sessionProfile.role_code === 'INVITADO');
     document.querySelectorAll('[data-requiere-escritura]').forEach(function (el) {
       el.hidden = !puedeEscribir;
       el.disabled = !puedeEscribir;
@@ -382,6 +383,9 @@
     document.querySelectorAll('[data-requiere-admin]').forEach(function (el) {
       el.hidden = !sessionProfile.is_admin;
       if ('disabled' in el) el.disabled = !sessionProfile.is_admin;
+    });
+    document.querySelectorAll('[data-ocultar-invitado]').forEach(function (el) {
+      el.hidden = sessionProfile.role_code === 'INVITADO';
     });
     var roleText = 'Rol: ' + sessionProfile.role_code;
     var badge = document.getElementById('user-role');
@@ -549,24 +553,75 @@
     wrap.hidden = String(rol.value || '').toUpperCase() !== 'INVITADO';
   }
   var avisoAppPendienteId_ = '';
+  var avisoAppCache_ = [];
 
-  function pintarAdminAvisoEstado_(aviso) {
+  function fmtAvisoFecha_(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    try {
+      return d.toLocaleString('es-ES', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch (_) {
+      return String(iso);
+    }
+  }
+
+  function htmlAvisoItem_(aviso, conBorrar) {
+    if (!aviso || !aviso.id) return '';
+    var meta = [];
+    var f = fmtAvisoFecha_(aviso.created_at);
+    if (f) meta.push(f);
+    if (aviso.created_by) meta.push(aviso.created_by);
+    if (aviso.active) meta.push('al entrar');
+    return '<article class="' + (conBorrar ? 'admin-aviso-item' : 'avisos-app-item') +
+      (aviso.active ? ' is-active' : '') + '" data-aviso-id="' + esc(aviso.id) + '">' +
+      '<div class="' + (conBorrar ? 'admin-aviso-item-top' : 'avisos-app-item-top') + '">' +
+        '<b>' + esc(aviso.titulo || 'Aviso') + '</b>' +
+        (aviso.active ? '<span class="admin-pill admin-pill--role">Al entrar</span>' : '') +
+      '</div>' +
+      (meta.length ? '<p class="' + (conBorrar ? 'admin-aviso-item-meta' : 'avisos-app-item-meta') + '">' +
+        esc(meta.join(' · ')) + '</p>' : '') +
+      '<p class="' + (conBorrar ? 'admin-aviso-item-body' : 'avisos-app-item-body') + '">' +
+        esc(aviso.cuerpo || '') + '</p>' +
+      (conBorrar
+        ? '<button type="button" class="btn secondary" data-aviso-borrar="' + esc(aviso.id) + '">Borrar</button>'
+        : '') +
+      '</article>';
+  }
+
+  function pintarAdminAvisoLista_(avisos) {
+    var box = document.getElementById('admin-aviso-lista');
+    if (!box) return;
+    var list = Array.isArray(avisos) ? avisos : [];
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">Aún no hay avisos publicados.</div>';
+      return;
+    }
+    box.innerHTML = list.map(function (a) { return htmlAvisoItem_(a, true); }).join('');
+  }
+
+  function pintarAdminAvisoEstado_(aviso, avisos) {
     var el = document.getElementById('admin-aviso-estado');
     var btnOff = document.getElementById('btn-admin-aviso-desactivar');
     var tit = document.getElementById('admin-aviso-titulo');
     var cue = document.getElementById('admin-aviso-cuerpo');
+    if (Array.isArray(avisos)) avisoAppCache_ = avisos;
     if (!el) return;
     if (aviso && aviso.id) {
-      el.textContent = 'Activo · ' + (aviso.titulo || 'Aviso') +
+      el.textContent = 'Modal activo · ' + (aviso.titulo || 'Aviso') +
         (aviso.created_by ? ' · ' + aviso.created_by : '') +
-        (aviso.created_at ? ' · ' + new Date(aviso.created_at).toLocaleString('es-ES') : '');
+        (aviso.created_at ? ' · ' + fmtAvisoFecha_(aviso.created_at) : '');
       if (btnOff) btnOff.hidden = false;
       if (tit && !tit.value) tit.value = aviso.titulo || '';
       if (cue && !cue.value) cue.value = aviso.cuerpo || '';
     } else {
-      el.textContent = 'No hay aviso activo ahora.';
+      el.textContent = 'No hay modal activo (el historial sigue visible para usuarios).';
       if (btnOff) btnOff.hidden = true;
     }
+    pintarAdminAvisoLista_(Array.isArray(avisos) ? avisos : avisoAppCache_);
   }
 
   async function cargarAdminAviso_() {
@@ -575,7 +630,7 @@
     if (el) el.textContent = 'Comprobando aviso activo…';
     try {
       var d = await call('aviso_app_estado', {});
-      pintarAdminAvisoEstado_(d && d.aviso);
+      pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos);
     } catch (err) {
       if (el) el.textContent = 'Error: ' + String(err.message || err);
     }
@@ -592,12 +647,12 @@
       toast('Título y mensaje son obligatorios.', 'error');
       return;
     }
-    if (!confirm('¿Publicar este aviso? Lo verán todos los usuarios al entrar hasta que lo acepten.')) return;
+    if (!confirm('¿Publicar este aviso? Lo verán al entrar (modal) y quedará en el historial.')) return;
     if (btn) btn.disabled = true;
     try {
       var d = await call('aviso_app_publicar', { titulo: titulo, cuerpo: cuerpo });
       toast('Aviso publicado.', 'success');
-      pintarAdminAvisoEstado_(d && d.aviso);
+      pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos);
       if (tit) tit.value = '';
       if (cue) cue.value = '';
     } catch (err) {
@@ -609,13 +664,73 @@
 
   async function desactivarAdminAviso_() {
     if (!sessionProfile.is_admin) return;
-    if (!confirm('¿Desactivar el aviso actual? Ya no se mostrará a quien aún no lo haya aceptado.')) return;
+    if (!confirm('¿Quitar el modal al entrar? El aviso seguirá en el historial hasta que lo borres.')) return;
     try {
-      await call('aviso_app_desactivar', {});
-      toast('Aviso desactivado.', 'success');
-      pintarAdminAvisoEstado_(null);
+      var d = await call('aviso_app_desactivar', {});
+      toast('Modal desactivado.', 'success');
+      pintarAdminAvisoEstado_(null, d && d.avisos);
     } catch (err) {
       toast(String(err.message || err), 'error');
+    }
+  }
+
+  async function borrarAdminAviso_(id) {
+    if (!sessionProfile.is_admin) return;
+    var avisoId = String(id || '').trim();
+    if (!avisoId) return;
+    if (!confirm('¿Borrar este aviso del historial? Dejará de verse para todos.')) return;
+    try {
+      var d = await call('aviso_app_borrar', { id: avisoId });
+      toast('Aviso borrado.', 'success');
+      var activo = null;
+      if (d && d.activo_id && Array.isArray(d.avisos)) {
+        for (var i = 0; i < d.avisos.length; i++) {
+          if (d.avisos[i] && d.avisos[i].id === d.activo_id) {
+            activo = d.avisos[i];
+            break;
+          }
+        }
+      }
+      pintarAdminAvisoEstado_(activo, d && d.avisos);
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  function pintarListaAvisosApp_(avisos) {
+    var box = document.getElementById('avisos-app-lista');
+    var home = document.getElementById('home-avisos-app');
+    var list = Array.isArray(avisos) ? avisos : [];
+    avisoAppCache_ = list;
+    if (home) {
+      home.textContent = list.length
+        ? (list.length + ' aviso' + (list.length === 1 ? '' : 's') + ' publicado' + (list.length === 1 ? '' : 's'))
+        : 'Sin avisos publicados.';
+    }
+    if (!box) return;
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">No hay avisos publicados.</div>';
+      return;
+    }
+    box.innerHTML = list.map(function (a) { return htmlAvisoItem_(a, false); }).join('');
+  }
+
+  async function cargarAvisosApp_(force) {
+    if (sessionProfile.role_code === 'INVITADO') {
+      pintarListaAvisosApp_([]);
+      return;
+    }
+    var box = document.getElementById('avisos-app-lista');
+    if (box && (!avisoAppCache_.length || force)) {
+      box.innerHTML = '<div class="empty">Cargando…</div>';
+    }
+    try {
+      var d = await call('aviso_app_listar', {});
+      pintarListaAvisosApp_(d && d.avisos);
+    } catch (err) {
+      if (box) box.innerHTML = '<div class="empty error-text">' + esc(String(err.message || err)) + '</div>';
+      var home = document.getElementById('home-avisos-app');
+      if (home) home.textContent = 'No se pudieron cargar los avisos.';
     }
   }
 
@@ -765,7 +880,9 @@
       aviso_desactivar_failed: 'No se pudo desactivar el aviso.',
       aviso_no_activo: 'Ese aviso ya no está activo.',
       aviso_ack_failed: 'No se pudo guardar la aceptación.',
-      aviso_app_unavailable: 'Avisos de app no disponibles.'
+      aviso_app_unavailable: 'Avisos de app no disponibles.',
+      aviso_no_encontrado: 'Ese aviso ya no existe.',
+      role_forbidden: 'Tu rol no puede ver el historial de avisos.'
     };
     var base = mapa[code] || code;
     if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
@@ -1779,12 +1896,13 @@
     kms: 'Kilómetros',
     pantallas: 'Pantallas estación',
     conexiones: 'Servicios enlazados',
-    avisos: 'Avisos de red'
+    avisos: 'Avisos de red',
+    'avisos-app': 'Avisos TURNIO'
   };
   /** Pantallas base desde las que Circulación/herramientas abren como flotante. */
   var FLOAT_BASE_KEEP_ = { radar: 1, mapa: 1 };
   /** Nunca flotan: siempre pantalla completa (como Inicio). */
-  var FLOAT_NUNCA_ = { home: 1, radar: 1, ajustes: 1, perfil: 1, admin: 1 };
+  var FLOAT_NUNCA_ = { home: 1, radar: 1, ajustes: 1, perfil: 1, admin: 1, 'avisos-app': 1 };
   var floatState_ = null;
   var floatZ_ = 3000;
   var floatMq_ = null;
@@ -1830,12 +1948,21 @@
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') refrescarAvisosRed();
     if (screen === 'avisos') cargarPantallaAvisos(true);
+    if (screen === 'avisos-app') {
+      if (sessionProfile.role_code === 'INVITADO') {
+        toast('Los invitados no tienen acceso al historial de avisos TURNIO.', 'error');
+        go('home');
+        return;
+      }
+      cargarAvisosApp_(true);
+    }
     if (screen === 'pantallas') abrirPantallas();
     if (screen === 'kms') abrirKms();
     if (screen === 'mapa') openMapa();
     if (screen === 'home') {
       refrescarAvisosRed();
       cargarClimaBienvenida_(false);
+      if (sessionProfile.role_code !== 'INVITADO') cargarAvisosApp_(false);
     }
     if (screen === 'mallas') {
       if (window.TurnioMallasGtfs) {
@@ -4594,6 +4721,16 @@
   if (btnAvPub) btnAvPub.addEventListener('click', publicarAdminAviso_);
   var btnAvOff = document.getElementById('btn-admin-aviso-desactivar');
   if (btnAvOff) btnAvOff.addEventListener('click', desactivarAdminAviso_);
+  var adminAvLista = document.getElementById('admin-aviso-lista');
+  if (adminAvLista) {
+    adminAvLista.addEventListener('click', function (ev) {
+      var btn = ev.target && ev.target.closest && ev.target.closest('[data-aviso-borrar]');
+      if (!btn) return;
+      borrarAdminAviso_(btn.getAttribute('data-aviso-borrar'));
+    });
+  }
+  var btnAvAppRef = document.getElementById('btn-refrescar-avisos-app');
+  if (btnAvAppRef) btnAvAppRef.addEventListener('click', function () { cargarAvisosApp_(true); });
   var btnAvOk = document.getElementById('btn-aviso-app-aceptar');
   if (btnAvOk) btnAvOk.addEventListener('click', aceptarModalAvisoApp_);
   var btnAvX = document.getElementById('btn-aviso-app-cerrar');
