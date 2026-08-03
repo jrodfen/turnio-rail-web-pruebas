@@ -1969,11 +1969,12 @@
   }
 
   function entrarPantalla_(screen) {
+    if (screen !== 'radar') cancelarVigilanteAutoOn_();
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') {
       refrescarAvisosRed();
-      // CGO/ADMIN: Vigilante ON al entrar en Radar (LECTURA/INVITADO no aplica).
-      if (puedeEscribir && !vigilanteActivo) setVigilanteState(true, true);
+      // CGO/ADMIN: Vigilante ON con retardo al entrar (evita avisos al instante).
+      if (puedeEscribir && !vigilanteActivo) programarVigilanteAutoOn_();
     }
     if (screen === 'avisos') cargarPantallaAvisos(true);
     if (screen === 'avisos-app') {
@@ -2458,10 +2459,31 @@
 
   var vigilanteActivo = false;
   var intervaloVigilante = null;
+  var timerVigilanteAutoOn_ = null;
+  var VIGILANTE_AUTO_ON_DELAY_MS_ = 20000;
   var trenesYaAlertados = {};
   var trenesPendientesConfirmacion = [];
   var trenesPendientesDetencion = [];
   var chequeoEnCurso = false;
+
+  function cancelarVigilanteAutoOn_() {
+    if (timerVigilanteAutoOn_) {
+      clearTimeout(timerVigilanteAutoOn_);
+      timerVigilanteAutoOn_ = null;
+    }
+  }
+
+  function programarVigilanteAutoOn_() {
+    cancelarVigilanteAutoOn_();
+    if (!puedeEscribir || vigilanteActivo) return;
+    timerVigilanteAutoOn_ = setTimeout(function () {
+      timerVigilanteAutoOn_ = null;
+      // Solo si seguimos en Radar y el usuario no lo ha tocado a mano.
+      if (!puedeEscribir || vigilanteActivo) return;
+      if (typeof pantallaActivaId_ === 'function' && pantallaActivaId_() !== 'radar') return;
+      setVigilanteState(true, true);
+    }, VIGILANTE_AUTO_ON_DELAY_MS_);
+  }
 
   function setVigilanteUI(on) {
     vigilanteActivo = !!on;
@@ -2496,6 +2518,7 @@
 
   function toggleVigilante() {
     if (!exigirEscritura_('El Vigilante')) return;
+    cancelarVigilanteAutoOn_();
     setVigilanteState(!vigilanteActivo);
   }
 
