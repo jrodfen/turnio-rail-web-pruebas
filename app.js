@@ -637,7 +637,12 @@
       admin_email_exists: 'Ya existe un perfil con ese email.',
       admin_auth_user_failed: 'No se pudo crear el acceso Auth del usuario.',
       admin_auth_unavailable: 'Auth de Supabase no disponible.',
-      admin_create_failed: 'No se pudo crear el perfil.'
+      admin_create_failed: 'No se pudo crear el perfil.',
+      role_write_required: 'Solo CGO o ADMIN pueden publicar combinados.',
+      combinados_sin_filas: 'No hay filas para publicar.',
+      combinados_demasiado_grande: 'El fichero es demasiado grande.',
+      combinados_publish_failed: 'No se pudo guardar el snapshot compartido.',
+      combinados_unavailable: 'Servicio de combinados no disponible.'
     };
     var base = mapa[code] || code;
     if (d.detail) base += ' (' + String(d.detail).slice(0, 120) + ')';
@@ -1726,7 +1731,14 @@
       asegurarInfoStationParaMallas_();
     }
     if (screen === 'conexiones') {
-      if (typeof pintarPanelConexiones_ === 'function') pintarPanelConexiones_();
+      asegurarCombinadosCompartidos_().finally(function () {
+        if (typeof pintarPanelConexiones_ === 'function') pintarPanelConexiones_();
+      });
+    }
+    if (screen === 'trafico') {
+      asegurarCombinadosCompartidos_().finally(function () {
+        if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
+      });
     }
     if (screen === 'mallas-localizador') {
       asegurarRutasMallas().catch(function (err) {
@@ -1933,6 +1945,10 @@
     cargarClimaBienvenida_(false);
     // Precarga flota del mapa en segundo plano (no mallas: demasiado pesado).
     precargarFlotaMapa();
+    // Combinados del día publicados por CGO (si no hay cache local).
+    asegurarCombinadosCompartidos_().finally(function () {
+      if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
+    });
   }
 
   // ========== MALLAS Y HORARIOS ==========
@@ -5190,35 +5206,107 @@
   function refrescarUiConexiones_() {
     var cx = window.TurnioConexiones;
     var st = cx ? cx.estado() : { cargado: false, total: 0, meta: {} };
+    var puedePublicar = !!(sessionProfile && sessionProfile.can_write);
     ['cx-status-chip', 'cx-panel-chip'].forEach(function (id) {
       var chip = document.getElementById(id);
       if (!chip) return;
       chip.textContent = st.cargado ? (st.total + ' filas') : 'Sin cargar';
       chip.classList.toggle('circ-chip--green', !!st.cargado);
     });
-    var txt = st.cargado
-      ? ('Cargado hoy · ' + (st.meta.nombre || 'fichero') + ' · ' + st.total + ' conexiones')
-      : 'Ningún fichero cargado hoy. Caduca al cambiar de día.';
+    var txt;
+    if (st.cargado) {
+      txt = (st.meta && st.meta.compartido ? 'Compartido hoy' : 'Cargado hoy') +
+        ' · ' + ((st.meta && st.meta.nombre) || 'fichero') + ' · ' + st.total + ' conexiones';
+      if (st.meta && st.meta.publicado_por) txt += ' · ' + st.meta.publicado_por;
+    } else {
+      txt = puedePublicar
+        ? 'Ningún fichero hoy. Carga el Excel y pulsa Publicar para todos.'
+        : 'Sin datos compartidos hoy. Cuando un CGO publique, aparecerán aquí.';
+    }
     ['cx-upload-meta', 'cx-panel-meta'].forEach(function (id) {
       var meta = document.getElementById(id);
       if (meta) meta.textContent = txt;
     });
     [
-      ['cx-upload-circ', 'btn-cx-cargar', 'btn-cx-limpiar'],
-      ['cx-upload-panel', 'btn-cx-cargar-panel', 'btn-cx-limpiar-panel']
+      ['cx-upload-circ', 'btn-cx-cargar', 'btn-cx-limpiar', 'btn-cx-publicar'],
+      ['cx-upload-panel', 'btn-cx-cargar-panel', 'btn-cx-limpiar-panel', 'btn-cx-publicar-panel']
     ].forEach(function (ids) {
       var row = document.getElementById(ids[0]);
       var loadBtn = document.getElementById(ids[1]);
       var clearBtn = document.getElementById(ids[2]);
+      var pubBtn = document.getElementById(ids[3]);
       if (row) row.classList.toggle('cx-upload-row--ready', !!st.cargado);
       if (clearBtn) clearBtn.hidden = !st.cargado;
       if (loadBtn) {
+        loadBtn.hidden = !puedePublicar;
         var idle = loadBtn.getAttribute('data-cx-label-idle') || 'Cargar Excel';
         var ready = loadBtn.getAttribute('data-cx-label-ready') || 'Recargar';
         loadBtn.textContent = st.cargado ? ready : idle;
       }
+      if (pubBtn) pubBtn.hidden = !(puedePublicar && st.cargado);
     });
     refrescarLiveIndCx_();
+  }
+
+  var combinadosFetchPromise_ = null;
+
+  async function asegurarCombinadosCompartidos_(opts) {
+    opts = opts || {};
+    var cx = window.TurnioConexiones;
+    if (!cx) return false;
+    if (cx.estado().cargado && !opts.force) return true;
+    if (combinadosFetchPromise_) return combinadosFetchPromise_;
+    combinadosFetchPromise_ = (async function () {
+      try {
+        var data = await call('combinados_obtener', {});
+        if (!data || data.ok === false) return false;
+        if (data.empty || !Array.isArray(data.filas) || !data.filas.length) return false;
+        var ok = cx.aplicarSnapshotCompartido(data);
+        if (ok) {
+          refrescarUiConexiones_();
+          if (typeof render === 'function') render();
+          if (typeof pintarPanelConexiones_ === 'function') pintarPanelConexiones_();
+        }
+        return ok;
+      } catch (_) {
+        return false;
+      } finally {
+        combinadosFetchPromise_ = null;
+      }
+    })();
+    return combinadosFetchPromise_;
+  }
+
+  async function publicarConexionesUi_() {
+    var cx = window.TurnioConexiones;
+    if (!cx) return;
+    if (!exigirEscritura_('Publicar combinados')) return;
+    var snap = cx.snapshotParaPublicar();
+    if (!snap || !snap.filas || !snap.filas.length) {
+      toast('Carga primero el Excel del día.', 'error');
+      return;
+    }
+    if (!confirm('¿Publicar ' + snap.filas.length + ' conexiones para todos los usuarios de hoy?')) return;
+    try {
+      var data = await call('combinados_publicar', {
+        filas: snap.filas,
+        meta: snap.meta
+      });
+      if (!data || data.ok === false) {
+        throw new Error((data && (data.detail || data.error)) || 'No se pudo publicar');
+      }
+      // Marca local como compartido.
+      cx.aplicarSnapshotCompartido({
+        fecha: data.fecha || snap.fecha,
+        filas: snap.filas,
+        meta: data.meta || snap.meta
+      });
+      refrescarUiConexiones_();
+      pintarPanelConexiones_();
+      toast('Publicado para todos · ' + (data.total || snap.filas.length) + ' filas', 'success');
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
   }
 
   function syncRolBtnsCx_() {
@@ -5276,7 +5364,11 @@
       if (cnt) cnt.textContent = '';
       if (totalLabel) totalLabel.textContent = '0 conexiones';
       if (stats) stats.hidden = true;
-      box.innerHTML = '<div class="empty">Carga el Excel/HTML de Trenes Combinados para ver el panel.</div>';
+      box.innerHTML = '<div class="empty">' +
+        (sessionProfile && sessionProfile.can_write
+          ? 'Carga el Excel/HTML de Trenes Combinados y pulsa Publicar para todos.'
+          : 'Aún no hay combinados compartidos hoy. Un CGO debe publicarlos.') +
+        '</div>';
       return;
     }
     var qRaw = (input && input.value) || '';
@@ -5559,6 +5651,10 @@
     }
     bindFile('btn-cx-cargar', 'cx-file-input');
     bindFile('btn-cx-cargar-panel', 'cx-file-input-panel');
+    ['btn-cx-publicar', 'btn-cx-publicar-panel'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', function () { publicarConexionesUi_(); });
+    });
     var btnClear = document.getElementById('btn-cx-limpiar');
     if (btnClear) btnClear.addEventListener('click', limpiarConexionesUi_);
     var btnClearP = document.getElementById('btn-cx-limpiar-panel');

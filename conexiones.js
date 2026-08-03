@@ -204,10 +204,44 @@
     state.meta = {
       nombre: String(nombreArchivo || 'conexiones'),
       cargadoEn: new Date().toISOString(),
-      total: filas.length
+      total: filas.length,
+      compartido: false
     };
     reconstruirIndice_();
     persistir_();
+  }
+
+  /** Aplica snapshot del servidor (mismo día). Devuelve true si cargó filas. */
+  function aplicarSnapshotCompartido(data) {
+    if (!data || !Array.isArray(data.filas) || !data.filas.length) return false;
+    var fecha = String(data.fecha || hoyIsoLocal_());
+    if (fecha !== hoyIsoLocal_()) return false;
+    state.fecha = fecha;
+    state.filas = data.filas;
+    var metaIn = data.meta && typeof data.meta === 'object' ? data.meta : {};
+    state.meta = {
+      nombre: String(metaIn.nombre || 'compartido'),
+      cargadoEn: String(metaIn.publicado_en || metaIn.cargadoEn || new Date().toISOString()),
+      total: state.filas.length,
+      compartido: true,
+      publicado_por: String(metaIn.publicado_por || '')
+    };
+    reconstruirIndice_();
+    persistir_();
+    return true;
+  }
+
+  function snapshotParaPublicar() {
+    if (!estado().cargado) return null;
+    return {
+      fecha: state.fecha,
+      filas: state.filas,
+      meta: {
+        nombre: state.meta && state.meta.nombre ? state.meta.nombre : 'combinados',
+        cargadoEn: state.meta && state.meta.cargadoEn ? state.meta.cargadoEn : new Date().toISOString(),
+        total: state.filas.length
+      }
+    };
   }
 
   function cargarArchivo(file) {
@@ -378,6 +412,8 @@
 
   global.TurnioConexiones = {
     cargarArchivo: cargarArchivo,
+    aplicarSnapshotCompartido: aplicarSnapshotCompartido,
+    snapshotParaPublicar: snapshotParaPublicar,
     estado: estado,
     conexionesDeTren: conexionesDeTren,
     listar: listar,

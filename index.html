@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.8">
+    <link rel="stylesheet" href="./styles.css?v=V.9">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +14,7 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.8</strong></span></header>
+      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.9</strong></span></header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <form id="login-form" class="login-card" hidden>
         <h2>Acceder a TURNIO</h2>
@@ -34,7 +34,7 @@
         <div class="top-bar">
           <div class="top-brand">
             <h1>TURNIO RAIL</h1>
-            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.8</span></span>
+            <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.9</span></span>
           </div>
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
@@ -416,10 +416,11 @@
                 <span class="circ-chip circ-chip--green" id="cx-status-chip">Sin cargar</span>
               </div>
             </div>
-            <p class="circ-note">Carga cada d&iacute;a el Excel de Trenes Combinados. <b>Copiar enlace</b> lo deja en el portapapeles: p&eacute;galo en la barra del navegador y Enter.</p>
+            <p class="circ-note">CGO/ADMIN carga el Excel de Trenes Combinados y puede <b>Publicar para todos</b>. El resto lo recibe solo al abrir Conexiones. <b>Copiar enlace</b> deja la URL de Cop&eacute;rnico en el portapapeles.</p>
             <div class="cx-upload-row" id="cx-upload-circ">
               <input type="file" id="cx-file-input" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
               <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar" data-cx-label-idle="Cargar Excel del d&iacute;a" data-cx-label-ready="Recargar">Cargar Excel del d&iacute;a</button>
+              <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-publicar" hidden>Publicar para todos</button>
               <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar" hidden>Quitar</button>
             </div>
             <p class="cx-upload-meta" id="cx-upload-meta">Ning&uacute;n fichero cargado hoy.</p>
@@ -468,6 +469,7 @@
           <div class="cx-upload-row" id="cx-upload-panel">
             <input type="file" id="cx-file-input-panel" accept=".xls,.xlsx,.html,.htm,text/html" hidden>
             <button type="button" class="btn primary cx-upload-btn" id="btn-cx-cargar-panel" data-cx-label-idle="Cargar Excel" data-cx-label-ready="Recargar">Cargar Excel</button>
+            <button type="button" class="btn secondary cx-upload-btn" id="btn-cx-publicar-panel" hidden>Publicar para todos</button>
             <button type="button" class="btn secondary cx-upload-btn cx-upload-clear" id="btn-cx-limpiar-panel" hidden>Quitar</button>
           </div>
           <p class="cx-upload-meta" id="cx-panel-meta">Ning&uacute;n fichero cargado hoy.</p>
@@ -539,7 +541,7 @@
           <span class="ajustes-card-body">
             <b>Obtener nueva actualizaci&oacute;n</b>
             <span>Descarga el c&oacute;digo m&aacute;s reciente y recarga la app. Ideal en m&oacute;vil cuando TURNIO est&aacute; anclado al inicio y la cach&eacute; no se limpia sola.</span>
-            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.8</span></span>
+            <span class="ajustes-chip">TURNIO RAIL &middot; pruebas externas &middot; <span data-turnio-version>V.9</span></span>
           </span>
         </button>
         <button type="button" class="ajustes-card" id="btn-ayuda-app">
@@ -1011,7 +1013,7 @@
               <div class="cx-hi-icon">&#128279;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Panel de conexiones</div>
-                <div class="cx-hi-desc">Carga el Excel/HTML de <em>Trenes Combinados</em> del d&iacute;a y cruza retrasos con la flota TURNIO. Sem&aacute;foro de proximidad, filtros de estaci&oacute;n/turno y sugerencias de encaminamiento. El manual detallado est&aacute; en el bot&oacute;n <span class="help-badge hb-green">?</span> del propio panel (Circulaci&oacute;n &rarr; Enlazados).</div>
+                <div class="cx-hi-desc">CGO/ADMIN carga el Excel/HTML de <em>Trenes Combinados</em> y puede <strong>Publicar para todos</strong>; el resto lo recibe solo. Cruza retrasos con la flota TURNIO. Manual en el bot&oacute;n <span class="help-badge hb-green">?</span> del panel (Circulaci&oacute;n &rarr; Enlazados).</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1214,12 +1216,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.8"></script>
-    <script src="./conexiones.js?v=V.8"></script>
+    <script src="./turnio-config.js?v=V.9"></script>
+    <script src="./conexiones.js?v=V.9"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas7"></script>
-    <script src="./app.js?v=V.8"></script>
+    <script src="./app.js?v=V.9"></script>
   </body>
 </html>
 
