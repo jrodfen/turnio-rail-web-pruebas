@@ -3156,6 +3156,21 @@
     window.setTimeout(enfocarTarjetaRadarPendiente_, 80);
   }
 
+  /** En Radar: botón Enlace solo si queda algún enlace no realizado (hora + 10 min). */
+  function radarTrenTieneEnlaceVisible_(tren) {
+    var api = window.TurnioConexiones;
+    if (!api || !api.estado || !api.estado().cargado || !api.conexionesDeTren) return false;
+    var list = api.conexionesDeTren(tren, true);
+    if (!list || !list.length) return false;
+    var realizados = typeof cxObtenerRealizadosManual_ === 'function'
+      ? cxObtenerRealizadosManual_()
+      : {};
+    for (var i = 0; i < list.length; i++) {
+      if (!cxEsRealizado_(list[i], realizados)) return true;
+    }
+    return false;
+  }
+
   function render() {
     var a = filtered();
     var total = radar[0] && Number(radar[0].totalActivos);
@@ -3189,7 +3204,7 @@
         (tieneGps
           ? '<button class="map-btn" type="button" data-map-tren="' + esc(tren) + '">&#128506; Mapa</button>'
           : '<button class="map-btn disabled" type="button" disabled title="Sin coordenadas GPS">&#128506; Mapa</button>') +
-        (window.TurnioConexiones && window.TurnioConexiones.tieneEnlaces(tren)
+        (radarTrenTieneEnlaceVisible_(tren)
           ? '<button class="cx-btn" type="button" data-cx-tren="' + esc(tren) + '" title="Ver servicios enlazados">&#128279; Enlace</button>'
           : '') +
         (puedeEscribir
