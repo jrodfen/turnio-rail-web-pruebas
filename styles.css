@@ -326,23 +326,34 @@ body.monitor-mode #screen-mapa{display:none!important}
 @keyframes fillCheck{100%{box-shadow:inset 0 0 0 50px var(--green)}}
 @keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* Ajustes */
-#screen-ajustes{max-width:560px;margin:0 auto}
+/* Ajustes (mismo lenguaje visual que Circulación) */
+#screen-ajustes{max-width:920px;margin:0 auto}
 .ajustes-title{margin:0 0 6px;font-size:22px}
 .ajustes-lead{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.4}
-.ajustes-card{display:flex;align-items:flex-start;gap:14px;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:16px 14px;margin:0 0 12px;box-shadow:var(--shadow);cursor:pointer}
-.ajustes-card--update{border-color:rgba(29,78,216,.35);background:linear-gradient(135deg,rgba(45,127,249,.1),var(--card))}
-.ajustes-card:active{transform:scale(.99)}
-.ajustes-card-ico{font-size:28px;line-height:1;flex-shrink:0;margin-top:2px}
-.ajustes-card-body{display:flex;flex-direction:column;gap:5px;min-width:0}
-.ajustes-card-body b{font-size:15px;color:var(--text)}
-.ajustes-card-body span{font-size:12px;color:var(--muted);line-height:1.4}
 .ajustes-danger{color:var(--red)!important}
 .home-comercial{margin:12px 0 20px}
 .home-comercial-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:420px){.home-comercial-grid{grid-template-columns:1fr}}
 html.turnio-es-comercial #fab-container{display:none!important}
-.ajustes-card--admin{border-color:rgba(5,150,105,.4);background:linear-gradient(135deg,rgba(5,150,105,.1),var(--card))}
+.circ-group--ajustes-com{border-top:3px solid #2563eb}
+.circ-group--ajustes-app{border-top:3px solid var(--primary)}
+.circ-group--ajustes-admin{border-top:3px solid #059669}
+.circ-group--ajustes-cuenta{border-top:3px solid #94a3b8}
+.circ-grid--ajustes{grid-template-columns:repeat(2,minmax(0,1fr))}
+.circ-grid--ajustes-1{grid-template-columns:1fr}
+.circ-tile--avisos{border-color:rgba(37,99,235,.3);background:linear-gradient(160deg,rgba(37,99,235,.07),var(--bg))}
+.circ-tile--sug{border-color:rgba(180,83,9,.3);background:linear-gradient(160deg,rgba(180,83,9,.07),var(--bg))}
+.circ-tile--update{border-color:rgba(45,127,249,.35);background:linear-gradient(160deg,rgba(45,127,249,.1),var(--bg))}
+.circ-tile--ayuda{border-color:rgba(100,116,139,.3);background:linear-gradient(160deg,rgba(100,116,139,.07),var(--bg))}
+.circ-tile--admin{border-color:rgba(5,150,105,.4);background:linear-gradient(160deg,rgba(5,150,105,.1),var(--bg))}
+.circ-tile--logout{border-color:rgba(185,28,28,.28);background:linear-gradient(160deg,rgba(185,28,28,.05),var(--bg))}
+@media (min-width:640px){
+  .circ-layout--ajustes{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+  .circ-group--ajustes-admin,.circ-group--ajustes-cuenta{grid-column:1/-1}
+}
+@media (max-width:420px){
+  .circ-grid--ajustes{grid-template-columns:1fr}
+}
 
 /* Administración (solo ADMIN) */
 #screen-admin{max-width:640px;margin:0 auto}
