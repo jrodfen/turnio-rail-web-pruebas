@@ -2891,9 +2891,9 @@
     gestionarAutoRadar();
     refrescarAvisosRed();
     cargarClimaBienvenida_(false);
-    // Precarga flota + malla operativa (~28 MB) en segundo plano.
+    // Precarga flota ya; malla 28 MB un poco después para no competir con el 1.er Radar.
     precargarFlotaMapa();
-    precargarMallaOperativaAlEntrar_();
+    setTimeout(function () { precargarMallaOperativaAlEntrar_(); }, 2500);
     // Combinados del día publicados por CGO (si no hay cache local).
     asegurarCombinadosCompartidos_().finally(function () {
       if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
