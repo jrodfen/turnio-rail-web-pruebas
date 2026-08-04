@@ -3669,8 +3669,10 @@
     return 'TREN';
   }
   function titularTexto(s) {
-    return String(s || '').toLowerCase().replace(/(^|\s|\/|·|-|_)([a-záéíóúñü])/g, function (_, a, b) {
-      return a + b.toUpperCase();
+    // Misma regla que Worker: no usar \w (rompe tildes → MáLaga).
+    return String(s || '').replace(/[0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/g, function (w) {
+      var lower = w.toLocaleLowerCase('es-ES');
+      return lower.charAt(0).toLocaleUpperCase('es-ES') + lower.slice(1);
     });
   }
   function abrirModalAviso() {
@@ -3689,8 +3691,8 @@
   function construirMensajeAviso(opts) {
     var tipo = opts.tipo || 'TREN';
     var tren = opts.tren || 'S/N';
-    var origen = opts.origen || 'ORIGEN';
-    var destino = opts.destino || 'DESTINO';
+    var origen = titularTexto(opts.origen || 'ORIGEN') || 'ORIGEN';
+    var destino = titularTexto(opts.destino || 'DESTINO') || 'DESTINO';
     var hO = opts.hO || '[HH:MM]';
     var hD = opts.hD || '[HH:MM]';
     var matPart = opts.matPart || '';
@@ -3707,13 +3709,16 @@
     var matchTramo = mensajeRadar.match(/Circulando entre\s+(.+?)\s+y\s+(.+?)\.\s*Próxima parada prevista:\s+(.+?)(?:\s+a las\s+([^\.]+))?\./i);
     var matchEnRuta = mensajeRadar.match(/En ruta hacia\s+(.+?)\.\s*Próxima parada prevista:\s+(.+?)\s+a las\s+([^\.]+)h\./i);
     if (matchTramo) {
-      return 'Circula con ' + demora + ' minutos de demora entre ' + matchTramo[1].trim() + ' y ' + matchTramo[2].trim() +
-        '. Próxima parada prevista: ' + matchTramo[3].trim() +
+      return 'Circula con ' + demora + ' minutos de demora entre ' +
+        titularTexto(matchTramo[1].trim()) + ' y ' + titularTexto(matchTramo[2].trim()) +
+        '. Próxima parada prevista: ' + titularTexto(matchTramo[3].trim()) +
         (matchTramo[4] ? ' a las ' + matchTramo[4].trim() : '') + '. [INCIDENCIA_AQUI].';
     }
     if (matchEnRuta) {
-      return 'Circula con ' + demora + ' minutos de demora. En ruta hacia ' + matchEnRuta[1].trim() +
-        '. Llegada prevista a ' + matchEnRuta[2].trim() + ': ' + matchEnRuta[3].trim() + 'h. [INCIDENCIA_AQUI].';
+      return 'Circula con ' + demora + ' minutos de demora. En ruta hacia ' +
+        titularTexto(matchEnRuta[1].trim()) +
+        '. Llegada prevista a ' + titularTexto(matchEnRuta[2].trim()) + ': ' +
+        matchEnRuta[3].trim() + 'h. [INCIDENCIA_AQUI].';
     }
     return 'Circula con ' + demora + ' minutos de demora. Ubicación operativa pendiente de confirmar. [INCIDENCIA_AQUI].';
   }
@@ -3775,11 +3780,11 @@
       if (!contexto || contexto.ok === false) return;
       var demora = Number.isFinite(Number(contexto.demoraMin)) ? Number(contexto.demoraMin) : id.demora;
       var situacion = 'Circula con ' + demora + ' minutos de demora.';
-      var ubicacion = String(contexto.ubicacion || '').trim();
+      var ubicacion = titularTexto(String(contexto.ubicacion || '').trim());
       if (ubicacion) situacion += ' ' + ubicacion + '.';
       var proxima = contexto.proxima || null;
       if (proxima && proxima.nombre) {
-        situacion += ' Próxima parada: ' + proxima.nombre +
+        situacion += ' Próxima parada: ' + titularTexto(proxima.nombre) +
           (proxima.hora ? ' (' + proxima.hora + 'h).' : '.');
       }
       if (contexto.llegadaDestino) {
@@ -3794,7 +3799,7 @@
           }
         }
         if (okLlegada) {
-          situacion += ' Llegada prevista a ' + id.destino + ': ' + contexto.llegadaDestino + 'h.';
+          situacion += ' Llegada prevista a ' + titularTexto(id.destino) + ': ' + contexto.llegadaDestino + 'h.';
         }
       }
       situacion += ' [INCIDENCIA_AQUI].';
