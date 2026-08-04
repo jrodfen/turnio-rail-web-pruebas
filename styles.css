@@ -582,6 +582,8 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .home-glance-card{margin:0;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
 .home-glance-card:hover{box-shadow:0 8px 24px rgba(21,34,50,.1)}
 .home-glance-card:active{transform:scale(.99)}
+.home-glance-actions{display:inline-flex;align-items:center;gap:6px;flex-shrink:0}
+.home-map-btn{min-width:36px;padding-left:10px;padding-right:10px;font-size:16px;line-height:1}
 #home-card-radar{cursor:default}
 #home-card-radar:active{transform:none}
 .welcome-list{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.35}
