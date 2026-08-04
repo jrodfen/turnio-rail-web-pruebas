@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.48">
+    <link rel="stylesheet" href="./styles.css?v=V.49">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -35,6 +35,23 @@
           <button type="submit" class="btn primary">Entrar en TURNIO</button>
           <button id="btn-cambiar-email" type="button" class="text-btn">Usar otro correo</button>
         </div>
+        <p class="login-or">¿Sin acceso?</p>
+        <button id="btn-abrir-solicitud" type="button" class="btn secondary">Solicitar acceso</button>
+      </form>
+      <form id="solicitud-form" class="login-card" hidden autocomplete="off">
+        <h2>Solicitar acceso</h2>
+        <p class="login-solicitud-help">Indica tus datos. Un administrador revisar&aacute; la petici&oacute;n y te asignar&aacute; el perfil seg&uacute;n tu centro.</p>
+        <label for="solicitud-email">Correo de acceso</label>
+        <input id="solicitud-email" name="solicitud-email" type="email" autocomplete="email" required maxlength="120" placeholder="tu@correo.com">
+        <label for="solicitud-nombre">Nombre para tu perfil</label>
+        <input id="solicitud-nombre" name="solicitud-nombre" type="text" autocomplete="name" required maxlength="80" placeholder="Nombre y apellidos">
+        <label for="solicitud-centro">Centro / unidad</label>
+        <input id="solicitud-centro" name="solicitud-centro" type="text" required maxlength="120" placeholder="Ej. CGO Sevilla">
+        <label for="solicitud-motivo">¿Por qu&eacute; necesitas acceso?</label>
+        <textarea id="solicitud-motivo" name="solicitud-motivo" rows="4" required maxlength="2000" placeholder="Explica brevemente tu uso previsto (m&iacute;n. 20 caracteres)"></textarea>
+        <input id="solicitud-website" name="website" type="text" tabindex="-1" autocomplete="off" class="login-hp" aria-hidden="true">
+        <button id="btn-enviar-solicitud" type="submit" class="btn primary">Enviar solicitud</button>
+        <button id="btn-cancelar-solicitud" type="button" class="text-btn">Volver al acceso</button>
       </form>
     </section>
     <main id="app-shell" class="app" hidden>
@@ -750,6 +767,18 @@
           <div id="admin-sugerencia-lista" class="admin-aviso-lista" aria-live="polite"></div>
         </div>
 
+        <div class="admin-aviso-box" id="admin-solicitud-box">
+          <div class="admin-mant-head">
+            <div>
+              <h3 class="admin-nuevo-title">Solicitudes de acceso</h3>
+              <p class="admin-nuevo-help">Peticiones desde el login. Al aprobar eliges el rol (el usuario no lo elige). Rechazar cierra la solicitud.</p>
+            </div>
+            <button type="button" class="btn secondary" id="btn-admin-solicitud-refrescar">Actualizar</button>
+          </div>
+          <p id="admin-solicitud-meta" class="admin-meta">Cargando&hellip;</p>
+          <div id="admin-solicitud-lista" class="admin-aviso-lista" aria-live="polite"></div>
+        </div>
+
         <form id="admin-form-clave" class="admin-nuevo admin-clave-box" autocomplete="off">
           <h3 class="admin-nuevo-title">Clave de acceso ADMIN</h3>
           <p class="admin-nuevo-help">Define una contrase&ntilde;a para entrar sin c&oacute;digo por correo. Solo perfiles ADMIN. M&iacute;nimo 8 caracteres. La primera vez puedes entrar con OTP y luego fijar la clave aqu&iacute;.</p>
@@ -877,6 +906,20 @@
         <p class="aviso-app-hint">Si cierras sin aceptar, volver&aacute; a salir la pr&oacute;xima vez.</p>
         <div class="vig-modal-actions">
           <button type="button" class="btn primary" id="btn-sugerencia-aceptar">Aceptar</button>
+        </div>
+      </div>
+    </div>
+    <div id="modal-solicitud-acceso" class="vig-modal aviso-app-modal" hidden>
+      <div class="vig-modal-card aviso-app-card" role="dialog" aria-modal="true" aria-labelledby="titulo-solicitud-acceso">
+        <div class="aviso-modal-head">
+          <h2 id="titulo-solicitud-acceso">Solicitud de acceso</h2>
+          <button type="button" class="aviso-close" id="btn-solicitud-modal-cerrar" aria-label="Cerrar">&times;</button>
+        </div>
+        <p id="solicitud-modal-meta" class="aviso-app-hint" style="margin-top:0"></p>
+        <p id="solicitud-modal-cuerpo" class="aviso-app-cuerpo"></p>
+        <div class="vig-modal-actions">
+          <button type="button" class="btn secondary" id="btn-solicitud-modal-ir">Ir a Administraci&oacute;n</button>
+          <button type="button" class="btn primary" id="btn-solicitud-modal-ok">Enterado</button>
         </div>
       </div>
     </div>
@@ -1501,12 +1544,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.48"></script>
-    <script src="./conexiones.js?v=V.48"></script>
+    <script src="./turnio-config.js?v=V.49"></script>
+    <script src="./conexiones.js?v=V.49"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas9"></script>
-    <script src="./app.js?v=V.48"></script>
+    <script src="./app.js?v=V.49"></script>
   </body>
 </html>
 

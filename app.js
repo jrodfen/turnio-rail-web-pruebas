@@ -1247,8 +1247,120 @@
     if (avisoModal && !avisoModal.hidden) return;
     try {
       var d = await call('sugerencia_pendiente', {});
-      if (d && d.pendiente && d.sugerencia) mostrarModalSugerencia_(d.sugerencia);
+      if (d && d.pendiente && d.sugerencia) {
+        mostrarModalSugerencia_(d.sugerencia);
+        return;
+      }
     } catch (_) { /* no bloquear entrada */ }
+    comprobarSolicitudAccesoAlEntrar_();
+  }
+
+  var solicitudCache_ = [];
+
+  function mostrarModalSolicitudAcceso_(item, total) {
+    var modal = document.getElementById('modal-solicitud-acceso');
+    var meta = document.getElementById('solicitud-modal-meta');
+    var cuerpo = document.getElementById('solicitud-modal-cuerpo');
+    if (!modal || !item) return;
+    var n = Number(total || 1);
+    if (meta) {
+      meta.textContent = (n > 1 ? (n + ' solicitudes pendientes · ') : '') +
+        String(item.email || '') +
+        (item.centro ? (' · ' + item.centro) : '');
+    }
+    if (cuerpo) {
+      cuerpo.textContent = (item.nombre || 'Sin nombre') + '\n\n' + String(item.motivo || '');
+    }
+    modal.hidden = false;
+  }
+
+  function cerrarModalSolicitudAcceso_() {
+    var modal = document.getElementById('modal-solicitud-acceso');
+    if (modal) modal.hidden = true;
+  }
+
+  async function comprobarSolicitudAccesoAlEntrar_() {
+    if (!sessionProfile.is_admin) return;
+    var sugModal = document.getElementById('modal-sugerencia');
+    if (sugModal && !sugModal.hidden) return;
+    try {
+      var d = await call('solicitud_acceso_pendiente', {});
+      if (d && d.pendiente && d.solicitud) {
+        mostrarModalSolicitudAcceso_(d.solicitud, d.total);
+      }
+    } catch (_) { /* no bloquear */ }
+  }
+
+  function htmlSolicitudItem_(item) {
+    if (!item || !item.id) return '';
+    var estado = String(item.estado || 'pendiente');
+    var meta = [];
+    var f = fmtAvisoFecha_(item.created_at);
+    if (f) meta.push(f);
+    if (item.centro) meta.push(item.centro);
+    if (estado !== 'pendiente') meta.push(estado + (item.role_code ? (' · ' + item.role_code) : ''));
+    var actions = '';
+    if (estado === 'pendiente') {
+      actions =
+        '<div class="admin-solicitud-actions">' +
+          '<label class="admin-solicitud-rol">Rol' +
+            '<select data-solicitud-rol="' + esc(item.id) + '">' +
+              '<option value="CGO" selected>CGO</option>' +
+              '<option value="LECTURA">LECTURA</option>' +
+              '<option value="COMERCIAL">COMERCIAL</option>' +
+              '<option value="INVITADO">INVITADO</option>' +
+            '</select>' +
+          '</label>' +
+          '<button type="button" class="btn primary" data-solicitud-aprobar="' + esc(item.id) + '">Aprobar</button>' +
+          '<button type="button" class="btn secondary" data-solicitud-rechazar="' + esc(item.id) + '">Rechazar</button>' +
+        '</div>';
+    }
+    return '<article class="admin-aviso-item admin-solicitud-item is-' + esc(estado) + '" data-solicitud-id="' + esc(item.id) + '">' +
+      '<button type="button" class="aviso-item-toggle" data-solicitud-toggle aria-expanded="false">' +
+        '<span class="aviso-item-toggle-main">' +
+          '<span class="admin-sug-tipo">' + esc(estado) + '</span>' +
+          '<b>' + esc(item.nombre || item.email || 'Solicitud') + '</b>' +
+        '</span>' +
+        '<span class="aviso-item-chev" aria-hidden="true">▸</span>' +
+      '</button>' +
+      '<div class="aviso-item-panel" hidden>' +
+        (meta.length ? '<p class="admin-aviso-item-meta">' + esc(meta.join(' · ')) + '</p>' : '') +
+        '<p class="admin-aviso-item-body"><b>' + esc(item.email || '') + '</b>\n' + esc(item.motivo || '') + '</p>' +
+        actions +
+      '</div>' +
+      '</article>';
+  }
+
+  function pintarAdminSolicitudes_(list) {
+    var box = document.getElementById('admin-solicitud-lista');
+    var meta = document.getElementById('admin-solicitud-meta');
+    var arr = Array.isArray(list) ? list : [];
+    solicitudCache_ = arr;
+    var pend = arr.filter(function (x) { return x && x.estado === 'pendiente'; }).length;
+    if (meta) {
+      meta.textContent = arr.length
+        ? (arr.length + ' solicitud' + (arr.length === 1 ? '' : 'es') +
+          (pend ? (' · ' + pend + ' pendiente' + (pend === 1 ? '' : 's')) : ''))
+        : 'No hay solicitudes todavía.';
+    }
+    if (!box) return;
+    if (!arr.length) {
+      box.innerHTML = '<div class="empty">Nadie ha solicitado acceso todavía.</div>';
+      return;
+    }
+    box.innerHTML = arr.map(htmlSolicitudItem_).join('');
+  }
+
+  async function cargarAdminSolicitudes_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-solicitud-meta');
+    if (meta) meta.textContent = 'Cargando…';
+    try {
+      var d = await call('solicitud_acceso_listar', {});
+      pintarAdminSolicitudes_(d && d.solicitudes);
+    } catch (err) {
+      if (meta) meta.textContent = 'Error: ' + String(err.message || err);
+    }
   }
 
   async function crearAdminPerfil_(ev) {
@@ -1391,6 +1503,18 @@
       admin_clave_invalida: 'La clave debe tener entre 8 y 72 caracteres.',
       admin_clave_solo_admin: 'Solo se puede definir clave en perfiles ADMIN.',
       admin_clave_failed: 'No se pudo guardar la clave de acceso.',
+      solicitud_email_invalido: 'Correo no válido.',
+      solicitud_nombre_requerido: 'Indica un nombre para el perfil.',
+      solicitud_centro_requerido: 'Indica tu centro o unidad.',
+      solicitud_motivo_corto: 'El motivo debe tener al menos 20 caracteres.',
+      solicitud_ya_pendiente: 'Ya tienes una solicitud pendiente con ese correo.',
+      solicitud_ya_tiene_perfil: 'Ese correo ya tiene perfil en TURNIO.',
+      solicitud_rate_limit: 'Demasiadas solicitudes. Prueba más tarde.',
+      solicitud_kv_missing: 'No hay almacenamiento para solicitudes.',
+      solicitud_no_encontrada: 'Solicitud no encontrada.',
+      solicitud_ya_resuelta: 'Esa solicitud ya está resuelta.',
+      solicitud_rol_admin_prohibido: 'No se puede aprobar como ADMIN desde aquí. Usa Añadir usuario.',
+      solicitud_unavailable: 'No se pudo enviar la solicitud.',
       role_write_required: 'Solo CGO o ADMIN pueden publicar combinados.',
       combinados_sin_filas: 'No hay filas para publicar.',
       combinados_demasiado_grande: 'El fichero es demasiado grande.',
@@ -2687,6 +2811,7 @@
       cargarAdminPerfiles_();
       cargarAdminAviso_();
       cargarAdminSugerencias_();
+      cargarAdminSolicitudes_();
       cargarAdminMantenimiento_();
       cargarAdminAccesos_();
     }
@@ -5610,6 +5735,78 @@
     document.getElementById('email').focus();
   });
 
+  var solicitudForm = document.getElementById('solicitud-form');
+  function mostrarFormSolicitud_(on) {
+    loginForm.hidden = !!on;
+    if (solicitudForm) solicitudForm.hidden = !on;
+  }
+  var btnAbrirSol = document.getElementById('btn-abrir-solicitud');
+  if (btnAbrirSol) {
+    btnAbrirSol.addEventListener('click', function () {
+      var em = document.getElementById('solicitud-email');
+      var loginEm = document.getElementById('email');
+      if (em && loginEm && loginEm.value && !em.value) em.value = loginEm.value;
+      mostrarFormSolicitud_(true);
+      setStatus('ready', 'Completa la solicitud de acceso.');
+      if (em) em.focus();
+    });
+  }
+  var btnCancelSol = document.getElementById('btn-cancelar-solicitud');
+  if (btnCancelSol) {
+    btnCancelSol.addEventListener('click', function () {
+      mostrarFormSolicitud_(false);
+      setStatus('ready', 'Introduce el correo autorizado.');
+    });
+  }
+  if (solicitudForm) {
+    solicitudForm.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      var email = String(document.getElementById('solicitud-email').value || '').trim().toLowerCase();
+      var nombre = String(document.getElementById('solicitud-nombre').value || '').trim();
+      var centro = String(document.getElementById('solicitud-centro').value || '').trim();
+      var motivo = String(document.getElementById('solicitud-motivo').value || '').trim();
+      var website = String(document.getElementById('solicitud-website').value || '');
+      var btn = document.getElementById('btn-enviar-solicitud');
+      if (!email || !nombre || !centro || motivo.length < 20) {
+        setStatus('error', motivo.length < 20
+          ? 'El motivo debe tener al menos 20 caracteres.'
+          : 'Completa correo, nombre, centro y motivo.');
+        return;
+      }
+      if (btn) btn.disabled = true;
+      setStatus('pending', 'Enviando solicitud…');
+      try {
+        var r = await fetch(api + '/api/turnio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify({
+            accion: 'solicitud_acceso',
+            email: email,
+            nombre: nombre,
+            centro: centro,
+            motivo: motivo,
+            website: website,
+            clientId: clientId()
+          })
+        });
+        var d;
+        try { d = await r.json(); } catch (_) { throw new Error('Respuesta no válida del servicio.'); }
+        if (!r.ok || d.ok === false) {
+          throw new Error(mensajeErrorApi_(d) || 'No se pudo enviar la solicitud.');
+        }
+        solicitudForm.reset();
+        mostrarFormSolicitud_(false);
+        setStatus('ready',
+          'Solicitud enviada. Te avisaremos por correo cuando se revise. Mientras, puedes volver a intentar entrar si ya tenías acceso.');
+      } catch (err) {
+        setStatus('error', String(err.message || err));
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  }
+
   function normalizarErrorOtp_(err) {
     var texto = String((err && err.message) || err || 'No se pudo completar el acceso.');
     if (/rate limit|60 seconds|too many/i.test(texto)) return 'Espera un minuto antes de solicitar otro código.';
@@ -5965,6 +6162,71 @@
   if (modalSug) {
     modalSug.addEventListener('click', function (e) {
       if (e.target === modalSug) cerrarModalSugerencia_(true);
+    });
+  }
+  var btnSolRef = document.getElementById('btn-admin-solicitud-refrescar');
+  if (btnSolRef) btnSolRef.addEventListener('click', cargarAdminSolicitudes_);
+  var adminSolLista = document.getElementById('admin-solicitud-lista');
+  if (adminSolLista) {
+    adminSolLista.addEventListener('click', async function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var btnToggle = t.closest('[data-solicitud-toggle]');
+      if (btnToggle) {
+        toggleAvisoItem_(btnToggle);
+        return;
+      }
+      var btnOk = t.closest('[data-solicitud-aprobar]');
+      if (btnOk) {
+        var idOk = btnOk.getAttribute('data-solicitud-aprobar');
+        var sel = adminSolLista.querySelector('[data-solicitud-rol="' + idOk + '"]');
+        var role = String(sel && sel.value || 'LECTURA').toUpperCase();
+        if (!confirm('¿Aprobar esta solicitud con rol ' + role + '?')) return;
+        btnOk.disabled = true;
+        try {
+          await call('solicitud_acceso_aprobar', { id: idOk, role_code: role });
+          toast('Solicitud aprobada. Perfil creado.', 'success');
+          cargarAdminSolicitudes_();
+          cargarAdminPerfiles_();
+        } catch (err) {
+          toast(String(err.message || err), 'error');
+        } finally {
+          btnOk.disabled = false;
+        }
+        return;
+      }
+      var btnNo = t.closest('[data-solicitud-rechazar]');
+      if (btnNo) {
+        var idNo = btnNo.getAttribute('data-solicitud-rechazar');
+        if (!confirm('¿Rechazar esta solicitud?')) return;
+        btnNo.disabled = true;
+        try {
+          await call('solicitud_acceso_rechazar', { id: idNo });
+          toast('Solicitud rechazada.', 'success');
+          cargarAdminSolicitudes_();
+        } catch (err) {
+          toast(String(err.message || err), 'error');
+        } finally {
+          btnNo.disabled = false;
+        }
+      }
+    });
+  }
+  var btnSolModalOk = document.getElementById('btn-solicitud-modal-ok');
+  if (btnSolModalOk) btnSolModalOk.addEventListener('click', cerrarModalSolicitudAcceso_);
+  var btnSolModalX = document.getElementById('btn-solicitud-modal-cerrar');
+  if (btnSolModalX) btnSolModalX.addEventListener('click', cerrarModalSolicitudAcceso_);
+  var btnSolModalIr = document.getElementById('btn-solicitud-modal-ir');
+  if (btnSolModalIr) {
+    btnSolModalIr.addEventListener('click', function () {
+      cerrarModalSolicitudAcceso_();
+      go('admin');
+    });
+  }
+  var modalSol = document.getElementById('modal-solicitud-acceso');
+  if (modalSol) {
+    modalSol.addEventListener('click', function (e) {
+      if (e.target === modalSol) cerrarModalSolicitudAcceso_();
     });
   }
   var adminListaEl = document.getElementById('admin-lista');

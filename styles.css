@@ -1275,3 +1275,12 @@ body.monitor-mode #fab-overlay{display:none!important}
   .fab-snake-label{background:var(--card);color:var(--text)}
 }
 
+
+.login-solicitud-help{margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.4}
+.login-hp{position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+.admin-solicitud-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:10px}
+.admin-solicitud-rol{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.admin-solicitud-rol select{min-width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:10px}
+.admin-solicitud-item.is-aprobada .admin-sug-tipo{background:#e7f6ec;color:#146c2e}
+.admin-solicitud-item.is-rechazada .admin-sug-tipo{background:#fdecea;color:#b3261e}
+.admin-solicitud-item .admin-aviso-item-body{white-space:pre-wrap}
