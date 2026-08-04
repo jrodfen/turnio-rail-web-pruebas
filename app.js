@@ -4929,7 +4929,12 @@
         '<strong style="display:block;margin-bottom:6px;">Retraso (Renfe)</strong>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#008000;"></div> ≤ 15 min</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FFDE21;"></div> 16 – 60 min</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>';
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>' +
+        '<strong style="display:block;margin:8px 0 6px;">LTV Adif</strong>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#dc2626;"></div> ≤ 30 km/h</div>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ea580c;"></div> ≤ 60 km/h</div>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ca8a04;"></div> ≤ 100 km/h</div>' +
+        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#2563eb;"></div> &gt; 100 km/h</div>';
       return div;
     };
     leyenda.addTo(map);
@@ -5028,6 +5033,166 @@
       window._adifActivo = false;
       actualizarBtnAdif_();
       toast('No se pudo cargar la capa ADIF.', 'error');
+    }
+  }
+
+  /** LTV Adif (Experience ArcGIS): puntos de limitación temporal de velocidad. */
+  var LTV_FS_URL_ = 'https://services7.arcgis.com/XTupIrLX53AjaJqO/arcgis/rest/services/LTV_2/FeatureServer/0/query';
+  var LTV_REFRESH_MS_ = 10 * 60 * 1000;
+  window._ltvActivo = false;
+  window._ltvLayer = null;
+  window._ltvTimer = null;
+  window._ltvCargando = false;
+
+  function colorLtvVel_(v) {
+    var n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return '#64748b';
+    if (n <= 30) return '#dc2626';
+    if (n <= 60) return '#ea580c';
+    if (n <= 100) return '#ca8a04';
+    return '#2563eb';
+  }
+
+  function formatearFechaLtv_(ms) {
+    var n = Number(ms);
+    if (!Number.isFinite(n) || n <= 0) return '';
+    try {
+      return new Date(n).toLocaleString('es-ES', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch (_) { return ''; }
+  }
+
+  function popupLtvHtml_(props) {
+    var p = props || {};
+    var vel = p.RESTRICCIONVELOCIDAD != null ? (String(p.RESTRICCIONVELOCIDAD) + ' km/h') : '—';
+    var linea = String(p.DESCLINEA || p.CODLINEA || '—');
+    var tramo = [p.DESCPSINI, p.DESCPSFIN].filter(Boolean).join(' → ') || '—';
+    var pk = '';
+    if (p.PKINI != null || p.PKFIN != null) {
+      pk = 'PK ' + (p.PKINI != null ? p.PKINI : '?') + ' – ' + (p.PKFIN != null ? p.PKFIN : '?');
+    }
+    var motivo = String(p.MOTIVO || p.OBSERVACIONES || '').trim();
+    var vigor = formatearFechaLtv_(p.FECHAVIGORLTV);
+    var fin = formatearFechaLtv_(p.FECHAFINPREV);
+    return '<div class="mapa-ltv-popup">' +
+      '<div class="mapa-popup-linea">LTV · ' + esc(vel) + '</div>' +
+      '<div class="mapa-popup-msg"><b>' + esc(linea) + '</b><br>' +
+      esc(tramo) +
+      (pk ? ('<br>' + esc(pk)) : '') +
+      (motivo ? ('<br>' + esc(motivo)) : '') +
+      (vigor ? ('<br>Vigor: ' + esc(vigor)) : '') +
+      (fin ? ('<br>Fin prev.: ' + esc(fin)) : '') +
+      '</div></div>';
+  }
+
+  function actualizarBtnLtv_() {
+    var btn = document.getElementById('btn-toggle-ltv');
+    if (!btn) return;
+    var on = !!window._ltvActivo;
+    btn.classList.toggle('activo', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.title = on
+      ? 'Ocultar LTV Adif (se detiene la autoactualización).'
+      : 'Mostrar limitaciones temporales de velocidad (Adif). Se actualiza sola cada 10 min.';
+  }
+
+  function pararAutoLtv_() {
+    if (window._ltvTimer) {
+      clearInterval(window._ltvTimer);
+      window._ltvTimer = null;
+    }
+  }
+
+  function arrancarAutoLtv_() {
+    pararAutoLtv_();
+    window._ltvTimer = setInterval(function () {
+      if (!window._ltvActivo) return;
+      cargarCapaLtv_({ silent: true }).catch(function () {});
+    }, LTV_REFRESH_MS_);
+  }
+
+  function quitarCapaLtv_() {
+    var map = window._mapaLeaflet;
+    pararAutoLtv_();
+    if (map && window._ltvLayer && map.hasLayer(window._ltvLayer)) {
+      map.removeLayer(window._ltvLayer);
+    }
+    window._ltvLayer = null;
+    window._ltvActivo = false;
+    actualizarBtnLtv_();
+  }
+
+  async function cargarCapaLtv_(opts) {
+    var silent = !!(opts && opts.silent);
+    var map = window._mapaLeaflet;
+    if (!map || !window.L) throw new Error('Mapa no listo');
+    if (window._ltvCargando) return window._ltvLayer;
+    window._ltvCargando = true;
+    try {
+      var url = LTV_FS_URL_ +
+        '?where=1%3D1' +
+        '&outFields=RESTRICCIONVELOCIDAD,DESCLINEA,CODLINEA,DESCPSINI,DESCPSFIN,PKINI,PKFIN,MOTIVO,OBSERVACIONES,FECHAVIGORLTV,FECHAFINPREV,VIAS,TIPOTREN' +
+        '&returnGeometry=true&outSR=4326&f=geojson&resultRecordCount=2000';
+      var res = await fetch(url, { method: 'GET', cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var geo = await res.json();
+      if (!geo || geo.type !== 'FeatureCollection') throw new Error('GeoJSON inválido');
+      var layer = L.geoJSON(geo, {
+        pointToLayer: function (feature, latlng) {
+          var vel = feature && feature.properties && feature.properties.RESTRICCIONVELOCIDAD;
+          var color = colorLtvVel_(vel);
+          return L.circleMarker(latlng, {
+            radius: 6,
+            color: '#fff',
+            weight: 1.5,
+            fillColor: color,
+            fillOpacity: 0.9
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          layer.bindPopup(popupLtvHtml_(feature && feature.properties), {
+            maxWidth: 280,
+            className: 'mapa-popup-wrap'
+          });
+        }
+      });
+      if (window._ltvLayer && map.hasLayer(window._ltvLayer)) {
+        map.removeLayer(window._ltvLayer);
+      }
+      window._ltvLayer = layer;
+      layer.addTo(map);
+      // Trenes por encima de LTV.
+      mapMarkers.forEach(function (m) {
+        if (m && m.bringToFront) m.bringToFront();
+      });
+      var n = Array.isArray(geo.features) ? geo.features.length : 0;
+      if (!silent) toast('LTV Adif: ' + n + ' limitaciones');
+      return layer;
+    } finally {
+      window._ltvCargando = false;
+    }
+  }
+
+  async function toggleCapaLtv_() {
+    var map = window._mapaLeaflet;
+    if (!map) {
+      toast('Abre el mapa primero.', 'error');
+      return;
+    }
+    if (window._ltvActivo) {
+      quitarCapaLtv_();
+      return;
+    }
+    try {
+      await cargarCapaLtv_({ silent: false });
+      window._ltvActivo = true;
+      actualizarBtnLtv_();
+      arrancarAutoLtv_();
+    } catch (err) {
+      quitarCapaLtv_();
+      toast('No se pudo cargar LTV Adif: ' + String(err && err.message ? err.message : err), 'error');
     }
   }
 
@@ -6739,6 +6904,10 @@
   document.getElementById('btn-toggle-vias').addEventListener('click', toggleOrmDropdown);
   var btnAdif = document.getElementById('btn-toggle-adif');
   if (btnAdif) btnAdif.addEventListener('click', toggleCapaAdif_);
+  var btnLtv = document.getElementById('btn-toggle-ltv');
+  if (btnLtv) btnLtv.addEventListener('click', function () {
+    toggleCapaLtv_().catch(function () {});
+  });
   document.querySelectorAll('.orm-option').forEach(function (el) {
     el.addEventListener('click', function (e) {
       e.stopPropagation();
