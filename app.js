@@ -6344,6 +6344,10 @@
         return 'https://apps.powerapps.com/play/e/default-7ad7404b-12f9-416e-afc5-c548c328a90b/a/deb6633f-196a-48c7-b3c8-1d263442cacb?tenantId=7ad7404b-12f9-416e-afc5-c548c328a90b';
       case 'sim':
         return 'https://mitweb.sir.renfe.es/CIMA/index.aspx';
+      case 'orbita':
+      case 'pos-orbita':
+      case 'posorbita':
+        return 'https://pos-orbita.sir.renfe.es/';
       default:
         return '';
     }
