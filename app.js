@@ -3657,16 +3657,57 @@
     if (isNaN(n)) return 'TREN';
     if (n >= 2000 && n <= 3999) return 'AVE';
     if (n >= 4000 && n <= 5999) return 'AVE';
-    if (n >= 6000 && n <= 7999) return 'ALVIA';
-    if (n >= 8000 && n <= 9999) return 'AVANT';
+    if (n >= 6000 && n <= 7999) return 'Alvia';
+    if (n >= 8000 && n <= 9999) return 'Avant';
     if (n >= 100 && n <= 999) return 'IR';
     if (n >= 1000 && n <= 1999) return 'AC';
     if (n >= 12000 && n <= 18999) return 'MD';
-    if (n >= 19500 && n <= 29999) return 'CC';
+    if (n >= 19500 && n <= 29999) return 'Cercanías';
     if (n >= 30500 && n <= 30999) return 'MD';
-    if (n >= 31000 && n <= 32999) return 'CC';
+    if (n >= 31000 && n <= 32999) return 'Cercanías';
     if (n < 100 || (n >= 10000 && n < 12000) || (n >= 30000 && n < 30500)) return 'LD';
     return 'TREN';
+  }
+  /** Etiqueta de producto del aviso = la de la tarjeta Radar cuando exista. */
+  function etiquetaProductoAviso_(productoOTipo) {
+    var p = String(productoOTipo || '').trim();
+    if (!p) return '';
+    if (/^cerc(\.|an[ií]as)?\b/i.test(p) || /^cc$/i.test(p)) return 'Cercanías';
+    if (/^alvia$/i.test(p)) return 'Alvia';
+    if (/^avant(\s+exp\.?)?$/i.test(p)) return /^avant\s+exp/i.test(p) ? 'Avant Exp.' : 'Avant';
+    if (/^avlo$/i.test(p)) return 'Avlo';
+    if (/^intercity$/i.test(p)) return 'Intercity';
+    if (/^ave(\s+tgv)?$/i.test(p)) return /^ave\s+tgv/i.test(p) ? 'AVE TGV' : 'AVE';
+    if (/^ave\s*int/i.test(p)) return 'AVE Int.';
+    if (/^euromed$/i.test(p)) return 'Euromed';
+    if (/^av\s*city$/i.test(p)) return 'AV City';
+    if (/^md$/i.test(p)) return 'MD';
+    if (/^ld$/i.test(p)) return 'LD';
+    if (/^ir$/i.test(p)) return 'IR';
+    if (/^ac$/i.test(p)) return 'AC';
+    if (/^trd$/i.test(p)) return 'TRD';
+    if (/^talgo$/i.test(p)) return 'Talgo';
+    if (/^altaria$/i.test(p)) return 'Altaria';
+    if (/^diurno$/i.test(p)) return 'Diurno';
+    if (/^estrella$/i.test(p)) return 'Estrella';
+    if (/^tren\s*hotel$/i.test(p)) return 'Tren Hotel';
+    if (/^regional(\s+exp\.?)?$/i.test(p)) {
+      return /^regional\s+exp/i.test(p) ? 'Regional Exp.' : 'Regional';
+    }
+    if (/^andaluc/i.test(p)) return 'Andalucía Exp.';
+    if (/^catalunya/i.test(p)) return 'Catalunya Exp.';
+    return p;
+  }
+  function productoDesdeAlertaRadar_(alerta) {
+    var desdeProducto = etiquetaProductoAviso_(alerta && alerta.producto);
+    if (desdeProducto) return desdeProducto;
+    var linea = plainText((alerta && alerta.linea) || '');
+    var m = linea.match(/^([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 .]+?)\s+(\d{2,6})\b/);
+    if (m && m[1] && !/^circ/i.test(m[1])) {
+      var desdeLinea = etiquetaProductoAviso_(m[1].trim());
+      if (desdeLinea) return desdeLinea;
+    }
+    return etiquetaProductoAviso_(tipoPorNumeroTren((alerta && alerta.codTren) || '')) || 'TREN';
   }
   function titularTexto(s) {
     // Misma regla que Worker: no usar \w (rompe tildes → MáLaga).
@@ -3677,7 +3718,7 @@
   }
   function abrirModalAviso() {
     if (!exigirEscritura_('Generar avisos')) return;
-    sincronizarFirmaModal();
+    // Firma: oculta por ahora (se configurará desde Ajustes).
     document.getElementById('modal-aviso-cg').hidden = false;
     setTimeout(function () {
       var b = document.getElementById('cg-buscador');
@@ -3697,11 +3738,11 @@
     var hD = opts.hD || '[HH:MM]';
     var matPart = opts.matPart || '';
     var situacion = opts.situacion || 'Circula con demora. [INCIDENCIA_AQUI].';
-    var firma = obtenerFirmaAviso();
     var cuerpo = tipo + ' ' + tren + ' ' + origen + ' ' + hO + 'h - ' + destino + ' ' + hD + 'h' + matPart +
       ' (   v.) ' + situacion;
     if (cuerpo.indexOf('[INCIDENCIA_AQUI]') < 0) cuerpo += ' [INCIDENCIA_AQUI].';
-    return firma + ': ' + cuerpo;
+    // Sin firma por defecto (futuro: Ajustes).
+    return cuerpo;
   }
   function situacionDesdeAlerta(alerta) {
     var demora = Number(alerta.retrasoNum || 0);
@@ -3754,7 +3795,7 @@
       ? alerta.matLabel
       : (alerta.mat && alerta.mat !== '' ? alerta.mat : '');
     return {
-      tipo: tipoPorNumeroTren(trenNum),
+      tipo: productoDesdeAlertaRadar_(alerta),
       tren: trenNum,
       origen: origen,
       destino: destino,
@@ -3972,7 +4013,7 @@
       }
       var d = data.datos;
       document.getElementById('cg-mensaje').value = construirMensajeAviso({
-        tipo: d.tipo || tipoPorNumeroTren(d.tren || num),
+        tipo: etiquetaProductoAviso_(d.tipo) || tipoPorNumeroTren(d.tren || num),
         tren: d.tren || num,
         origen: d.origen || 'ORIGEN',
         destino: d.destino || 'DESTINO',
