@@ -144,6 +144,13 @@ body.monitor-mode #modal-aviso-manual{z-index:31000}
 .mapa-empty p{margin:0 0 8px;font-size:13px;color:var(--muted)}
 .mapa-empty b{color:var(--text)}
 .mapa-div-icon{background:transparent!important;border:none!important;overflow:visible!important}
+.mapa-ltv-div-icon{background:transparent!important;border:none!important}
+.mapa-ltv-marker{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);
+  font-weight:900;font-size:12px;line-height:1;letter-spacing:-0.02em;
+}
 .mapa-marker-shell{position:relative;width:56px;height:56px;overflow:visible;pointer-events:auto}
 .mapa-marker{position:absolute;left:13px;top:13px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2.5px solid #fff;font-weight:900;font-size:10px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:2}
 .mapa-marker-arrow{position:absolute;left:50%;top:50%;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid #fff;z-index:3;filter:drop-shadow(0 0 0 1.5px #fff) drop-shadow(0 1px 2px rgba(0,0,0,.4));pointer-events:none}

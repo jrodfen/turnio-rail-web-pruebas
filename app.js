@@ -5143,12 +5143,20 @@
         pointToLayer: function (feature, latlng) {
           var vel = feature && feature.properties && feature.properties.RESTRICCIONVELOCIDAD;
           var color = colorLtvVel_(vel);
-          return L.circleMarker(latlng, {
-            radius: 6,
-            color: '#fff',
-            weight: 1.5,
-            fillColor: color,
-            fillOpacity: 0.9
+          var nVel = Number(vel);
+          var texto = Number.isFinite(nVel) && nVel > 0 ? String(Math.round(nVel)) : 'LTV';
+          var ink = (nVel > 0 && nVel <= 100) ? '#fff' : '#fff';
+          if (color === '#ca8a04') ink = '#111';
+          return L.marker(latlng, {
+            icon: L.divIcon({
+              className: 'mapa-ltv-div-icon',
+              html: '<div class="mapa-ltv-marker" style="background:' + color + ';color:' + ink + ';">' +
+                texto + '</div>',
+              iconSize: [34, 34],
+              iconAnchor: [17, 17],
+              popupAnchor: [0, -16]
+            }),
+            keyboard: false
           });
         },
         onEachFeature: function (feature, layer) {
