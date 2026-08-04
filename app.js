@@ -816,17 +816,41 @@
     }).join('');
   }
 
-  function pintarAdminAccesos_(lista, resumen) {
+  function pintarAlertasCompartidas_(alertas) {
+    var box = document.getElementById('admin-accesos-alertas');
+    if (!box) return;
+    var rows = Array.isArray(alertas) ? alertas : [];
+    if (!rows.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = rows.map(function (a) {
+      var ips = (a.ips || []).join(', ');
+      var lugares = (a.lugares || []).join(' · ');
+      return '<button type="button" class="admin-acceso-alerta" data-acceso-email="' + esc(a.email || '') + '">' +
+        '<b>Posible cuenta compartida · ' + esc(a.email || '—') + '</b>' +
+        '<span>' + esc(String(a.n_ips || 0)) + ' IPs en ' + esc(String(a.ventana_min || 120)) + ' min' +
+        (a.role ? (' · ' + esc(a.role)) : '') +
+        '<br>' + esc(ips) +
+        (lugares ? ('<br>' + esc(lugares)) : '') +
+        '<br>' + esc(fmtAccesoHora_(a.desde)) + ' → ' + esc(fmtAccesoHora_(a.hasta)) +
+        '</span></button>';
+    }).join('');
+  }
+
+  function pintarAdminAccesos_(lista, resumen, alertas) {
     var box = document.getElementById('admin-accesos-lista');
     var meta = document.getElementById('admin-accesos-meta');
     if (!box) return;
     var rows = Array.isArray(lista) ? lista : [];
-    var f = leerFiltrosAccesos_();
     if (meta) {
       meta.textContent = rows.length
         ? (rows.length + ' registro' + (rows.length === 1 ? '' : 's'))
         : 'Sin accesos con estos filtros.';
     }
+    pintarAlertasCompartidas_(alertas);
     pintarResumenCiudadesAccesos_(resumen);
     if (!rows.length) {
       box.innerHTML = '<div class="empty" style="padding:8px;">Sin datos.</div>';
@@ -863,7 +887,7 @@
         ciudad: f.ciudad,
         solo_denegados: f.resultado === 'denegados'
       });
-      pintarAdminAccesos_(d && d.accesos, d && d.resumen_ciudades);
+      pintarAdminAccesos_(d && d.accesos, d && d.resumen_ciudades, d && d.alertas_compartidas);
     } catch (err) {
       if (meta) meta.textContent = 'Error: ' + String(err.message || err);
     }
@@ -5790,6 +5814,20 @@
         inp.value = chip.getAttribute('data-acceso-ciudad') || '';
         cargarAdminAccesos_();
       }
+    });
+  }
+  var accesosAlertas = document.getElementById('admin-accesos-alertas');
+  if (accesosAlertas) {
+    accesosAlertas.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-acceso-email]');
+      if (!btn) return;
+      var inp = document.getElementById('admin-accesos-email');
+      var periodo = document.getElementById('admin-accesos-periodo');
+      var resultado = document.getElementById('admin-accesos-resultado');
+      if (inp) inp.value = btn.getAttribute('data-acceso-email') || '';
+      if (periodo) periodo.value = '7d';
+      if (resultado) resultado.value = 'ok';
+      cargarAdminAccesos_();
     });
   }
   var adminBuscar = document.getElementById('admin-buscar');

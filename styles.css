@@ -386,6 +386,13 @@ html.turnio-es-comercial #fab-container{display:none!important}
   background:var(--card);color:var(--text);text-transform:none;letter-spacing:0
 }
 .admin-accesos-resumen{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.admin-accesos-alertas{display:grid;gap:8px;margin:0 0 10px}
+.admin-acceso-alerta{
+  border:1px solid rgba(180,83,9,.4);background:rgba(180,83,9,.1);border-radius:12px;padding:10px 12px;text-align:left;
+  cursor:pointer;color:#9a3412
+}
+.admin-acceso-alerta b{display:block;font-size:13px;margin:0 0 4px;color:#9a3412}
+.admin-acceso-alerta span{font-size:11px;line-height:1.4;font-weight:600;color:#7c2d12}
 .admin-acceso-chip{
   display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(29,78,216,.25);background:rgba(29,78,216,.08);
   color:#1d4ed8;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer
