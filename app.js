@@ -361,7 +361,8 @@
       is_admin: isAdmin,
       active: p.active !== false,
       expires_at: p.expires_at || p.expiresAt || '',
-      display_name: p.display_name || p.displayName || p.nombre || ''
+      display_name: p.display_name || p.displayName || p.nombre || '',
+      estaciones_preferidas: Array.isArray(p.estaciones_preferidas) ? p.estaciones_preferidas : null
     };
   }
   function esComercial_() {
@@ -385,6 +386,7 @@
     document.documentElement.classList.toggle('turnio-solo-lectura', !puedeEscribir);
     document.documentElement.classList.toggle('turnio-es-admin', !!sessionProfile.is_admin);
     document.documentElement.classList.toggle('turnio-es-invitado', sessionProfile.role_code === 'INVITADO');
+    aplicarPreferenciasEstaciones_(persona && persona.estaciones_preferidas);
     document.documentElement.classList.toggle('turnio-es-comercial', esComercial_());
     document.querySelectorAll('[data-requiere-escritura]').forEach(function (el) {
       el.hidden = !puedeEscribir;
@@ -7402,6 +7404,79 @@
     });
   }
 
+  function aplicarPreferenciasEstaciones_(ids) {
+    var cx = window.TurnioConexiones;
+    if (!cx || !cx.setEstacionesPreferidas) return;
+    if (Array.isArray(ids) && ids.length) {
+      cx.setEstacionesPreferidas(ids);
+    } else {
+      // null / vacío → default Andalucía del catálogo
+      cx.setEstacionesPreferidas(null);
+    }
+    sessionProfile.estaciones_preferidas = cx.getEstacionesPreferidas();
+    pintarChecksPreferenciasCx_();
+    if (document.getElementById('screen-conexiones') &&
+        document.getElementById('screen-conexiones').classList.contains('active')) {
+      pintarPanelConexiones_();
+    }
+  }
+
+  function pintarChecksPreferenciasCx_() {
+    var box = document.getElementById('cx-prefs-checks');
+    var cx = window.TurnioConexiones;
+    if (!box || !cx || !cx.catalogoPreferidas) return;
+    var selected = {};
+    (cx.getEstacionesPreferidas() || []).forEach(function (id) { selected[id] = 1; });
+    box.innerHTML = cx.catalogoPreferidas().map(function (c) {
+      return '<label class="cx-pref-check">' +
+        '<input type="checkbox" data-cx-pref-id="' + esc(c.id) + '"' +
+        (selected[c.id] ? ' checked' : '') + '> ' + esc(c.label) +
+        '</label>';
+    }).join('');
+  }
+
+  function togglePanelPreferenciasCx_() {
+    var panel = document.getElementById('cx-prefs-panel');
+    var btn = document.getElementById('btn-cx-prefs');
+    if (!panel) return;
+    var open = panel.hidden;
+    panel.hidden = !open;
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) pintarChecksPreferenciasCx_();
+  }
+
+  async function guardarPreferenciasEstacionesCx_() {
+    var cx = window.TurnioConexiones;
+    var box = document.getElementById('cx-prefs-checks');
+    if (!cx || !box) return;
+    var ids = [];
+    box.querySelectorAll('input[data-cx-pref-id]:checked').forEach(function (el) {
+      ids.push(el.getAttribute('data-cx-pref-id'));
+    });
+    if (!ids.length) {
+      toast('Marca al menos una estación preferida.', 'error');
+      return;
+    }
+    try {
+      var data = await call('preferencias_estaciones_guardar', {
+        estaciones_preferidas: ids
+      });
+      if (!data || data.ok === false) {
+        throw new Error((data && (data.detail || data.error)) || 'No se pudieron guardar');
+      }
+      var saved = data.estaciones_preferidas;
+      if (data.persona && Array.isArray(data.persona.estaciones_preferidas)) {
+        saved = data.persona.estaciones_preferidas;
+      }
+      aplicarPreferenciasEstaciones_(saved && saved.length ? saved : ids);
+      toast('Preferencias de estaciones guardadas', 'success');
+      var panel = document.getElementById('cx-prefs-panel');
+      if (panel) panel.hidden = true;
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
   function estacionFiltroActivaCx_() {
     var libre = document.getElementById('cx-est-libre');
     var typed = libre ? String(libre.value || '').trim() : '';
@@ -7823,6 +7898,18 @@
         }, 220);
       });
     }
+    var btnPrefs = document.getElementById('btn-cx-prefs');
+    if (btnPrefs) btnPrefs.addEventListener('click', togglePanelPreferenciasCx_);
+    var btnPrefsGuardar = document.getElementById('btn-cx-prefs-guardar');
+    if (btnPrefsGuardar) btnPrefsGuardar.addEventListener('click', function () {
+      guardarPreferenciasEstacionesCx_().catch(function () {});
+    });
+    var btnPrefsCerrar = document.getElementById('btn-cx-prefs-cerrar');
+    if (btnPrefsCerrar) btnPrefsCerrar.addEventListener('click', function () {
+      var panel = document.getElementById('cx-prefs-panel');
+      if (panel) panel.hidden = true;
+      if (btnPrefs) btnPrefs.setAttribute('aria-expanded', 'false');
+    });
     document.querySelectorAll('.cx-turno-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         cxFiltroTurno_ = btn.getAttribute('data-cx-turno') || 'todos';

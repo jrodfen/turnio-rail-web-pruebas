@@ -4,18 +4,41 @@
 
   var STORAGE_KEY = 'turnio-conexiones-v1';
 
-  /* Estaciones preferidas (mismo criterio que servicios-enlazados CG). */
-  var ESTACIONES_PREFERIDAS = [
-    'sevilla s.j',
-    'sevilla santa justa',
-    'cordoba',
-    'malaga maria zambrano',
-    'malaga',
-    'antequera santa ana',
-    'antequera',
-    'granada',
-    'dos hermanas'
+  /* Catálogo de estaciones preferidas (ids estables). match = substrings normalizadas. */
+  var CATALOGO_PREFERIDAS = [
+    { id: 'sevilla s.j', label: 'Sevilla SJ', match: ['sevilla s.j', 'sevilla santa justa'] },
+    { id: 'cordoba', label: 'Córdoba', match: ['cordoba'] },
+    { id: 'malaga maria zambrano', label: 'Málaga MZ', match: ['malaga maria zambrano', 'malaga'] },
+    { id: 'antequera santa ana', label: 'Antequera AV', match: ['antequera santa ana', 'antequera'] },
+    { id: 'granada', label: 'Granada', match: ['granada'] },
+    { id: 'dos hermanas', label: 'Dos Hermanas', match: ['dos hermanas'] }
   ];
+
+  var ESTACIONES_PREFERIDAS_DEFAULT = CATALOGO_PREFERIDAS.map(function (c) { return c.id; });
+  /** Ids activos del usuario (o default). */
+  var preferidasIds_ = ESTACIONES_PREFERIDAS_DEFAULT.slice();
+  /** Patrones de match derivados de preferidasIds_. */
+  var ESTACIONES_PREFERIDAS = [];
+
+  function reconstruirMatchPreferidas_() {
+    var pats = [];
+    var seen = {};
+    preferidasIds_.forEach(function (id) {
+      var cat = null;
+      for (var i = 0; i < CATALOGO_PREFERIDAS.length; i++) {
+        if (CATALOGO_PREFERIDAS[i].id === id) { cat = CATALOGO_PREFERIDAS[i]; break; }
+      }
+      if (!cat) return;
+      (cat.match || [cat.id]).forEach(function (m) {
+        var k = String(m || '').toLowerCase();
+        if (!k || seen[k]) return;
+        seen[k] = 1;
+        pats.push(k);
+      });
+    });
+    ESTACIONES_PREFERIDAS = pats;
+  }
+  reconstruirMatchPreferidas_();
 
   var state = {
     fecha: '',
@@ -395,17 +418,59 @@
     return out.slice(0, limit);
   }
 
+  function refrescarFlagsPreferida_() {
+    state.filas.forEach(function (f) {
+      f.preferida = esEstacionPreferida_(f.estacionEnlace);
+    });
+  }
+
+  function setEstacionesPreferidas(ids) {
+    var list = Array.isArray(ids) ? ids : null;
+    if (!list || !list.length) {
+      preferidasIds_ = ESTACIONES_PREFERIDAS_DEFAULT.slice();
+    } else {
+      var out = [];
+      var seen = {};
+      list.forEach(function (raw) {
+        var id = String(raw || '').trim().toLowerCase();
+        var ok = false;
+        for (var i = 0; i < CATALOGO_PREFERIDAS.length; i++) {
+          if (CATALOGO_PREFERIDAS[i].id === id) { ok = true; break; }
+        }
+        if (!ok || seen[id]) return;
+        seen[id] = 1;
+        out.push(id);
+      });
+      preferidasIds_ = out.length ? out : ESTACIONES_PREFERIDAS_DEFAULT.slice();
+    }
+    reconstruirMatchPreferidas_();
+    refrescarFlagsPreferida_();
+    return preferidasIds_.slice();
+  }
+
+  function getEstacionesPreferidas() {
+    return preferidasIds_.slice();
+  }
+
+  function catalogoPreferidas() {
+    return CATALOGO_PREFERIDAS.map(function (c) {
+      return { id: c.id, label: c.label };
+    });
+  }
+
   function estacionesPreferidasUi() {
-    return [
+    var chips = [
       { id: '__todas__', label: 'Todas', todas: true },
-      { id: '', label: 'Todas preferidas', all: true },
-      { id: 'sevilla s.j', label: 'Sevilla SJ' },
-      { id: 'cordoba', label: 'Córdoba' },
-      { id: 'malaga maria zambrano', label: 'Málaga MZ' },
-      { id: 'antequera santa ana', label: 'Antequera AV' },
-      { id: 'granada', label: 'Granada' },
-      { id: 'dos hermanas', label: 'Dos Hermanas' }
+      { id: '', label: 'Todas preferidas', all: true }
     ];
+    preferidasIds_.forEach(function (id) {
+      var cat = null;
+      for (var i = 0; i < CATALOGO_PREFERIDAS.length; i++) {
+        if (CATALOGO_PREFERIDAS[i].id === id) { cat = CATALOGO_PREFERIDAS[i]; break; }
+      }
+      if (cat) chips.push({ id: cat.id, label: cat.label });
+    });
+    return chips;
   }
 
   cargarDesdeStorage_();
@@ -418,6 +483,9 @@
     conexionesDeTren: conexionesDeTren,
     listar: listar,
     estacionesPreferidasUi: estacionesPreferidasUi,
+    setEstacionesPreferidas: setEstacionesPreferidas,
+    getEstacionesPreferidas: getEstacionesPreferidas,
+    catalogoPreferidas: catalogoPreferidas,
     tieneEnlaces: tieneEnlaces,
     rolTrenEnFila: rolTrenEnFila,
     urlCombinadosHoy: urlCombinadosHoy,

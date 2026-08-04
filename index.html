@@ -586,6 +586,15 @@
             <div class="cx-ctrl-row">
               <span class="cx-ctrl-label">Estaci&oacute;n</span>
               <div class="cx-est-row" id="cx-est-btns" role="group" aria-label="Estaciones"></div>
+              <button type="button" class="cx-prefs-btn" id="btn-cx-prefs" aria-expanded="false" title="Elegir tus estaciones preferidas">Mis preferidas</button>
+            </div>
+            <div id="cx-prefs-panel" class="cx-prefs-panel" hidden>
+              <p class="cx-prefs-lead">Elige las estaciones que usan el filtro <strong>Todas preferidas</strong> y el bot&oacute;n Enlace del Radar. Se guardan en tu cuenta.</p>
+              <div id="cx-prefs-checks" class="cx-prefs-checks"></div>
+              <div class="cx-prefs-actions">
+                <button type="button" class="btn primary" id="btn-cx-prefs-guardar">Guardar</button>
+                <button type="button" class="btn secondary" id="btn-cx-prefs-cerrar">Cerrar</button>
+              </div>
             </div>
             <div class="cx-ctrl-row">
               <span class="cx-ctrl-label">Otra</span>
