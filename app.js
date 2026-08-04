@@ -4391,13 +4391,31 @@
 
   function fechaAvisoTxt(inicio) {
     var ts = Number(inicio || 0);
-    if (!ts) return '';
+    if (!ts) return 'Sin fecha/hora oficial';
     // Renfe a veces manda segundos Unix; a veces ms.
     if (ts < 1e12) ts = ts * 1000;
     var d = new Date(ts);
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
-      ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    if (isNaN(d.getTime())) return 'Sin fecha/hora oficial';
+    return d.toLocaleDateString('es-ES', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Europe/Madrid'
+    }) + ' · ' + d.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Madrid'
+    });
+  }
+
+  function ordenarAvisosRed_(avisos) {
+    return (Array.isArray(avisos) ? avisos.slice() : []).sort(function (a, b) {
+      var ia = Number((a && a.inicio) || 0);
+      var ib = Number((b && b.inicio) || 0);
+      if (ib !== ia) return ib - ia;
+      return String((a && a.texto) || '').localeCompare(String((b && b.texto) || ''), 'es');
+    });
   }
 
   async function fetchAvisosRed() {
@@ -4407,14 +4425,14 @@
         var r = await fetch(api + '/api/avisos', { method: 'GET', cache: 'no-store' });
         if (r.ok) {
           var data = await r.json();
-          if (data && Array.isArray(data.avisos)) return data.avisos;
+          if (data && Array.isArray(data.avisos)) return ordenarAvisosRed_(data.avisos);
         }
       } catch (_) {}
       try {
         var dataGas = await call('avisos_red', {});
-        return Array.isArray(dataGas.avisos) ? dataGas.avisos : [];
+        return ordenarAvisosRed_(Array.isArray(dataGas.avisos) ? dataGas.avisos : []);
       } catch (_) {
-        return cacheAvisosRed.slice();
+        return ordenarAvisosRed_(cacheAvisosRed.slice());
       }
     })();
     try {
@@ -4429,7 +4447,8 @@
     var cont = document.getElementById('infra-contador');
     var btn = document.getElementById('btn-estado-red');
     var home = document.getElementById('home-avisos');
-    var n = Array.isArray(avisos) ? avisos.length : 0;
+    avisos = ordenarAvisosRed_(avisos);
+    var n = avisos.length;
     if (cont) cont.textContent = String(n);
     if (btn) btn.classList.toggle('is-alert', n > 0);
     if (home) {
@@ -4445,7 +4464,9 @@
     var max = Math.min(n, 12);
     var html = '';
     for (var i = 0; i < max; i++) {
+      var fecha = fechaAvisoTxt(avisos[i].inicio);
       html += '<div class="infra-item"><span class="infra-dot">🔴</span><span>' +
+        '<span class="infra-fecha">🕐 ' + esc(fecha) + '</span> · ' +
         esc(avisos[i].texto || '') + '</span></div>';
     }
     if (n > max) {
@@ -4458,14 +4479,15 @@
   function pintarListaAvisos(avisos) {
     var lista = document.getElementById('avisos-lista');
     if (!lista) return;
-    if (!avisos || !avisos.length) {
+    avisos = ordenarAvisosRed_(avisos);
+    if (!avisos.length) {
       lista.innerHTML = '<div class="empty">✅ Red operando con normalidad. No hay avisos activos.</div>';
       return;
     }
     lista.innerHTML = avisos.map(function (av) {
       var fecha = fechaAvisoTxt(av.inicio);
       return '<div class="avisos-row">' +
-        (fecha ? '<div class="avisos-fecha">🕐 ' + esc(fecha) + '</div>' : '') +
+        '<div class="avisos-fecha">🕐 ' + esc(fecha) + '</div>' +
         '<div class="avisos-texto">🔴 ' + esc(av.texto || '') + '</div></div>';
     }).join('');
   }
