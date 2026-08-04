@@ -2891,14 +2891,29 @@
     gestionarAutoRadar();
     refrescarAvisosRed();
     cargarClimaBienvenida_(false);
-    // Precarga flota del mapa en segundo plano (no mallas: demasiado pesado).
+    // Precarga flota + malla operativa (~28 MB) en segundo plano.
     precargarFlotaMapa();
+    precargarMallaOperativaAlEntrar_();
     // Combinados del día publicados por CGO (si no hay cache local).
     asegurarCombinadosCompartidos_().finally(function () {
       if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
     });
     // Aviso ADMIN: aceptar = no volver; cerrar X = sale otra vez.
     comprobarAvisoAppAlEntrar_();
+  }
+
+  /** Descarga operativa diaria + índice de rutas tras login (no bloquea la UI). */
+  function precargarMallaOperativaAlEntrar_() {
+    if (window.TurnioMallasGtfs && typeof window.TurnioMallasGtfs.asegurarOperativaGtfs === 'function') {
+      window.TurnioMallasGtfs.asegurarOperativaGtfs({ silencioso: true }).catch(function (err) {
+        console.warn('[Mallas] precarga operativa al entrar', err);
+      });
+    }
+    if (typeof asegurarRutasMallas === 'function') {
+      asegurarRutasMallas().catch(function (err) {
+        console.warn('[Mallas] precarga rutas al entrar', err);
+      });
+    }
   }
 
   // ========== MALLAS Y HORARIOS ==========

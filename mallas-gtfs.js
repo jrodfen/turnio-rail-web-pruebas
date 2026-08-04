@@ -216,11 +216,16 @@
 
   async function asegurarOperativaGtfs(opts) {
     opts = opts || {};
+    var silencioso = !!opts.silencioso;
     if (global.horarios && global.horarios.length && global.viajes && Object.keys(global.viajes).length) {
-      document.getElementById('gtfs-carga').hidden = true;
-      document.getElementById('gtfs-busqueda').hidden = false;
-      reconstruirSelectores();
-      aplicarEstacionPorDefectoMallas_();
+      var cargaOk = document.getElementById('gtfs-carga');
+      var buscaOk = document.getElementById('gtfs-busqueda');
+      if (cargaOk) cargaOk.hidden = true;
+      if (buscaOk) buscaOk.hidden = false;
+      if (!silencioso) {
+        reconstruirSelectores();
+        aplicarEstacionPorDefectoMallas_();
+      }
       return true;
     }
     if (cargando) return cargando;
@@ -229,7 +234,9 @@
       var panelBusqueda = document.getElementById('gtfs-busqueda');
       if (panelCarga) panelCarga.hidden = false;
       if (panelBusqueda) panelBusqueda.hidden = true;
-      setStatus('Sincronizando operativa diaria…');
+      setStatus(silencioso
+        ? 'Precargando operativa diaria en segundo plano…'
+        : 'Sincronizando operativa diaria…');
       setProgress(5);
       var data = null;
       try {
