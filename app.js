@@ -4175,9 +4175,14 @@
         }
       }
       var tieneGps = x.lat && x.lon && Math.abs(x.lat) > 0.1 && Math.abs(x.lon) > 0.1;
+      var matTxt = String(x.matLabel || x.mat || '').trim();
+      var matHtml = matTxt
+        ? '<div class="alert-mat">&#128667; Unidades: ' + esc(matTxt) + '</div>'
+        : '';
       return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '">' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
         '<div class="train">&#9642; ' + esc(linea) + '</div>' +
+        matHtml +
         '<p class="message">' + esc(x.mensaje || ('Demora ' + (delay >= 0 ? '+' : '') + delay + ' min.')) + '</p>' +
         '<div class="alert-bottom"><span>&#8618; Pulsa para ver la marcha</span>' +
         '<div class="alert-actions">' +

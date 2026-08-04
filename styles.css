@@ -591,6 +591,8 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .home-retraso-item strong{color:var(--primary-dark)}
 .alert-flash{animation:alert-flash-pulse 2.1s ease-out 1;box-shadow:0 0 0 3px rgba(45,127,249,.45)}
 @keyframes alert-flash-pulse{0%{box-shadow:0 0 0 6px rgba(45,127,249,.55)}100%{box-shadow:0 0 0 0 rgba(45,127,249,0)}}
+.alert-mat{margin:2px 0 6px;font-size:12px;font-weight:700;color:var(--primary-dark)}
+body.monitor-mode .alert-mat{font-size:13px}
 .home-radar-ambito{font-weight:600;color:var(--muted)}
 .home-radar-ambito strong{color:var(--primary-dark);font-weight:800}
 .home-shortcuts{margin:0 0 10px}
