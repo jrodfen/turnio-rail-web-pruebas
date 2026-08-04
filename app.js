@@ -3505,11 +3505,7 @@
       return Number(c.retrasoNum || 0) >= 25;
     });
     if (graves.length) mostrarModalRetrasos(graves);
-    // Sin salida: modal ámbar propio (independiente del detector detenidos).
-    var sinSalida = nuevos.filter(function (c) {
-      return c && c.categoria === 'sin_salida';
-    });
-    if (sinSalida.length) mostrarModalSinSalida(sinSalida);
+    // Sin salida: solo Telegram pruebas (no modal / no lista Radar).
     // Modal ámbar «Tren detenido»: silenciado (flag arriba).
     if (VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) {
       var detenidos = nuevos.filter(function (c) {
@@ -3532,10 +3528,8 @@
     var avisos = 0;
     radar.forEach(function (a) {
       if (!a || /LIMPIA|ERROR/i.test(String(a.tipo || ''))) return;
-      if (a.categoria === 'sin_salida' || /SIN SALIDA/i.test(String(a.tipo || ''))) {
-        avisos++;
-        return;
-      }
+      // Sin salida no cuenta en Radar (Telegram pruebas).
+      if (a.categoria === 'sin_salida' || /SIN SALIDA/i.test(String(a.tipo || ''))) return;
       var r = Number(a.retrasoNum || 0);
       var productoAlta = /^(AVE|AVE Int\.|Avlo|Alvia|Avant|Avant Exp\.|Intercity)$/i.test(String(a.producto || ''));
       var umbral = productoAlta ? 15 : 25;
@@ -4306,6 +4300,12 @@
             regiones: regiones
           });
           radar = Array.isArray(data.alertas) ? data.alertas : [];
+          // Defensa: sin_salida no se muestra en Radar (Telegram pruebas).
+          radar = radar.filter(function (a) {
+            if (!a) return false;
+            if (a.categoria === 'sin_salida') return false;
+            return !/SIN SALIDA/i.test(String(a.tipo || ''));
+          });
           var busy = radar.length === 1 && (
             radar[0]._radarBusy ||
             /ACTUALIZ/i.test(String(radar[0].tipo || '')) ||
