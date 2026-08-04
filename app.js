@@ -5090,17 +5090,18 @@
       var ink = color === '#FFDE21' ? '#111' : '#fff';
       var bearing = Number(a.bearing);
       var tieneRumbo = Number.isFinite(bearing);
+      // Flecha por encima del borde de la bola; caja 56px para que Leaflet no la recorte.
       var arrowHtml = tieneRumbo
         ? '<span class="mapa-marker-arrow" style="border-bottom-color:' + color +
-          ';transform:translate(-50%,-50%) rotate(' + Math.round(bearing) + 'deg) translateY(-19px);"></span>'
+          ';transform:translate(-50%,-50%) rotate(' + Math.round(bearing) + 'deg) translateY(-23px);"></span>'
         : '';
       var icon = L.divIcon({
-        className: '',
+        className: 'mapa-div-icon',
         html: '<div class="mapa-marker-shell">' +
           '<div class="mapa-marker" style="width:30px;height:30px;background:' + color + ';color:' + ink + ';">' +
           texto + '</div>' + arrowHtml + '</div>',
-        iconSize: [42, 42],
-        iconAnchor: [21, 21],
+        iconSize: [56, 56],
+        iconAnchor: [28, 28],
         popupAnchor: [0, -18]
       });
       var retrasoHtml = Number(a.retrasoNum) > 0
