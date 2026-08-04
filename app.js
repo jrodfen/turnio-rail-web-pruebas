@@ -3259,7 +3259,9 @@
   }
 
   function claveCritico(c) {
-    return String((c && (c.linea || c.codTren || c.mensaje)) || '');
+    var cat = (c && c.categoria) ? String(c.categoria) : 'retraso';
+    var id = String((c && (c.codTren || c.linea || c.mensaje)) || '');
+    return cat + '|' + id;
   }
 
   /** Si el mapa está en fullscreen nativo, el modal debe vivir dentro de #screen-mapa. */
@@ -3298,23 +3300,27 @@
 
   // Modal ámbar «Tren detenido»: OFF hasta que el detector funcione al 100%.
   // El modal rojo de críticos (retraso grave) sigue activo.
+  // Modal ámbar «Sin salida» (malla − vivo): activo.
   var VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_ = false;
 
-  function mostrarModalDetenciones(items) {
-    if (!VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) return;
+  function pintarModalAmbarVigilante_(items, titulo, lead) {
     var lista = document.getElementById('lista-detenciones');
     var modal = document.getElementById('modal-detencion-grave');
     if (!lista || !modal) return;
+    var h2 = modal.querySelector('h2');
+    var p = modal.querySelector('.vig-modal-card > p');
+    if (h2) h2.textContent = titulo || 'Aviso';
+    if (p) p.textContent = lead || '';
     trenesPendientesDetencion = [];
     lista.innerHTML = items.map(function (c) {
       trenesPendientesDetencion.push(claveCritico(c));
       var etiqueta = c.etiquetaModal != null && c.etiquetaModal !== ''
         ? plainText(c.etiquetaModal)
-        : 'Parado';
+        : 'Aviso';
       var lineaTxt = plainText(c.linea || c.codTren || 'Tren');
       var lugar = c.lugar
         ? ('<div class="vig-item-lugar">📍 ' + esc(plainText(c.lugar)) +
-          (c.horaDesde ? (' · desde las <b>' + esc(plainText(c.horaDesde)) + '</b>h') : '') +
+          (c.horaDesde ? (' · salida teórica <b>' + esc(plainText(c.horaDesde)) + '</b>h') : '') +
           '</div>')
         : '';
       return '<div class="vig-item vig-item--amber">' +
@@ -3326,6 +3332,24 @@
     }).join('');
     montarModalVigilante_(modal);
     modal.hidden = false;
+  }
+
+  function mostrarModalDetenciones(items) {
+    if (!VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) return;
+    pintarModalAmbarVigilante_(
+      items,
+      'Tren detenido',
+      'Un tren lleva más de 10 minutos parado en vía o estación.'
+    );
+  }
+
+  function mostrarModalSinSalida(items) {
+    if (!items || !items.length) return;
+    pintarModalAmbarVigilante_(
+      items,
+      'Tren sin salida',
+      'Debería haber salido según malla y aún no hay señal viva (GTFS/flota).'
+    );
   }
 
   function procesarCriticos(criticos) {
@@ -3341,11 +3365,17 @@
       return Number(c.retrasoNum || 0) >= 25;
     });
     if (graves.length) mostrarModalRetrasos(graves);
+    // Sin salida: modal ámbar propio (independiente del detector detenidos).
+    var sinSalida = nuevos.filter(function (c) {
+      return c && c.categoria === 'sin_salida';
+    });
+    if (sinSalida.length) mostrarModalSinSalida(sinSalida);
     // Modal ámbar «Tren detenido»: silenciado (flag arriba).
     if (VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) {
       var detenidos = nuevos.filter(function (c) {
         if (c && c.categoria === 'detencion') return true;
-        if (c && (c.categoria === 'sin_salida' || c.categoria === 'retraso')) {
+        if (c && c.categoria === 'sin_salida') return false;
+        if (c && c.categoria === 'retraso') {
           return Number(c.retrasoNum || 0) < 25;
         }
         var et = String((c && c.etiquetaModal) || '');
@@ -3362,6 +3392,10 @@
     var avisos = 0;
     radar.forEach(function (a) {
       if (!a || /LIMPIA|ERROR/i.test(String(a.tipo || ''))) return;
+      if (a.categoria === 'sin_salida' || /SIN SALIDA/i.test(String(a.tipo || ''))) {
+        avisos++;
+        return;
+      }
       var r = Number(a.retrasoNum || 0);
       var productoAlta = /^(AVE|AVE Int\.|Avlo|Alvia|Avant|Avant Exp\.|Intercity)$/i.test(String(a.producto || ''));
       var umbral = productoAlta ? 15 : 25;
@@ -3818,6 +3852,9 @@
     }
   }
   function typeOf(a) {
+    if (a && (a.categoria === 'sin_salida' || /SIN SALIDA/i.test(String(a.tipo || '')))) {
+      return 'warning';
+    }
     var x = String(a.tipo || '');
     return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 ? 'warning' : '';
   }
@@ -3845,6 +3882,7 @@
       if (!a) return;
       var tipo = String(a.tipo || '');
       if (/LIMPIA|ERROR|ACTUALIZ/i.test(tipo)) return;
+      // Sin salida también en Inicio si ya supera 15 min desde la teórica.
       var r = Number(a.retrasoNum || 0);
       if (!(r >= 15)) return;
       var tren = String(a.codTren || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
