@@ -3866,7 +3866,10 @@
         if ((!id.hD || id.hD === '[HH:MM]') && d.hDest && d.hDest !== 'S/H') {
           id.hD = normalizarHHMMAviso(d.hDest);
         }
-        if (d.tipo) id.tipo = d.tipo;
+        // No pisar el producto de la tarjeta Radar (p. ej. Intercity ≠ AVE por nº).
+        if ((!id.tipo || id.tipo === 'TREN') && d.tipo) {
+          id.tipo = etiquetaProductoAviso_(d.tipo) || d.tipo;
+        }
       }
     } catch (_) { /* best-effort */ }
     return id;
