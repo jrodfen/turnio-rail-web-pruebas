@@ -4,41 +4,70 @@
 
   var STORAGE_KEY = 'turnio-conexiones-v1';
 
-  /* Catálogo de estaciones preferidas (ids estables). match = substrings normalizadas. */
-  var CATALOGO_PREFERIDAS = [
-    { id: 'sevilla s.j', label: 'Sevilla SJ', match: ['sevilla s.j', 'sevilla santa justa'] },
-    { id: 'cordoba', label: 'Córdoba', match: ['cordoba'] },
-    { id: 'malaga maria zambrano', label: 'Málaga MZ', match: ['malaga maria zambrano', 'malaga'] },
-    { id: 'antequera santa ana', label: 'Antequera AV', match: ['antequera santa ana', 'antequera'] },
-    { id: 'granada', label: 'Granada', match: ['granada'] },
-    { id: 'dos hermanas', label: 'Dos Hermanas', match: ['dos hermanas'] }
-  ];
-
-  var ESTACIONES_PREFERIDAS_DEFAULT = CATALOGO_PREFERIDAS.map(function (c) { return c.id; });
-  /** Ids activos del usuario (o default). */
-  var preferidasIds_ = ESTACIONES_PREFERIDAS_DEFAULT.slice();
-  /** Patrones de match derivados de preferidasIds_. */
+  /**
+   * Preferidas del usuario.
+   * null = aún no ha elegido → modo "todas" (todas las filas cuentan).
+   * array = ids normalizados de estaciones reales elegidas.
+   */
+  var preferidasIds_ = null;
+  /** Catálogo del día: estaciones reales del Excel (sin tramos A - B). */
+  var catalogoDia_ = [];
+  /** Patrones de match cuando hay selección (ids normalizados). */
   var ESTACIONES_PREFERIDAS = [];
 
+  /** Tramos de enlace tipo "Chamartín - Atocha" (espacio-guion-espacio): no son una estación. */
+  function esEstacionElegible_(nombre) {
+    var s = String(nombre == null ? '' : nombre).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!s) return false;
+    if (s.indexOf(' - ') >= 0) return false;
+    return true;
+  }
+
+  function idEstacion_(nombre) {
+    return normalizarTexto_(nombre);
+  }
+
+  function modoTodasPreferidas_() {
+    return !preferidasIds_ || !preferidasIds_.length;
+  }
+
+  function reconstruirCatalogoDia_() {
+    var byId = {};
+    state.filas.forEach(function (f) {
+      var raw = f && f.estacionEnlace;
+      if (!esEstacionElegible_(raw)) return;
+      var id = idEstacion_(raw);
+      if (!id) return;
+      var label = String(raw).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!byId[id]) {
+        byId[id] = { id: id, label: label, n: 0 };
+      }
+      byId[id].n += 1;
+      /* Conserva el label más largo si hay variantes de mayúsculas. */
+      if (label.length > byId[id].label.length) byId[id].label = label;
+    });
+    catalogoDia_ = Object.keys(byId).map(function (k) { return byId[k]; })
+      .sort(function (a, b) {
+        if (b.n !== a.n) return b.n - a.n;
+        return a.label.localeCompare(b.label, 'es');
+      });
+  }
+
   function reconstruirMatchPreferidas_() {
+    if (modoTodasPreferidas_()) {
+      ESTACIONES_PREFERIDAS = [];
+      return;
+    }
     var pats = [];
     var seen = {};
     preferidasIds_.forEach(function (id) {
-      var cat = null;
-      for (var i = 0; i < CATALOGO_PREFERIDAS.length; i++) {
-        if (CATALOGO_PREFERIDAS[i].id === id) { cat = CATALOGO_PREFERIDAS[i]; break; }
-      }
-      if (!cat) return;
-      (cat.match || [cat.id]).forEach(function (m) {
-        var k = String(m || '').toLowerCase();
-        if (!k || seen[k]) return;
-        seen[k] = 1;
-        pats.push(k);
-      });
+      var k = String(id || '').toLowerCase();
+      if (!k || seen[k] || !esEstacionElegible_(k)) return;
+      seen[k] = 1;
+      pats.push(k);
     });
     ESTACIONES_PREFERIDAS = pats;
   }
-  reconstruirMatchPreferidas_();
 
   var state = {
     fecha: '',
@@ -78,10 +107,13 @@
   }
 
   function esEstacionPreferida_(nombre) {
+    if (modoTodasPreferidas_()) return true;
     var n = normalizarTexto_(nombre);
     if (!n) return false;
     for (var i = 0; i < ESTACIONES_PREFERIDAS.length; i++) {
-      if (n.indexOf(ESTACIONES_PREFERIDAS[i]) >= 0) return true;
+      if (n.indexOf(ESTACIONES_PREFERIDAS[i]) >= 0 || ESTACIONES_PREFERIDAS[i].indexOf(n) >= 0) {
+        return true;
+      }
     }
     return false;
   }
@@ -124,6 +156,8 @@
       state.filas = data.filas;
       state.meta = data.meta || { nombre: '', cargadoEn: '', total: state.filas.length };
       reconstruirIndice_();
+      reconstruirCatalogoDia_();
+      refrescarFlagsPreferida_();
       return state.filas.length > 0;
     } catch (err) {
       return false;
@@ -231,6 +265,8 @@
       compartido: false
     };
     reconstruirIndice_();
+    reconstruirCatalogoDia_();
+    refrescarFlagsPreferida_();
     persistir_();
   }
 
@@ -250,6 +286,8 @@
       publicado_por: String(metaIn.publicado_por || '')
     };
     reconstruirIndice_();
+    reconstruirCatalogoDia_();
+    refrescarFlagsPreferida_();
     persistir_();
     return true;
   }
@@ -344,6 +382,7 @@
 
   function limpiar() {
     state = { fecha: '', filas: [], meta: { nombre: '', cargadoEn: '', total: 0 }, idx: {} };
+    catalogoDia_ = [];
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
   }
 
@@ -425,51 +464,50 @@
   }
 
   function setEstacionesPreferidas(ids) {
-    var list = Array.isArray(ids) ? ids : null;
-    if (!list || !list.length) {
-      preferidasIds_ = ESTACIONES_PREFERIDAS_DEFAULT.slice();
+    if (!Array.isArray(ids) || !ids.length) {
+      preferidasIds_ = null;
     } else {
       var out = [];
       var seen = {};
-      list.forEach(function (raw) {
-        var id = String(raw || '').trim().toLowerCase();
-        var ok = false;
-        for (var i = 0; i < CATALOGO_PREFERIDAS.length; i++) {
-          if (CATALOGO_PREFERIDAS[i].id === id) { ok = true; break; }
-        }
-        if (!ok || seen[id]) return;
+      ids.forEach(function (raw) {
+        var id = normalizarTexto_(raw);
+        if (!id || seen[id] || !esEstacionElegible_(id)) return;
+        if (id.length > 80) return;
         seen[id] = 1;
         out.push(id);
       });
-      preferidasIds_ = out.length ? out : ESTACIONES_PREFERIDAS_DEFAULT.slice();
+      preferidasIds_ = out.length ? out : null;
     }
     reconstruirMatchPreferidas_();
     refrescarFlagsPreferida_();
-    return preferidasIds_.slice();
+    return getEstacionesPreferidas();
   }
 
+  /** null = modo todas (sin elección). */
   function getEstacionesPreferidas() {
-    return preferidasIds_.slice();
+    return preferidasIds_ ? preferidasIds_.slice() : null;
   }
 
   function catalogoPreferidas() {
-    return CATALOGO_PREFERIDAS.map(function (c) {
-      return { id: c.id, label: c.label };
+    return catalogoDia_.map(function (c) {
+      return { id: c.id, label: c.label, n: c.n };
     });
   }
 
   function estacionesPreferidasUi() {
     var chips = [
-      { id: '__todas__', label: 'Todas', todas: true },
-      { id: '', label: 'Todas preferidas', all: true }
+      { id: '__todas__', label: 'Todas', todas: true }
     ];
-    preferidasIds_.forEach(function (id) {
-      var cat = null;
-      for (var i = 0; i < CATALOGO_PREFERIDAS.length; i++) {
-        if (CATALOGO_PREFERIDAS[i].id === id) { cat = CATALOGO_PREFERIDAS[i]; break; }
-      }
-      if (cat) chips.push({ id: cat.id, label: cat.label });
-    });
+    if (!modoTodasPreferidas_()) {
+      chips.push({ id: '', label: 'Todas preferidas', all: true });
+      preferidasIds_.forEach(function (id) {
+        var label = id;
+        for (var i = 0; i < catalogoDia_.length; i++) {
+          if (catalogoDia_[i].id === id) { label = catalogoDia_[i].label; break; }
+        }
+        chips.push({ id: id, label: label });
+      });
+    }
     return chips;
   }
 
@@ -486,6 +524,8 @@
     setEstacionesPreferidas: setEstacionesPreferidas,
     getEstacionesPreferidas: getEstacionesPreferidas,
     catalogoPreferidas: catalogoPreferidas,
+    modoTodasPreferidas: modoTodasPreferidas_,
+    esEstacionElegible: esEstacionElegible_,
     tieneEnlaces: tieneEnlaces,
     rolTrenEnFila: rolTrenEnFila,
     urlCombinadosHoy: urlCombinadosHoy,

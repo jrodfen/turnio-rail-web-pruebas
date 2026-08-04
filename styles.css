@@ -743,7 +743,9 @@ body.monitor-mode .alert-mat{font-size:13px}
 .cx-prefs-btn[aria-expanded="true"]{background:var(--primary);color:#fff;border-color:var(--primary)}
 .cx-prefs-panel{margin:4px 0 8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
 .cx-prefs-lead{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.4}
-.cx-prefs-checks{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0 0 12px}
+.cx-prefs-checks{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0 0 12px;max-height:220px;overflow:auto}
+.cx-prefs-buscar{width:100%;margin:0 0 10px;box-sizing:border-box}
+.cx-prefs-empty{margin:0;font-size:12px;color:var(--muted)}
 .cx-pref-check{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer}
 .cx-pref-check input{accent-color:var(--primary)}
 .cx-prefs-actions{display:flex;flex-wrap:wrap;gap:8px}

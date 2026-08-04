@@ -7404,16 +7404,19 @@
     });
   }
 
+  var cxPrefsPanelDraft_ = null; // { id: 1 } mientras el panel está abierto
+
   function aplicarPreferenciasEstaciones_(ids) {
     var cx = window.TurnioConexiones;
     if (!cx || !cx.setEstacionesPreferidas) return;
     if (Array.isArray(ids) && ids.length) {
       cx.setEstacionesPreferidas(ids);
     } else {
-      // null / vacío → default Andalucía del catálogo
+      // null / vacío → modo "todas" (aún no ha elegido)
       cx.setEstacionesPreferidas(null);
     }
     sessionProfile.estaciones_preferidas = cx.getEstacionesPreferidas();
+    cxPrefsPanelDraft_ = null;
     pintarChecksPreferenciasCx_();
     if (document.getElementById('screen-conexiones') &&
         document.getElementById('screen-conexiones').classList.contains('active')) {
@@ -7421,18 +7424,52 @@
     }
   }
 
+  function syncDraftPreferenciasDesdeDom_() {
+    var box = document.getElementById('cx-prefs-checks');
+    if (!box || !cxPrefsPanelDraft_) return;
+    box.querySelectorAll('input[data-cx-pref-id]').forEach(function (el) {
+      var id = el.getAttribute('data-cx-pref-id');
+      if (!id) return;
+      if (el.checked) cxPrefsPanelDraft_[id] = 1;
+      else delete cxPrefsPanelDraft_[id];
+    });
+  }
+
+  function initDraftPreferenciasCx_() {
+    var cx = window.TurnioConexiones;
+    cxPrefsPanelDraft_ = {};
+    var prefs = cx && cx.getEstacionesPreferidas ? cx.getEstacionesPreferidas() : null;
+    if (Array.isArray(prefs)) {
+      prefs.forEach(function (id) { cxPrefsPanelDraft_[id] = 1; });
+    }
+  }
+
   function pintarChecksPreferenciasCx_() {
     var box = document.getElementById('cx-prefs-checks');
     var cx = window.TurnioConexiones;
     if (!box || !cx || !cx.catalogoPreferidas) return;
-    var selected = {};
-    (cx.getEstacionesPreferidas() || []).forEach(function (id) { selected[id] = 1; });
-    box.innerHTML = cx.catalogoPreferidas().map(function (c) {
+    var catalogo = cx.catalogoPreferidas() || [];
+    if (!catalogo.length) {
+      box.innerHTML = '<p class="cx-prefs-empty">Carga o sincroniza el Excel de Combinados del día para ver las estaciones de enlace.</p>';
+      return;
+    }
+    if (!cxPrefsPanelDraft_) initDraftPreferenciasCx_();
+    syncDraftPreferenciasDesdeDom_();
+    var selected = cxPrefsPanelDraft_ || {};
+    var qEl = document.getElementById('cx-prefs-buscar');
+    var q = qEl ? String(qEl.value || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    box.innerHTML = catalogo.filter(function (c) {
+      if (!q) return true;
+      var blob = (c.id + ' ' + c.label).toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return blob.indexOf(q) >= 0;
+    }).map(function (c) {
       return '<label class="cx-pref-check">' +
         '<input type="checkbox" data-cx-pref-id="' + esc(c.id) + '"' +
         (selected[c.id] ? ' checked' : '') + '> ' + esc(c.label) +
         '</label>';
-    }).join('');
+    }).join('') || '<p class="cx-prefs-empty">Ninguna estación coincide con la búsqueda.</p>';
   }
 
   function togglePanelPreferenciasCx_() {
@@ -7442,21 +7479,23 @@
     var open = panel.hidden;
     panel.hidden = !open;
     if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) pintarChecksPreferenciasCx_();
+    if (open) {
+      var buscar = document.getElementById('cx-prefs-buscar');
+      if (buscar) buscar.value = '';
+      initDraftPreferenciasCx_();
+      pintarChecksPreferenciasCx_();
+    } else {
+      cxPrefsPanelDraft_ = null;
+    }
   }
 
   async function guardarPreferenciasEstacionesCx_() {
     var cx = window.TurnioConexiones;
     var box = document.getElementById('cx-prefs-checks');
     if (!cx || !box) return;
-    var ids = [];
-    box.querySelectorAll('input[data-cx-pref-id]:checked').forEach(function (el) {
-      ids.push(el.getAttribute('data-cx-pref-id'));
-    });
-    if (!ids.length) {
-      toast('Marca al menos una estación preferida.', 'error');
-      return;
-    }
+    if (!cxPrefsPanelDraft_) initDraftPreferenciasCx_();
+    syncDraftPreferenciasDesdeDom_();
+    var ids = Object.keys(cxPrefsPanelDraft_ || {});
     try {
       var data = await call('preferencias_estaciones_guardar', {
         estaciones_preferidas: ids
@@ -7468,10 +7507,14 @@
       if (data.persona && Array.isArray(data.persona.estaciones_preferidas)) {
         saved = data.persona.estaciones_preferidas;
       }
-      aplicarPreferenciasEstaciones_(saved && saved.length ? saved : ids);
-      toast('Preferencias de estaciones guardadas', 'success');
+      aplicarPreferenciasEstaciones_(saved);
+      toast(ids.length
+        ? ('Preferencias guardadas (' + ids.length + ' estaciones)')
+        : 'Sin selección: se usan todas las estaciones', 'success');
       var panel = document.getElementById('cx-prefs-panel');
       if (panel) panel.hidden = true;
+      var btn = document.getElementById('btn-cx-prefs');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
     } catch (err) {
       toast(String(err.message || err), 'error');
     }
@@ -7735,7 +7778,9 @@
     if (sub) {
       sub.textContent = !cx.estado().cargado
         ? 'Carga primero el Excel de Combinados del día en Circulación.'
-        : ('Tren ' + num + ' · ' + filas.length + ' enlace(s) en estaciones preferidas (Sevilla SJ, Córdoba, Málaga, Antequera, Granada, Dos Hermanas).');
+        : (cx.modoTodasPreferidas && cx.modoTodasPreferidas()
+          ? ('Tren ' + num + ' · ' + filas.length + ' enlace(s) (todas las estaciones).')
+          : ('Tren ' + num + ' · ' + filas.length + ' enlace(s) en tus estaciones preferidas.'));
     }
     if (!filas.length) {
       lista.innerHTML = '<div class="empty">' +
@@ -7909,7 +7954,16 @@
       var panel = document.getElementById('cx-prefs-panel');
       if (panel) panel.hidden = true;
       if (btnPrefs) btnPrefs.setAttribute('aria-expanded', 'false');
+      cxPrefsPanelDraft_ = null;
     });
+    var prefsBuscar = document.getElementById('cx-prefs-buscar');
+    if (prefsBuscar) {
+      var prefsBuscarTimer = null;
+      prefsBuscar.addEventListener('input', function () {
+        clearTimeout(prefsBuscarTimer);
+        prefsBuscarTimer = setTimeout(pintarChecksPreferenciasCx_, 160);
+      });
+    }
     document.querySelectorAll('.cx-turno-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         cxFiltroTurno_ = btn.getAttribute('data-cx-turno') || 'todos';
