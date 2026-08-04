@@ -5088,11 +5088,19 @@
       var color = colorMarcador(a);
       var texto = textoRetrasoFlota(a.retrasoNum);
       var ink = color === '#FFDE21' ? '#111' : '#fff';
+      var bearing = Number(a.bearing);
+      var tieneRumbo = Number.isFinite(bearing);
+      var arrowHtml = tieneRumbo
+        ? '<span class="mapa-marker-arrow" style="border-bottom-color:' + color +
+          ';transform:translate(-50%,-50%) rotate(' + Math.round(bearing) + 'deg) translateY(-19px);"></span>'
+        : '';
       var icon = L.divIcon({
         className: '',
-        html: '<div class="mapa-marker" style="width:30px;height:30px;background:' + color + ';color:' + ink + ';">' + texto + '</div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
+        html: '<div class="mapa-marker-shell">' +
+          '<div class="mapa-marker" style="width:30px;height:30px;background:' + color + ';color:' + ink + ';">' +
+          texto + '</div>' + arrowHtml + '</div>',
+        iconSize: [42, 42],
+        iconAnchor: [21, 21],
         popupAnchor: [0, -18]
       });
       var retrasoHtml = Number(a.retrasoNum) > 0
