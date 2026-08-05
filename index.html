@@ -589,9 +589,13 @@
               <button type="button" class="cx-prefs-btn" id="btn-cx-prefs" aria-expanded="false" title="Elegir tus estaciones preferidas">Mis preferidas</button>
             </div>
             <div id="cx-prefs-panel" class="cx-prefs-panel" hidden>
-              <p class="cx-prefs-lead">Elige estaciones de enlace del Excel del d&iacute;a (no tramos tipo Chamart&iacute;n&nbsp;&ndash;&nbsp;Atocha). Si no marcas ninguna, se usan <strong>todas</strong>. Se guardan en tu cuenta.</p>
-              <input id="cx-prefs-buscar" class="cx-search-input cx-prefs-buscar" type="search" placeholder="Buscar estaci&oacute;n&hellip;" autocomplete="off" aria-label="Buscar en estaciones preferidas">
-              <div id="cx-prefs-checks" class="cx-prefs-checks"></div>
+              <p class="cx-prefs-lead">Tus estaciones preferidas (filtro <strong>Todas preferidas</strong> y Enlace del Radar). Sin ninguna, se usan <strong>todas</strong>.</p>
+              <div id="cx-prefs-chips" class="cx-prefs-chips" aria-live="polite"></div>
+              <label class="cx-prefs-add-label" for="cx-prefs-buscar">A&ntilde;adir desde el Excel del d&iacute;a</label>
+              <div class="cx-prefs-add-wrap">
+                <input id="cx-prefs-buscar" class="cx-search-input cx-prefs-buscar" type="search" placeholder="Escribe para buscar (C&oacute;rdoba, Sevilla S.J.&hellip;)" autocomplete="off" aria-label="Buscar estaci&oacute;n para a&ntilde;adir" aria-autocomplete="list" aria-controls="cx-prefs-suggest">
+                <div id="cx-prefs-suggest" class="cx-prefs-suggest" role="listbox" hidden></div>
+              </div>
               <div class="cx-prefs-actions">
                 <button type="button" class="btn primary" id="btn-cx-prefs-guardar">Guardar</button>
                 <button type="button" class="btn secondary" id="btn-cx-prefs-cerrar">Cerrar</button>

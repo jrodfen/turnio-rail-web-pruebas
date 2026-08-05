@@ -7404,7 +7404,7 @@
     });
   }
 
-  var cxPrefsPanelDraft_ = null; // { id: 1 } mientras el panel está abierto
+  var cxPrefsPanelDraft_ = null; // [{ id, label }, ...] mientras el panel está abierto
 
   function aplicarPreferenciasEstaciones_(ids) {
     var cx = window.TurnioConexiones;
@@ -7412,64 +7412,119 @@
     if (Array.isArray(ids) && ids.length) {
       cx.setEstacionesPreferidas(ids);
     } else {
-      // null / vacío → modo "todas" (aún no ha elegido)
       cx.setEstacionesPreferidas(null);
     }
     sessionProfile.estaciones_preferidas = cx.getEstacionesPreferidas();
     cxPrefsPanelDraft_ = null;
-    pintarChecksPreferenciasCx_();
+    pintarPanelPreferenciasCx_();
     if (document.getElementById('screen-conexiones') &&
         document.getElementById('screen-conexiones').classList.contains('active')) {
       pintarPanelConexiones_();
     }
   }
 
-  function syncDraftPreferenciasDesdeDom_() {
-    var box = document.getElementById('cx-prefs-checks');
-    if (!box || !cxPrefsPanelDraft_) return;
-    box.querySelectorAll('input[data-cx-pref-id]').forEach(function (el) {
-      var id = el.getAttribute('data-cx-pref-id');
-      if (!id) return;
-      if (el.checked) cxPrefsPanelDraft_[id] = 1;
-      else delete cxPrefsPanelDraft_[id];
-    });
-  }
-
   function initDraftPreferenciasCx_() {
     var cx = window.TurnioConexiones;
-    cxPrefsPanelDraft_ = {};
     var prefs = cx && cx.getEstacionesPreferidas ? cx.getEstacionesPreferidas() : null;
+    cxPrefsPanelDraft_ = [];
     if (Array.isArray(prefs)) {
-      prefs.forEach(function (id) { cxPrefsPanelDraft_[id] = 1; });
+      prefs.forEach(function (id) {
+        cxPrefsPanelDraft_.push({
+          id: id,
+          label: (cx.labelEstacionPreferida && cx.labelEstacionPreferida(id)) || id
+        });
+      });
     }
   }
 
-  function pintarChecksPreferenciasCx_() {
-    var box = document.getElementById('cx-prefs-checks');
+  function draftTienePref_(id) {
+    if (!cxPrefsPanelDraft_) return false;
+    for (var i = 0; i < cxPrefsPanelDraft_.length; i++) {
+      if (cxPrefsPanelDraft_[i].id === id) return true;
+    }
+    return false;
+  }
+
+  function pintarChipsPreferenciasCx_() {
+    var box = document.getElementById('cx-prefs-chips');
+    if (!box) return;
+    if (!cxPrefsPanelDraft_) initDraftPreferenciasCx_();
+    if (!cxPrefsPanelDraft_.length) {
+      box.innerHTML = '<p class="cx-prefs-empty">Ninguna seleccionada — se usan todas.</p>';
+      return;
+    }
+    box.innerHTML = cxPrefsPanelDraft_.map(function (p) {
+      return '<span class="cx-prefs-chip">' + esc(p.label) +
+        '<button type="button" class="cx-prefs-chip-x" data-cx-pref-remove="' + esc(p.id) +
+        '" aria-label="Quitar ' + esc(p.label) + '">×</button></span>';
+    }).join('');
+  }
+
+  function ocultarSuggestPreferenciasCx_() {
+    var sug = document.getElementById('cx-prefs-suggest');
+    if (!sug) return;
+    sug.hidden = true;
+    sug.innerHTML = '';
+  }
+
+  function pintarSuggestPreferenciasCx_() {
     var cx = window.TurnioConexiones;
-    if (!box || !cx || !cx.catalogoPreferidas) return;
+    var sug = document.getElementById('cx-prefs-suggest');
+    var qEl = document.getElementById('cx-prefs-buscar');
+    if (!sug || !cx || !cx.catalogoPreferidas) return;
     var catalogo = cx.catalogoPreferidas() || [];
+    var q = qEl ? String(qEl.value || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    if (!q) {
+      ocultarSuggestPreferenciasCx_();
+      return;
+    }
     if (!catalogo.length) {
-      box.innerHTML = '<p class="cx-prefs-empty">Carga o sincroniza el Excel de Combinados del día para ver las estaciones de enlace.</p>';
+      sug.hidden = false;
+      sug.innerHTML = '<div class="cx-prefs-suggest-empty">Carga el Excel de Combinados del día para buscar estaciones.</div>';
       return;
     }
     if (!cxPrefsPanelDraft_) initDraftPreferenciasCx_();
-    syncDraftPreferenciasDesdeDom_();
-    var selected = cxPrefsPanelDraft_ || {};
-    var qEl = document.getElementById('cx-prefs-buscar');
-    var q = qEl ? String(qEl.value || '').trim().toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
-    box.innerHTML = catalogo.filter(function (c) {
-      if (!q) return true;
+    var hits = catalogo.filter(function (c) {
+      if (draftTienePref_(c.id)) return false;
       var blob = (c.id + ' ' + c.label).toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return blob.indexOf(q) >= 0;
-    }).map(function (c) {
-      return '<label class="cx-pref-check">' +
-        '<input type="checkbox" data-cx-pref-id="' + esc(c.id) + '"' +
-        (selected[c.id] ? ' checked' : '') + '> ' + esc(c.label) +
-        '</label>';
-    }).join('') || '<p class="cx-prefs-empty">Ninguna estación coincide con la búsqueda.</p>';
+    }).slice(0, 12);
+    if (!hits.length) {
+      sug.hidden = false;
+      sug.innerHTML = '<div class="cx-prefs-suggest-empty">Sin coincidencias en el Excel de hoy.</div>';
+      return;
+    }
+    sug.hidden = false;
+    sug.innerHTML = hits.map(function (c) {
+      return '<button type="button" class="cx-prefs-suggest-item" role="option" data-cx-pref-add="' +
+        esc(c.id) + '" data-cx-pref-label="' + esc(c.label) + '">' + esc(c.label) + '</button>';
+    }).join('');
+  }
+
+  function pintarPanelPreferenciasCx_() {
+    pintarChipsPreferenciasCx_();
+    pintarSuggestPreferenciasCx_();
+  }
+
+  function anadirPreferenciaDraft_(id, label) {
+    var cx = window.TurnioConexiones;
+    if (!id) return;
+    if (!cxPrefsPanelDraft_) initDraftPreferenciasCx_();
+    if (draftTienePref_(id)) return;
+    var nice = label || (cx && cx.labelEstacionPreferida && cx.labelEstacionPreferida(id)) || id;
+    cxPrefsPanelDraft_.push({ id: id, label: nice });
+    var buscar = document.getElementById('cx-prefs-buscar');
+    if (buscar) buscar.value = '';
+    pintarPanelPreferenciasCx_();
+    if (buscar) buscar.focus();
+  }
+
+  function quitarPreferenciaDraft_(id) {
+    if (!cxPrefsPanelDraft_) return;
+    cxPrefsPanelDraft_ = cxPrefsPanelDraft_.filter(function (p) { return p.id !== id; });
+    pintarPanelPreferenciasCx_();
   }
 
   function togglePanelPreferenciasCx_() {
@@ -7483,19 +7538,19 @@
       var buscar = document.getElementById('cx-prefs-buscar');
       if (buscar) buscar.value = '';
       initDraftPreferenciasCx_();
-      pintarChecksPreferenciasCx_();
+      pintarPanelPreferenciasCx_();
+      if (buscar) setTimeout(function () { buscar.focus(); }, 0);
     } else {
       cxPrefsPanelDraft_ = null;
+      ocultarSuggestPreferenciasCx_();
     }
   }
 
   async function guardarPreferenciasEstacionesCx_() {
     var cx = window.TurnioConexiones;
-    var box = document.getElementById('cx-prefs-checks');
-    if (!cx || !box) return;
+    if (!cx) return;
     if (!cxPrefsPanelDraft_) initDraftPreferenciasCx_();
-    syncDraftPreferenciasDesdeDom_();
-    var ids = Object.keys(cxPrefsPanelDraft_ || {});
+    var ids = cxPrefsPanelDraft_.map(function (p) { return p.id; });
     try {
       var data = await call('preferencias_estaciones_guardar', {
         estaciones_preferidas: ids
@@ -7515,11 +7570,11 @@
       if (panel) panel.hidden = true;
       var btn = document.getElementById('btn-cx-prefs');
       if (btn) btn.setAttribute('aria-expanded', 'false');
+      ocultarSuggestPreferenciasCx_();
     } catch (err) {
       toast(String(err.message || err), 'error');
     }
   }
-
   function estacionFiltroActivaCx_() {
     var libre = document.getElementById('cx-est-libre');
     var typed = libre ? String(libre.value || '').trim() : '';
@@ -7955,13 +8010,39 @@
       if (panel) panel.hidden = true;
       if (btnPrefs) btnPrefs.setAttribute('aria-expanded', 'false');
       cxPrefsPanelDraft_ = null;
+      ocultarSuggestPreferenciasCx_();
     });
+    var prefsPanel = document.getElementById('cx-prefs-panel');
+    if (prefsPanel) {
+      prefsPanel.addEventListener('click', function (e) {
+        var rm = e.target.closest('[data-cx-pref-remove]');
+        if (rm) {
+          e.preventDefault();
+          quitarPreferenciaDraft_(rm.getAttribute('data-cx-pref-remove'));
+          return;
+        }
+        var add = e.target.closest('[data-cx-pref-add]');
+        if (add) {
+          e.preventDefault();
+          anadirPreferenciaDraft_(
+            add.getAttribute('data-cx-pref-add'),
+            add.getAttribute('data-cx-pref-label')
+          );
+        }
+      });
+    }
     var prefsBuscar = document.getElementById('cx-prefs-buscar');
     if (prefsBuscar) {
       var prefsBuscarTimer = null;
       prefsBuscar.addEventListener('input', function () {
         clearTimeout(prefsBuscarTimer);
-        prefsBuscarTimer = setTimeout(pintarChecksPreferenciasCx_, 160);
+        prefsBuscarTimer = setTimeout(pintarSuggestPreferenciasCx_, 140);
+      });
+      prefsBuscar.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') ocultarSuggestPreferenciasCx_();
+      });
+      prefsBuscar.addEventListener('blur', function () {
+        setTimeout(ocultarSuggestPreferenciasCx_, 180);
       });
     }
     document.querySelectorAll('.cx-turno-btn').forEach(function (btn) {

@@ -488,6 +488,20 @@
     return preferidasIds_ ? preferidasIds_.slice() : null;
   }
 
+  /* Fallback legible si aún no hay Excel del día. */
+  function labelEstacionPreferida_(id) {
+    var key = normalizarTexto_(id);
+    if (!key) return '';
+    for (var i = 0; i < catalogoDia_.length; i++) {
+      if (catalogoDia_[i].id === key) return catalogoDia_[i].label;
+    }
+    return key.split(' ').map(function (w) {
+      if (!w) return w;
+      if (/^s\.?j\.?$/i.test(w)) return 'S.J.';
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  }
+
   function catalogoPreferidas() {
     return catalogoDia_.map(function (c) {
       return { id: c.id, label: c.label, n: c.n };
@@ -501,11 +515,7 @@
     if (!modoTodasPreferidas_()) {
       chips.push({ id: '', label: 'Todas preferidas', all: true });
       preferidasIds_.forEach(function (id) {
-        var label = id;
-        for (var i = 0; i < catalogoDia_.length; i++) {
-          if (catalogoDia_[i].id === id) { label = catalogoDia_[i].label; break; }
-        }
-        chips.push({ id: id, label: label });
+        chips.push({ id: id, label: labelEstacionPreferida_(id) });
       });
     }
     return chips;
@@ -524,6 +534,7 @@
     setEstacionesPreferidas: setEstacionesPreferidas,
     getEstacionesPreferidas: getEstacionesPreferidas,
     catalogoPreferidas: catalogoPreferidas,
+    labelEstacionPreferida: labelEstacionPreferida_,
     modoTodasPreferidas: modoTodasPreferidas_,
     esEstacionElegible: esEstacionElegible_,
     tieneEnlaces: tieneEnlaces,

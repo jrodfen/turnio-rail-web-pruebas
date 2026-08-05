@@ -743,11 +743,19 @@ body.monitor-mode .alert-mat{font-size:13px}
 .cx-prefs-btn[aria-expanded="true"]{background:var(--primary);color:#fff;border-color:var(--primary)}
 .cx-prefs-panel{margin:4px 0 8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
 .cx-prefs-lead{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.4}
-.cx-prefs-checks{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0 0 12px;max-height:220px;overflow:auto}
-.cx-prefs-buscar{width:100%;margin:0 0 10px;box-sizing:border-box}
-.cx-prefs-empty{margin:0;font-size:12px;color:var(--muted)}
-.cx-pref-check{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer}
-.cx-pref-check input{accent-color:var(--primary)}
+.cx-prefs-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;min-height:28px}
+.cx-prefs-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:999px;padding:5px 8px 5px 11px;font-size:12px;font-weight:800;line-height:1.2}
+.cx-prefs-chip-x{margin:0;border:0;background:transparent;color:#64748b;font-size:15px;line-height:1;cursor:pointer;padding:0 2px;font-weight:700}
+.cx-prefs-chip-x:hover{color:#b91c1c}
+.cx-prefs-empty{margin:0;font-size:12px;color:var(--muted);font-weight:600}
+.cx-prefs-add-label{display:block;margin:0 0 6px;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.cx-prefs-add-wrap{position:relative;margin:0 0 12px}
+.cx-prefs-buscar{width:100%;margin:0;box-sizing:border-box}
+.cx-prefs-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);box-shadow:0 8px 24px rgba(15,23,42,.12)}
+.cx-prefs-suggest-item{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:10px 12px;font-size:13px;font-weight:700;color:var(--text);cursor:pointer}
+.cx-prefs-suggest-item:last-child{border-bottom:0}
+.cx-prefs-suggest-item:hover,.cx-prefs-suggest-item:focus{background:#eef6ff;outline:none}
+.cx-prefs-suggest-empty{padding:10px 12px;font-size:12px;color:var(--muted)}
 .cx-prefs-actions{display:flex;flex-wrap:wrap;gap:8px}
 .cx-est-libre{flex:1;min-width:160px}
 .cxn-check-lbl{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;margin-top:2px}
