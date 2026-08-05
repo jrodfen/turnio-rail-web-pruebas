@@ -370,12 +370,15 @@
   }
   function pantallaPermitidaComercial_(screen) {
     return ({
-      home: 1, mapa: 1, conexiones: 1, perfil: 1, ajustes: 1
+      home: 1, mapa: 1, conexiones: 1, mallas: 1, 'mallas-localizador': 1,
+      perfil: 1, ajustes: 1
     })[screen] === 1;
   }
   function textoPermisoPerfil_(perfil) {
     if (perfil.role_code === 'ADMIN') return 'Administración: puedes gestionar usuarios y usar todas las funciones operativas.';
-    if (perfil.role_code === 'COMERCIAL') return 'Perfil comercial: acceso a Mapa en vivo y Servicios enlazados.';
+    if (perfil.role_code === 'COMERCIAL') {
+      return 'Perfil comercial: acceso a Mapa en vivo, Mallas y horarios, y Servicios enlazados.';
+    }
     if (perfil.can_write) return 'Permiso operativo: puedes generar avisos y usar el Vigilante.';
     if (perfil.role_code === 'INVITADO') return 'Modo invitado: consulta de datos. No puedes generar avisos ni usar el Vigilante.';
     return 'Modo lectura: puedes consultar datos, sin generar avisos ni usar el Vigilante.';
@@ -3317,7 +3320,7 @@
 
   function go(screen) {
     if (esComercial_() && !pantallaPermitidaComercial_(screen)) {
-      toast('Tu perfil COMERCIAL solo puede usar Mapa y Servicios enlazados.', 'error');
+      toast('Tu perfil COMERCIAL solo puede usar Mapa, Mallas y Servicios enlazados.', 'error');
       screen = 'home';
     }
     // Toggle: si ese flotante ya está abierto, el mismo botón lo cierra.
@@ -3685,7 +3688,7 @@
     var welcomeSub = document.getElementById('welcome-sub');
     if (welcomeSub) {
       welcomeSub.textContent = esComercial_()
-        ? 'Perfil comercial: Mapa en vivo y Servicios enlazados.'
+        ? 'Perfil comercial: Mapa, Mallas y horarios, y Servicios enlazados.'
         : 'Bienvenido a TURNIO. Aquí tienes un primer vistazo al Radar y a los avisos de red.';
     }
     document.getElementById('user-name').textContent = nombre;
@@ -3697,11 +3700,12 @@
     document.getElementById('profile-email').textContent = email;
     var profileName = document.getElementById('profile-name');
     if (profileName) profileName.textContent = nombre;
-    // COMERCIAL: sin Radar/Vigilante/FAB; precarga mapa + combinados.
+    // COMERCIAL: sin Radar/Vigilante/FAB; precarga mapa + mallas + combinados.
     if (esComercial_()) {
       mostrarFab_(false);
       setVigilanteState(false, true);
       precargarFlotaMapa();
+      setTimeout(function () { precargarMallaOperativaAlEntrar_(); }, 1200);
       asegurarCombinadosCompartidos_().finally(function () {
         if (typeof refrescarUiConexiones_ === 'function') refrescarUiConexiones_();
       });

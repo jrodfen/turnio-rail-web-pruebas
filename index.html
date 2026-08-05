@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.84">
+    <link rel="stylesheet" href="./styles.css?v=V.85">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -102,6 +102,10 @@
             <button type="button" class="circ-tile circ-tile--mapa" data-go="mapa">
               <b>&#128506; Mapa</b>
               <span>Flota en vivo</span>
+            </button>
+            <button type="button" class="circ-tile circ-tile--mallas" data-go="mallas">
+              <b>&#128646; Mallas</b>
+              <span>Horarios y circulaci&oacute;n</span>
             </button>
             <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
               <b>&#128279; Enlazados</b>
@@ -250,7 +254,8 @@
         </div>
       </section>
       <section id="screen-mallas" class="screen">
-        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
+        <button class="back" type="button" data-go="trafico" data-ocultar-comercial>&#11013; Volver a Circulaci&oacute;n</button>
+        <button class="back" type="button" data-go="home" data-solo-comercial hidden>&#11013; Volver al inicio</button>
         <div id="gtfs-carga" class="mallas-card mallas-card--cuadro">
           <div class="gtfs-carga-ico" aria-hidden="true">&#128646;</div>
           <h3>Sincronizando operativa&hellip;</h3>
@@ -1033,6 +1038,7 @@
       <button class="nav-item active" data-go="home" type="button"><span>&#127968;</span>Inicio</button>
       <button class="nav-item" data-go="radar" type="button" data-ocultar-comercial><span>&#128225;</span>Radar</button>
       <button class="nav-item" data-go="mapa" type="button" data-solo-comercial hidden><span>&#128506;</span>Mapa</button>
+      <button class="nav-item" data-go="mallas" type="button" data-solo-comercial hidden><span>&#128646;</span>Mallas</button>
       <button class="nav-item" data-go="conexiones" type="button" data-solo-comercial hidden><span>&#128279;</span>Enlazados</button>
       <button class="nav-item" data-go="trafico" type="button" data-ocultar-comercial><span>&#128642;</span>Circulaci&oacute;n</button>
       <button class="nav-item" data-go="ajustes" type="button"><span>&#9881;</span>Ajustes</button>
@@ -1596,7 +1602,7 @@
                 <div class="cx-hi-desc">
                   <span class="help-badge hb-blue">LECTURA</span> consulta.<br>
                   <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante, publicar Combinados&hellip;).<br>
-                  <span class="help-badge hb-amber">COMERCIAL</span> mapa y servicios enlazados (vista reducida; sin Radar ni exclusiones).<br>
+                  <span class="help-badge hb-amber">COMERCIAL</span> mapa, mallas/horarios y servicios enlazados (vista reducida; sin Radar ni exclusiones).<br>
                   <span class="help-badge hb-gray">INVITADO</span> consulta limitada (sin avisos TURNIO ni sugerencias).
                 </div>
               </div>
@@ -1806,13 +1812,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.84"></script>
-    <script src="./conexiones.js?v=V.84"></script>
+    <script src="./turnio-config.js?v=V.85"></script>
+    <script src="./conexiones.js?v=V.85"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.84"></script>
+    <script src="./app.js?v=V.85"></script>
   </body>
 </html>
 

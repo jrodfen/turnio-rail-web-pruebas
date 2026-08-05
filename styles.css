@@ -350,7 +350,8 @@ body.monitor-mode #screen-mapa{display:none!important}
 .ajustes-lead{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.4}
 .ajustes-danger{color:var(--red)!important}
 .home-comercial{margin:12px 0 20px}
-.home-comercial-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.home-comercial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:560px){.home-comercial-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:420px){.home-comercial-grid{grid-template-columns:1fr}}
 html.turnio-es-comercial #fab-container{display:none!important}
 
