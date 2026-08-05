@@ -2510,6 +2510,7 @@
         n ? 'is-ok' : 'is-run'
       );
       inyectarViaAdifEnMallas_();
+      inyectarViaAdifEnRadar_();
       document.querySelectorAll('.marcha-list[data-marcha-tren]').forEach(function (list) {
         var host = list.parentElement;
         pintarViasEnMarchaPanel_(host, list.getAttribute('data-marcha-tren'));
@@ -2602,6 +2603,113 @@
       await adifPedirViasEstaciones_(codes);
     } catch (_) {}
     pintarViasEnMarchaPanel_(panel, m.numTren);
+  }
+
+  function codigoEstacionPorNombreAdif_(nombre) {
+    var name = String(nombre || '').trim();
+    if (!name) return '';
+    var mapa = window.mapaEstacionesGlobal || {};
+    var key = Object.keys(mapa).find(function (k) {
+      return String(k).toLowerCase() === name.toLowerCase();
+    });
+    if (!key && name.indexOf('(') > 0) {
+      var short = name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+      key = Object.keys(mapa).find(function (k) {
+        return String(k).toLowerCase() === short.toLowerCase();
+      });
+    }
+    var ids = key ? mapa[key] : null;
+    if (!ids || !ids.length) return '';
+    return adifNormalizarCodigoEst_(ids[0]);
+  }
+
+  function inyectarViaAdifEnRadar_() {
+    if (!list) return;
+    list.querySelectorAll('.alert[data-cod]').forEach(function (card) {
+      var tren = card.getAttribute('data-cod') || '';
+      var o = card.getAttribute('data-cod-origen') || '';
+      var d = card.getAttribute('data-cod-destino') || '';
+      var infoO = o ? lookupViaAdifEnEstacion_(tren, o) : null;
+      var infoD = d ? lookupViaAdifEnEstacion_(tren, d) : null;
+      var host = card.querySelector('.alert-vias-adif');
+      if (!host) return;
+      var parts = [];
+      if (infoO && infoO.via) {
+        parts.push('Orig. VÍA ' + infoO.via + (infoO.acceso ? ' · Acc. ' + infoO.acceso : ''));
+      }
+      if (infoD && infoD.via) {
+        parts.push('Dest. VÍA ' + infoD.via + (infoD.acceso ? ' · Acc. ' + infoD.acceso : ''));
+      }
+      if (parts.length) {
+        host.hidden = false;
+        host.textContent = '📡 ' + parts.join(' · ');
+        card.classList.add('has-via-adif');
+      } else {
+        host.hidden = true;
+        host.textContent = '';
+        card.classList.remove('has-via-adif');
+      }
+    });
+  }
+
+  var adifRadarEnrichTimer_ = null;
+  var adifRadarEnrichBusy_ = false;
+
+  function codigosViaRadarVisibles_() {
+    var uniq = [];
+    var seen = Object.create(null);
+    if (!list) return uniq;
+    list.querySelectorAll('.alert[data-cod]').forEach(function (card) {
+      [card.getAttribute('data-cod-origen'), card.getAttribute('data-cod-destino')].forEach(function (raw) {
+        var code = adifNormalizarCodigoEst_(raw);
+        if (!code || seen[code]) return;
+        seen[code] = true;
+        uniq.push(code);
+      });
+    });
+    return uniq;
+  }
+
+  function adifEstacionNecesitaRefresh_(code, maxAgeMs) {
+    var bucket = adifByStation_[code];
+    if (!bucket) return true;
+    var keys = Object.keys(bucket);
+    if (!keys.length) return true;
+    var ts = 0;
+    for (var i = 0; i < keys.length; i++) {
+      var t = Number(bucket[keys[i]] && bucket[keys[i]].ts) || 0;
+      if (t > ts) ts = t;
+    }
+    return !ts || (Date.now() - ts) > (maxAgeMs || 90000);
+  }
+
+  function programarEnrichRadarViasAdif_() {
+    var scr = document.getElementById('screen-radar');
+    var vis = scr && (scr.classList.contains('active') || scr.classList.contains('screen--in-float'));
+    if (!vis) return;
+    if (adifRadarEnrichTimer_) clearTimeout(adifRadarEnrichTimer_);
+    adifRadarEnrichTimer_ = setTimeout(function () {
+      adifRadarEnrichTimer_ = null;
+      enriquecerRadarViasAdif_().catch(function () {});
+    }, 350);
+  }
+
+  async function enriquecerRadarViasAdif_() {
+    if (adifRadarEnrichBusy_) return;
+    inyectarViaAdifEnRadar_();
+    var codes = codigosViaRadarVisibles_().filter(function (c) {
+      return adifEstacionNecesitaRefresh_(c, 90000);
+    }).slice(0, 14);
+    if (!codes.length) return;
+    adifRadarEnrichBusy_ = true;
+    try {
+      await adifPedirViasEstaciones_(codes);
+    } catch (_) {
+      /* InfoStation a veces no responde; la tarjeta queda sin vía. */
+    } finally {
+      adifRadarEnrichBusy_ = false;
+    }
+    inyectarViaAdifEnRadar_();
   }
 
   async function escucharInfoStationEstacion_(codigo) {
@@ -3179,6 +3287,7 @@
     if (screen === 'radar' && !radar.length) loadRadar();
     if (screen === 'radar') {
       refrescarAvisosRed();
+      programarEnrichRadarViasAdif_();
       // CGO/ADMIN: Vigilante ON con retardo al entrar (evita avisos al instante).
       if (puedeEscribir && !vigilanteActivo) programarVigilanteAutoOn_();
     }
@@ -4806,10 +4915,15 @@
         ? '<div class="alert-mat">&#128667; Unidades: ' + esc(matTxt) + '</div>'
         : '';
       var esSs = esAlertaSinSalidaFront_(x);
+      var codO = adifNormalizarCodigoEst_(x.codOrigen) || codigoEstacionPorNombreAdif_(x.nombreOrig);
+      var codD = adifNormalizarCodigoEst_(x.codDestino) || codigoEstacionPorNombreAdif_(x.nombreDest);
       return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '"' +
+        (codO ? ' data-cod-origen="' + esc(codO) + '"' : '') +
+        (codD ? ' data-cod-destino="' + esc(codD) + '"' : '') +
         (esSs ? ' data-sin-salida="1"' : '') + '>' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
         '<div class="train">&#9642; ' + esc(linea) + '</div>' +
+        '<div class="alert-vias-adif" hidden></div>' +
         matHtml +
         '<p class="message">' + esc(x.mensaje || ('Demora ' + (delay >= 0 ? '+' : '') + delay + ' min.')) + '</p>' +
         '<div class="alert-bottom"><span>' +
@@ -4833,6 +4947,8 @@
         '<div class="marcha-panel" hidden></div></article>';
     }).join('');
     enfocarTarjetaRadarPendiente_();
+    inyectarViaAdifEnRadar_();
+    programarEnrichRadarViasAdif_();
   }
   function labelStatus(s) {
     return s === 'STOPPED_AT' ? '&#128205; Posición en estación'

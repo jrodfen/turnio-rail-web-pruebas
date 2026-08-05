@@ -1148,6 +1148,12 @@ body.monitor-mode .alert-mat{font-size:13px}
   padding:3px 9px;border-radius:20px;animation:pulse-circulando 1.5s infinite
 }
 .flip-card.has-via-adif .flip-card-front{border-color:#0f766e}
+.alert-vias-adif{
+  margin:2px 0 8px;padding:5px 9px;border-radius:10px;
+  background:#0f766e;color:#fff;font-size:12px;font-weight:800;line-height:1.35
+}
+.alert-vias-adif[hidden]{display:none!important}
+.alert.has-via-adif{border-color:rgba(15,118,110,.45)}
 .marcha-via-adif{
   margin:8px 0;padding:8px 10px;border-radius:10px;
   background:#0f766e;color:#fff;font-size:13px;font-weight:800
