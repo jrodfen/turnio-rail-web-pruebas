@@ -415,12 +415,71 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .circ-tile--admin{border-color:rgba(5,150,105,.4);background:linear-gradient(160deg,rgba(5,150,105,.1),var(--bg))}
 .circ-tile--logout{border-color:rgba(185,28,28,.28);background:linear-gradient(160deg,rgba(185,28,28,.05),var(--bg))}
 
-/* Administración (solo ADMIN) */
-#screen-admin{max-width:640px;margin:0 auto}
+/* Administración (solo ADMIN) — no hereda el grid 6-col de Circulación */
+#screen-admin{
+  max-width:720px;
+  margin:0 auto;
+  width:100%;
+  min-width:0;
+  padding-bottom:28px;
+}
+#screen-admin .circ-layout{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:12px;
+  width:100%;
+  min-width:0;
+}
+#screen-admin .circ-group{
+  grid-column:1 / -1 !important;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+#screen-admin .circ-grid,
+#screen-admin .circ-grid--turnio,
+#screen-admin .circ-grid--admin{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px;
+  width:100%;
+  min-width:0;
+}
+@media (min-width:560px){
+  #screen-admin .circ-grid,
+  #screen-admin .circ-grid--turnio,
+  #screen-admin .circ-grid--admin{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+#screen-admin .circ-tile{
+  min-height:72px;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+  word-break:break-word;
+}
+#screen-admin .circ-tile b,
+#screen-admin .circ-tile span{
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+#screen-admin .admin-panel{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+#screen-admin .admin-panel-card,
+#screen-admin .admin-nuevo-grid,
+#screen-admin .admin-accesos-filtros{
+  min-width:0;
+  max-width:100%;
+}
 .admin-nuevo{background:var(--card);border:1px solid rgba(5,150,105,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
 .admin-clave-box{border-color:rgba(124,58,237,.35)}
 .admin-mant-box{border-color:rgba(185,28,28,.4);background:linear-gradient(135deg,rgba(185,28,28,.06),var(--card))}
-.admin-mant-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 8px}
+.admin-mant-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 8px;flex-wrap:wrap}
 .admin-mant-head .admin-nuevo-title{margin:0 0 4px}
 .admin-mant-head .admin-nuevo-help{margin:0}
 .admin-mant-toggle{
