@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.76">
+    <link rel="stylesheet" href="./styles.css?v=V.77">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -1404,7 +1404,14 @@
               <div class="cx-hi-icon">&#128683;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Sin salida</div>
-                <div class="cx-hi-desc">Aparece en Radar cuando la malla dice que ya debi&oacute; salir y no hay se&ntilde;al viva. Modal &aacute;mbar del Vigilante y bot&oacute;n <strong>Enterado</strong> en la tarjeta: lo quita del Radar el resto del d&iacute;a (Madrid). Tambi&eacute;n Telegram de pruebas. No se mezcla con detenidos.</div>
+                <div class="cx-hi-desc">Aparece en Radar cuando la malla dice que el tren <strong>circula hoy</strong>, ya debi&oacute; salir (&ge;12&nbsp;min) y no hay se&ntilde;al viva (ventana ~45&nbsp;min). No alerta trenes de otros d&iacute;as de circulaci&oacute;n. Los <strong>35xxx</strong> (bus/taxi) se ignoran siempre. Modal &aacute;mbar del Vigilante y bot&oacute;n <strong>Enterado</strong> en la tarjeta: lo quita del Radar el resto del d&iacute;a (Madrid). Telegram de pruebas. No se mezcla con detenidos.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128683;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Exclusiones de l&iacute;nea (solo lectura)</div>
+                <div class="cx-hi-desc">Quien tiene Radar puede ver qu&eacute; trenes o tramos est&aacute;n fuera de sin salida: tile <strong>Exclusiones</strong> en Circulaci&oacute;n o el enlace en el propio Radar. Solo lectura. Si ves un error, <strong>Notificar incidencia</strong> abre Sugerencias/fallos con un borrador (no disponible para invitados). Solo ADMIN crea o quita exclusiones.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1464,7 +1471,7 @@
               <div class="cx-hi-icon">&#128642;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Hub de herramientas</div>
-                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas y Enlazados. CGO/ADMIN cargan el Excel de combinados, <strong>Publicar para todos</strong> o <strong>Borrar publicaci&oacute;n</strong> (servidor); el resto lo recibe solo. Atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas, Enlazados y <strong>Exclusiones</strong> (consulta de lo excluido de sin salida). CGO/ADMIN cargan el Excel de combinados, <strong>Publicar para todos</strong> o <strong>Borrar publicaci&oacute;n</strong> (servidor); el resto lo recibe solo. Atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1548,10 +1555,29 @@
           <div class="cx-help-section">
             <h3>Ajustes y Cuenta</h3>
             <div class="cx-help-item">
+              <div class="cx-hi-icon">&#9881;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Panel de Ajustes</div>
+                <div class="cx-hi-desc">Bloques apilados: <strong>Comunicaci&oacute;n</strong> (Avisos TURNIO y Sugerencias/fallos), <strong>Aplicaci&oacute;n</strong> (actualizar y este manual), <strong>Administraci&oacute;n</strong> (solo ADMIN) y <strong>Cuenta</strong> (cerrar sesi&oacute;n). La versi&oacute;n visible (<em>V.n</em>) aparece en el chip de Aplicaci&oacute;n.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
               <div class="cx-hi-icon">&#128226;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Avisos al entrar</div>
-                <div class="cx-hi-desc">ADMIN puede publicar un mensaje desde Administraci&oacute;n. Al abrir la app te sale un aviso: <strong>Aceptar</strong> = no vuelve a salir; cerrar con <strong>X</strong> = te lo muestra otra vez.</div>
+                <div class="cx-hi-desc">ADMIN publica desde Administraci&oacute;n &rarr; Aviso al entrar. Al crear el aviso elige:<br>
+                  <span class="help-badge hb-green">Ahora</span> modal al entrar de inmediato.<br>
+                  <span class="help-badge hb-amber">Programar</span> fecha/hora; se activa sola (cada minuto).<br>
+                  <span class="help-badge hb-gray">No notificar</span> solo historial, sin modal.<br>
+                  Al abrir la app: <strong>Aceptar</strong> = no vuelve a salir; <strong>X</strong> = te lo muestra otra vez. No es push del sistema: hace falta abrir TURNIO.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128172;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Sugerencias y fallos</div>
+                <div class="cx-hi-desc">Desde Ajustes (o desde Exclusiones &rarr; Notificar incidencia) env&iacute;as un fallo o una propuesta. Lo recibe Administraci&oacute;n. Los invitados no pueden enviar.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1568,9 +1594,40 @@
                 <div class="cx-hi-desc">
                   <span class="help-badge hb-blue">LECTURA</span> consulta.<br>
                   <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante, publicar Combinados&hellip;).<br>
-                  <span class="help-badge hb-amber">COMERCIAL</span> mapa y servicios enlazados (vista reducida).<br>
-                  <span class="help-badge hb-purple">ADMIN</span> gesti&oacute;n de usuarios y acceso en Administraci&oacute;n.
+                  <span class="help-badge hb-amber">COMERCIAL</span> mapa y servicios enlazados (vista reducida; sin Radar ni exclusiones).<br>
+                  <span class="help-badge hb-purple">ADMIN</span> gesti&oacute;n completa en Administraci&oacute;n.
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Administraci&oacute;n (solo ADMIN)</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128101;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Hub tipo Circulaci&oacute;n</div>
+                <div class="cx-hi-desc">Ajustes &rarr; Panel de administraci&oacute;n. Mosaico de herramientas (Operaci&oacute;n / Usuarios). Cada tile abre su panel; <strong>&larr; Administraci&oacute;n</strong> vuelve al hub. Los cambios se auditan.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128721;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Operaci&oacute;n</div>
+                <div class="cx-hi-desc">
+                  <strong>Mantenimiento</strong> &mdash; bloquea el acceso a no-ADMIN.<br>
+                  <strong>Accesos</strong> &mdash; registro IP/ciudad y alertas de multi-IP.<br>
+                  <strong>Exclusiones</strong> &mdash; tren o tramo A&harr;B fuera de sin salida, con caducidad; 35xxx ya se ignoran solos.<br>
+                  <strong>Aviso al entrar</strong> &mdash; ahora / programar / solo historial.<br>
+                  <strong>Sugerencias</strong> y <strong>Solicitudes</strong> de alta pendientes.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128274;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Usuarios</div>
+                <div class="cx-hi-desc"><strong>Clave ADMIN</strong> (entrar sin OTP), <strong>A&ntilde;adir usuario</strong> (perfil + OTP) y <strong>Usuarios</strong> (roles, activaci&oacute;n, caducidad de invitados).</div>
               </div>
             </div>
           </div>
@@ -1578,31 +1635,31 @@
           <div class="cx-help-section">
             <h3>Novedades recientes (pruebas)</h3>
             <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128683;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">V.77 &middot; Exclusiones y sin salida</div>
+                <div class="cx-hi-desc">Exclusiones de l&iacute;nea visibles en solo lectura (Circulaci&oacute;n / Radar) con aviso de incidencia. Sin salida solo si el tren circula hoy en malla. Hub Admin reorganizado; Ajustes en columna estable.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128226;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Avisos programables</div>
+                <div class="cx-hi-desc">Al publicar un aviso al entrar: <strong>Ahora</strong>, <strong>Programar</strong> (fecha/hora) o <strong>No notificar</strong> (solo historial).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
               <div class="cx-hi-icon">&#11088;</div>
               <div class="cx-hi-body">
-                <div class="cx-hi-title">V.63 &middot; Preferidas Enlazados</div>
-                <div class="cx-hi-desc">Estaciones preferidas por usuario (cuenta). Chips con nombre del Excel + buscador para a&ntilde;adir. Sin elecci&oacute;n = todas. No se eligen tramos de enlace compuestos.</div>
+                <div class="cx-hi-title">Preferidas Enlazados</div>
+                <div class="cx-hi-desc">Estaciones preferidas por usuario (cuenta). Chips con nombre del Excel + buscador. Sin elecci&oacute;n = todas.</div>
               </div>
             </div>
             <div class="cx-help-item">
               <div class="cx-hi-icon">&#128506;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Mapa &middot; flechas, LTV e Inicio</div>
-                <div class="cx-hi-desc">Flecha de sentido en las bolas de tren; capa <strong>LTV</strong> con velocidad visible y refresco autom&aacute;tico; atajo de mapa junto al Radar en Inicio.</div>
-              </div>
-            </div>
-            <div class="cx-help-item">
-              <div class="cx-hi-icon">&#128226;</div>
-              <div class="cx-hi-body">
-                <div class="cx-hi-title">Radar &middot; avisos y Vigilante</div>
-                <div class="cx-hi-desc">Unidades de flota en tarjetas de alerta; avisos de Red con fecha/hora y m&aacute;s recientes primero; producto alineado con la tarjeta; <strong>Sin salida</strong> en Radar con Enterado; detenidos a&uacute;n en calibraci&oacute;n.</div>
-              </div>
-            </div>
-            <div class="cx-help-item">
-              <div class="cx-hi-icon">&#128100;</div>
-              <div class="cx-hi-body">
-                <div class="cx-hi-title">Acceso y administraci&oacute;n</div>
-                <div class="cx-hi-desc">Solicitud de acceso desde el login; cola de solicitudes en Admin; filtros y registro de accesos; modo mantenimiento ADMIN.</div>
+                <div class="cx-hi-desc">Flecha de sentido en las bolas; capa LTV con velocidad y refresco; atajo de mapa junto al Radar en Inicio.</div>
               </div>
             </div>
           </div>
@@ -1810,13 +1867,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.76"></script>
-    <script src="./conexiones.js?v=V.76"></script>
+    <script src="./turnio-config.js?v=V.77"></script>
+    <script src="./conexiones.js?v=V.77"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.76"></script>
+    <script src="./app.js?v=V.77"></script>
   </body>
 </html>
 
