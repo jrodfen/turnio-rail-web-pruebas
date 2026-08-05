@@ -3689,8 +3689,37 @@
     pintarModalAmbarVigilante_(
       items,
       'Tren sin salida',
-      'Debería haber salido según malla y aún no hay señal viva (GTFS/flota).'
+      'Debería haber salido según malla y aún no hay señal viva (GTFS/flota). Enterado lo quita del Radar.'
     );
+  }
+
+  /** Al cargar Radar: modal + tarjetas de sin salida pendientes (Telegram ya lo manda el Worker). */
+  function avisarSinSalidaDesdeRadar_() {
+    var pendientes = [];
+    (radar || []).forEach(function (a) {
+      if (!esAlertaSinSalidaFront_(a)) return;
+      var cod = codTrenSinSalida_(a.codTren);
+      if (!cod || estaSinSalidaEnterado_(cod)) return;
+      var clave = claveCritico({ categoria: 'sin_salida', codTren: cod });
+      if (trenesYaAlertados[clave]) return;
+      pendientes.push({
+        tipo: a.tipo || '🟠 AVISO SIN SALIDA',
+        categoria: 'sin_salida',
+        linea: a.linea || ('Tren ' + cod),
+        codTren: cod,
+        retrasoNum: Number(a.retrasoNum || 0),
+        etiquetaModal: '+' + Number(a.retrasoNum || 0) + ' min sin señal',
+        mensaje: String(a.mensaje || 'Sin señal viva tras salida teórica'),
+        lugar: String(a.nombreOrig || '').trim(),
+        horaDesde: String(a.hOrig || '').trim(),
+        tripId: a.tripId || ''
+      });
+    });
+    if (!pendientes.length) return;
+    // No marcar yaAlertados hasta Enterado: así el modal puede reabrirse si Posponer.
+    var modal = document.getElementById('modal-detencion-grave');
+    if (modal && !modal.hidden) return;
+    mostrarModalSinSalida(pendientes);
   }
 
   function procesarCriticos(criticos) {
@@ -4605,6 +4634,7 @@
             window.TurnioCxRetrasos.aplicarDesdeRadar(radar, 'turnio-radar');
           }
           render();
+          try { avisarSinSalidaDesdeRadar_(); } catch (_) { /* */ }
           if (meta) meta.style.color = '';
           return;
         }
