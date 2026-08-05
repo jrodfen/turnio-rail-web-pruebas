@@ -2324,29 +2324,65 @@
   }
 
   function adifNumTrenDePayload_(t) {
-    if (!t || typeof t !== 'object') return '';
-    var raw =
-      (t.commercial_id && t.commercial_id[0] && t.commercial_id[0].number) ||
-      t.technical_number_planif ||
-      t.technical_number_in ||
-      t.id ||
-      '';
-    return String(raw).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    var nums = adifNumsTrenDePayload_(t);
+    return nums.length ? nums[0] : '';
+  }
+
+  /** Todos los números comerciales/técnicos del tren ADIF (para cruzar con GTFS). */
+  function adifNumsTrenDePayload_(t) {
+    var nums = [];
+    function add(raw) {
+      var n = String(raw == null ? '' : raw).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+      if (n && nums.indexOf(n) < 0) nums.push(n);
+    }
+    if (!t || typeof t !== 'object') return nums;
+    var cid = t.commercial_id;
+    if (Array.isArray(cid)) {
+      cid.forEach(function (c) {
+        if (!c || typeof c !== 'object') return;
+        if (c.number != null) add(c.number);
+        if (Array.isArray(c.numbers)) c.numbers.forEach(add);
+      });
+    }
+    add(t.technical_number_planif);
+    add(t.technical_number_planif_in);
+    add(t.technical_number_planif_out);
+    add(t.technical_number_in);
+    add(t.technical_number_out);
+    add(t.id);
+    return nums;
   }
 
   function adifViaDePayload_(t) {
     if (!t || typeof t !== 'object') return '';
     var v = t.platform != null && String(t.platform).trim() !== '' ? t.platform : t.platform_in;
-    return v != null ? String(v).trim() : '';
+    if ((v == null || String(v).trim() === '') && t.platform_out != null) v = t.platform_out;
+    v = v != null ? String(v).trim() : '';
+    if (!v || /^BUS$/i.test(v) || v === '-' || v === '—' || v === '?') return '';
+    return v;
   }
 
   function adifAccesoDePayload_(t) {
     if (!t || typeof t !== 'object') return '';
-    var keys = ['access_in', 'access_out', 'access', 'passenger_access', 'hall', 'boarding_access', 'entry'];
+    var keys = [
+      'access_in', 'access_out', 'access', 'passenger_access', 'hall',
+      'boarding_access', 'entry', 'arrivals_access', 'departures_access'
+    ];
     for (var i = 0; i < keys.length; i++) {
       var v = t[keys[i]];
       if (v != null && String(v).trim() !== '') return String(v).trim();
     }
+    return '';
+  }
+
+  function adifExtraerCodigoEstDePayload_(mensajeCrudo) {
+    try {
+      var datos = typeof mensajeCrudo === 'string' ? JSON.parse(mensajeCrudo) : mensajeCrudo;
+      if (datos && datos.station_settings && datos.station_settings.code != null) {
+        return adifNormalizarCodigoEst_(datos.station_settings.code);
+      }
+      if (datos && datos.code != null) return adifNormalizarCodigoEst_(datos.code);
+    } catch (_) {}
     return '';
   }
 
@@ -2405,29 +2441,34 @@
     var next = Object.create(null);
     var n = 0;
     trenes.forEach(function (t) {
-      var num = adifNumTrenDePayload_(t);
-      if (!num) return;
-      next[num] = {
+      var nums = adifNumsTrenDePayload_(t);
+      if (!nums.length) return;
+      var entry = {
         via: adifViaDePayload_(t),
         acceso: adifAccesoDePayload_(t),
         raw: t,
         ts: Date.now()
       };
+      nums.forEach(function (num) {
+        // Si un nº ya tenía vía y este entry no, no pisar en el mismo snapshot.
+        if (next[num] && next[num].via && !entry.via) return;
+        next[num] = entry;
+      });
       n++;
     });
-    return { map: next, n: n };
+    return { map: next, n: n, station: adifExtraerCodigoEstDePayload_(datos) };
   }
 
   /**
-   * stationCodeOpt vacío = mensaje huérfano (sin topic): solo actualiza cache plana
-   * de mallas, nunca pisa adifByStation_ de otras estaciones.
+   * stationCodeOpt vacío: intenta station_settings.code del payload.
+   * Sin estación → solo cache plana (mallas).
    */
   function aplicarCacheAdifDesdePayload_(mensajeCrudo, stationCodeOpt) {
     var parsed = adifPayloadAMapaTrenes_(mensajeCrudo);
     if (!parsed) return 0;
     var next = parsed.map;
     var n = parsed.n;
-    var st = adifNormalizarCodigoEst_(stationCodeOpt) || '';
+    var st = adifNormalizarCodigoEst_(stationCodeOpt) || parsed.station || '';
     if (st) {
       adifByStation_[st] = adifMergeStationBucket_(adifByStation_[st], next);
       adifJoinedStations_[st] = true;
@@ -2435,7 +2476,6 @@
         adifLiveCache_ = adifMergeStationBucket_(adifLiveCache_, next);
       }
     } else {
-      // Push sin estación clara: no tocar buckets multi-estación.
       adifLiveCache_ = adifMergeStationBucket_(adifLiveCache_, next);
     }
     adifLiveLastMsgAt_ = Date.now();
@@ -2540,9 +2580,10 @@
       try {
         await conn.invoke('JoinInfo', topics[i]);
       } catch (_) {}
+      // GetLastMessage en InfoStation suele devolver null; el dato llega por ReceiveMessage.
       try {
         var ret = await conn.invoke('GetLastMessage', topics[i]);
-        if (ret != null && ret !== '') onAdifLiveMessage_(ret, 'GetLastMessage', code);
+        if (ret != null && ret !== '' && ret !== 'null') onAdifLiveMessage_(ret, 'GetLastMessage', code);
       } catch (_) {}
     }
     return topics;
@@ -2550,9 +2591,7 @@
 
   function onAdifLiveMessage_(mensajeCrudo, evName, stationOpt) {
     try {
-      // Solo GetLastMessage / topic explícito actualizan buckets por estación.
-      // Push sin código → cache plana (mallas), sin pisar O/D/próx del Radar.
-      var st = adifNormalizarCodigoEst_(stationOpt) || '';
+      var st = adifNormalizarCodigoEst_(stationOpt) || adifExtraerCodigoEstDePayload_(mensajeCrudo) || '';
       var n = aplicarCacheAdifDesdePayload_(mensajeCrudo, st);
       var conVia = 0;
       var bucket = (st && adifByStation_[st]) || adifLiveCache_;
@@ -2576,6 +2615,19 @@
     }
   }
 
+  async function adifEsperarDatosEstacion_(code, timeoutMs) {
+    var st = adifNormalizarCodigoEst_(code);
+    if (!st) return false;
+    if (adifByStation_[st] && Object.keys(adifByStation_[st]).length) return true;
+    var t0 = Date.now();
+    var max = timeoutMs == null ? 4500 : timeoutMs;
+    while (Date.now() - t0 < max) {
+      await new Promise(function (r) { setTimeout(r, 250); });
+      if (adifByStation_[st] && Object.keys(adifByStation_[st]).length) return true;
+    }
+    return !!(adifByStation_[st] && Object.keys(adifByStation_[st]).length);
+  }
+
   async function adifAsegurarConexion_(preferCode) {
     var signalR = await cargarSignalRAdif_();
     var Connected = signalR.HubConnectionState && signalR.HubConnectionState.Connected;
@@ -2596,8 +2648,12 @@
     if (!uniq.length) return;
     var conn = await adifAsegurarConexion_(uniq[0]);
     if (!conn) return;
-    for (var i = 0; i < uniq.length; i++) {
+    // Limitar joins simultáneos: InfoStation empuja el snapshot tras JoinInfo.
+    var maxJoin = Math.min(uniq.length, 10);
+    for (var i = 0; i < maxJoin; i++) {
       await adifJoinTopics_(conn, uniq[i]);
+      await adifEsperarDatosEstacion_(uniq[i], i < 3 ? 5000 : 2500);
+      inyectarViaAdifEnRadar_();
     }
   }
 
