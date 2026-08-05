@@ -1339,3 +1339,18 @@ body.monitor-mode #fab-overlay{display:none!important}
 .alert.sin-salida{border-left:5px solid #d97706;background:linear-gradient(180deg,#fffbeb 0%,#fff 55%)}
 .ss-enterado-btn{margin:0;padding:8px 12px;border:1px solid rgba(217,119,6,.45);border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
 .ss-enterado-btn:hover{background:#ffedd5}
+.admin-fold{background:var(--card);border:1px solid rgba(37,99,235,.35);border-radius:16px;margin:0 0 12px;box-shadow:var(--shadow);overflow:hidden}
+.admin-fold.admin-sugerencia-box{border-color:rgba(180,83,9,.35)}
+.admin-fold.admin-mant-box{border-color:rgba(5,150,105,.35)}
+.admin-fold-sum{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none;user-select:none}
+.admin-fold-sum::-webkit-details-marker{display:none}
+.admin-fold-sum::marker{content:''}
+.admin-fold-titles{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.admin-fold-title{font-size:15px;font-weight:800;color:var(--text)}
+.admin-fold-sub{font-size:12px;color:var(--muted);line-height:1.35}
+.admin-fold-chev{flex-shrink:0;width:22px;height:22px;border-radius:8px;background:rgba(45,127,249,.1);color:#1d63cb;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;transition:transform .15s ease}
+.admin-fold-chev::before{content:'▾'}
+.admin-fold[open] .admin-fold-chev{transform:rotate(-180deg)}
+.admin-fold-body{padding:0 16px 16px;border-top:1px dashed var(--line)}
+.admin-fold-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.admin-nuevo--nested{margin:0;padding:0;border:0;box-shadow:none;background:transparent}
