@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.72">
+    <link rel="stylesheet" href="./styles.css?v=V.73">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -180,6 +180,7 @@
             <button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button>
           </div>
           <button type="button" class="manual" id="radar-manual" data-requiere-escritura>&#128221; Redactar Aviso Manual (Tren no detectado)</button>
+          <button type="button" class="text-btn excl-radar-link" id="btn-radar-exclusiones" data-go="exclusiones" data-ocultar-comercial>&#128683; Ver exclusiones de l&iacute;nea</button>
           <label class="search" id="radar-search-box"><span>&#128269;</span><input id="search" type="search" placeholder="Buscar tren, estaci&oacute;n, retraso..." autocomplete="off"></label>
           <div id="radar-meta" class="last-update">&Uacute;ltima carga: --:--:--</div>
           <div id="radar-list" class="radar-list" aria-live="polite"></div>
@@ -388,6 +389,22 @@
           </form>
         </div>
       </section>
+      <section id="screen-exclusiones" class="screen">
+        <button class="back" type="button" data-go="trafico" data-ocultar-comercial>&#11013; Volver a Circulaci&oacute;n</button>
+        <div class="avisos-card excl-ro-card">
+          <div class="avisos-card-head">
+            <h3>&#128683; Exclusiones de l&iacute;nea</h3>
+            <button type="button" class="action-btn" id="btn-excl-ro-refrescar" title="Actualizar">&#8635;</button>
+          </div>
+          <p class="avisos-lead">Trenes o tramos que <strong>no salen en sin salida</strong>. Solo lectura. Los <strong>35xxx</strong> (bus/taxi) se ignoran siempre.</p>
+          <p id="excl-ro-meta" class="admin-meta">Cargando&hellip;</p>
+          <div id="excl-ro-lista" class="admin-aviso-lista excl-ro-lista" aria-live="polite"></div>
+          <div class="excl-ro-actions" data-ocultar-invitado>
+            <p class="admin-nuevo-help" style="margin-bottom:8px">&#191;Ves un tren excluido que s&iacute; debiera avisar, o falta una exclusi&oacute;n?</p>
+            <button type="button" class="btn primary" id="btn-excl-ro-notificar">Notificar incidencia</button>
+          </div>
+        </div>
+      </section>
       <section id="screen-pantallas" class="screen">
         <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
         <div class="pantallas-card">
@@ -484,6 +501,10 @@
               <button type="button" class="circ-tile circ-tile--conex" data-go="conexiones">
                 <b>&#128279; Enlazados</b>
                 <span>Panel de conexiones</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--excl" data-go="exclusiones" data-ocultar-comercial>
+                <b>&#128683; Exclusiones</b>
+                <span>Fuera de sin salida</span>
               </button>
             </div>
           </div>
@@ -1774,13 +1795,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.72"></script>
-    <script src="./conexiones.js?v=V.72"></script>
+    <script src="./turnio-config.js?v=V.73"></script>
+    <script src="./conexiones.js?v=V.73"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.72"></script>
+    <script src="./app.js?v=V.73"></script>
   </body>
 </html>
 

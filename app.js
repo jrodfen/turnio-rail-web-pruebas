@@ -1400,6 +1400,86 @@
     }
   }
 
+  function tituloExclItem_(it) {
+    if (!it) return 'Exclusión';
+    if (it.tipo === 'relacion') {
+      return 'Tramo ' + (it.origen || '?') + (it.bidireccional === false ? ' → ' : ' ↔ ') + (it.destino || '?')
+        + (it.producto ? (' · ' + it.producto) : '');
+    }
+    return 'Tren ' + (it.cod_tren || '?') + (it.producto ? (' · ' + it.producto) : '');
+  }
+
+  async function cargarExclusionesLectura_() {
+    if (esComercial_()) return;
+    var meta = document.getElementById('excl-ro-meta');
+    var lista = document.getElementById('excl-ro-lista');
+    if (meta) meta.textContent = 'Cargando…';
+    try {
+      var d = await call('exclusiones_listar');
+      var items = (d && d.items) || [];
+      if (meta) {
+        meta.textContent = items.length
+          ? (items.length + ' activas · 35xxx siempre ignorados')
+          : 'Ninguna exclusión activa · 35xxx siempre ignorados';
+      }
+      if (!lista) return;
+      if (!items.length) {
+        lista.innerHTML = '<div class="empty" style="padding:8px;">No hay exclusiones de línea activas ahora.</div>';
+        return;
+      }
+      lista.innerHTML = items.map(function (it) {
+        var hasta = String(it.hasta || '').slice(0, 10);
+        return '<div class="admin-excl-item" data-excl-id="' + esc(it.id) + '">' +
+          '<div class="admin-excl-item-main">' +
+          '<div class="admin-excl-item-title">' + esc(tituloExclItem_(it)) + '</div>' +
+          '<div class="admin-excl-item-meta">Hasta ' + esc(hasta || '—') +
+          (it.motivo ? (' · ' + esc(it.motivo)) : '') +
+          '</div></div></div>';
+      }).join('');
+    } catch (e) {
+      if (meta) meta.textContent = String(e.message || e) || 'No se pudieron cargar exclusiones.';
+      if (lista) lista.innerHTML = '';
+    }
+  }
+
+  var sugerenciaBorrador_ = null;
+
+  function aplicarBorradorSugerencia_() {
+    if (!sugerenciaBorrador_) return;
+    var draft = sugerenciaBorrador_;
+    sugerenciaBorrador_ = null;
+    var tipoEl = document.getElementById('sugerencia-tipo');
+    var tit = document.getElementById('sugerencia-titulo');
+    var cue = document.getElementById('sugerencia-cuerpo');
+    var back = document.querySelector('#screen-sugerencias > .back');
+    if (tipoEl) tipoEl.value = draft.tipo || 'fallo';
+    if (tit) tit.value = draft.titulo || '';
+    if (cue) cue.value = draft.cuerpo || '';
+    if (back && draft.volver) {
+      back.setAttribute('data-go', draft.volver);
+      back.innerHTML = draft.volver === 'exclusiones'
+        ? '← Exclusiones'
+        : '&larr; Ajustes';
+    }
+  }
+
+  function abrirNotificarExcl_() {
+    if (sessionProfile.role_code === 'INVITADO') {
+      toast('Los invitados no pueden notificar incidencias.', 'error');
+      return;
+    }
+    sugerenciaBorrador_ = {
+      tipo: 'fallo',
+      titulo: 'Revisar exclusión de línea / sin salida',
+      cuerpo: 'Creo que hay un error en las exclusiones de línea (sin salida).\n\n'
+        + 'Tren o tramo afectado:\n'
+        + 'Qué ocurre (excluido de más / falta exclusión):\n'
+        + 'Hora aprox. (Madrid):\n',
+      volver: 'exclusiones'
+    };
+    go('sugerencias');
+  }
+
   function syncAdminExclFormTipo_() {
     var tipo = String((document.getElementById('admin-excl-tipo') || {}).value || 'tren');
     var esRel = tipo === 'relacion';
@@ -1628,6 +1708,7 @@
       excl_hasta_pasada: 'La caducidad no puede ser anterior a hoy.',
       excl_tren_invalido: 'Número de tren no válido.',
       excl_tren_es_35: 'Los 35xxx ya se ignoran solos (medio alternativo).',
+      excl_unavailable: 'No se pudieron cargar las exclusiones.',
       excl_relacion_incompleta: 'Indica origen y destino del tramo.',
       excl_relacion_misma_estacion: 'Origen y destino no pueden ser la misma estación.',
       excl_tipo_invalido: 'Tipo de exclusión no válido.',
@@ -2817,6 +2898,7 @@
     kms: 'Kilómetros',
     pantallas: 'Pantallas estación',
     conexiones: 'Servicios enlazados',
+    exclusiones: 'Exclusiones de línea',
     avisos: 'Avisos de red',
     'avisos-app': 'TURNIO RAIL'
   };
@@ -2888,6 +2970,15 @@
         go('ajustes');
         return;
       }
+      aplicarBorradorSugerencia_();
+    }
+    if (screen === 'exclusiones') {
+      if (esComercial_()) {
+        toast('Tu perfil COMERCIAL no tiene acceso a exclusiones.', 'error');
+        go('home');
+        return;
+      }
+      cargarExclusionesLectura_();
     }
     if (screen === 'pantallas') abrirPantallas();
     if (screen === 'kms') abrirKms();
@@ -6572,6 +6663,10 @@
   });
   var btnExclRef = document.getElementById('btn-admin-excl-refrescar');
   if (btnExclRef) btnExclRef.addEventListener('click', cargarAdminExclusiones_);
+  var btnExclRoRef = document.getElementById('btn-excl-ro-refrescar');
+  if (btnExclRoRef) btnExclRoRef.addEventListener('click', cargarExclusionesLectura_);
+  var btnExclRoNotif = document.getElementById('btn-excl-ro-notificar');
+  if (btnExclRoNotif) btnExclRoNotif.addEventListener('click', abrirNotificarExcl_);
   var exclTipo = document.getElementById('admin-excl-tipo');
   if (exclTipo) {
     exclTipo.addEventListener('change', syncAdminExclFormTipo_);

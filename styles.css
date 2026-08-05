@@ -419,6 +419,11 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .admin-acceso-meta{margin:0;font-size:11px;color:var(--muted);line-height:1.4}
 .login-or{margin:12px 0 8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted)}
 .login-opt{font-weight:600;color:var(--muted);font-size:11px}
+.circ-tile--excl{border-color:rgba(124,58,237,.35);background:linear-gradient(160deg,rgba(124,58,237,.07),var(--bg))}
+.excl-radar-link{display:block;margin:8px 0 4px;font-size:12px;font-weight:700;text-align:left}
+.excl-ro-card .avisos-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.excl-ro-lista{margin:8px 0 14px}
+.excl-ro-actions{padding-top:10px;border-top:1px dashed var(--line)}
 .admin-excl-form{margin:10px 0 12px}
 .admin-excl-check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text)}
 .admin-excl-check input{width:auto;margin:0}
