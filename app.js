@@ -2628,18 +2628,24 @@
     list.querySelectorAll('.alert[data-cod]').forEach(function (card) {
       var tren = card.getAttribute('data-cod') || '';
       var o = card.getAttribute('data-cod-origen') || '';
+      var p = card.getAttribute('data-cod-prox') || '';
       var d = card.getAttribute('data-cod-destino') || '';
       var infoO = o ? lookupViaAdifEnEstacion_(tren, o) : null;
+      var infoP = p ? lookupViaAdifEnEstacion_(tren, p) : null;
       var infoD = d ? lookupViaAdifEnEstacion_(tren, d) : null;
       var host = card.querySelector('.alert-vias-adif');
       if (!host) return;
       var parts = [];
-      if (infoO && infoO.via) {
-        parts.push('Orig. VÍA ' + infoO.via + (infoO.acceso ? ' · Acc. ' + infoO.acceso : ''));
+      var shown = Object.create(null);
+      function addVia_(label, code, info) {
+        var st = adifNormalizarCodigoEst_(code);
+        if (!st || !info || !info.via || shown[st]) return;
+        shown[st] = true;
+        parts.push(label + ' VÍA ' + info.via + (info.acceso ? ' · Acc. ' + info.acceso : ''));
       }
-      if (infoD && infoD.via) {
-        parts.push('Dest. VÍA ' + infoD.via + (infoD.acceso ? ' · Acc. ' + infoD.acceso : ''));
-      }
+      addVia_('Orig.', o, infoO);
+      addVia_('Próx.', p, infoP);
+      addVia_('Dest.', d, infoD);
       if (parts.length) {
         host.hidden = false;
         host.textContent = '📡 ' + parts.join(' · ');
@@ -2659,13 +2665,19 @@
     var uniq = [];
     var seen = Object.create(null);
     if (!list) return uniq;
+    function add_(raw) {
+      var code = adifNormalizarCodigoEst_(raw);
+      if (!code || seen[code]) return;
+      seen[code] = true;
+      uniq.push(code);
+    }
+    // Prioriza próxima (más operativa) frente a O/D.
     list.querySelectorAll('.alert[data-cod]').forEach(function (card) {
-      [card.getAttribute('data-cod-origen'), card.getAttribute('data-cod-destino')].forEach(function (raw) {
-        var code = adifNormalizarCodigoEst_(raw);
-        if (!code || seen[code]) return;
-        seen[code] = true;
-        uniq.push(code);
-      });
+      add_(card.getAttribute('data-cod-prox'));
+    });
+    list.querySelectorAll('.alert[data-cod]').forEach(function (card) {
+      add_(card.getAttribute('data-cod-origen'));
+      add_(card.getAttribute('data-cod-destino'));
     });
     return uniq;
   }
@@ -2699,7 +2711,7 @@
     inyectarViaAdifEnRadar_();
     var codes = codigosViaRadarVisibles_().filter(function (c) {
       return adifEstacionNecesitaRefresh_(c, 90000);
-    }).slice(0, 14);
+    }).slice(0, 18);
     if (!codes.length) return;
     adifRadarEnrichBusy_ = true;
     try {
@@ -4917,8 +4929,10 @@
       var esSs = esAlertaSinSalidaFront_(x);
       var codO = adifNormalizarCodigoEst_(x.codOrigen) || codigoEstacionPorNombreAdif_(x.nombreOrig);
       var codD = adifNormalizarCodigoEst_(x.codDestino) || codigoEstacionPorNombreAdif_(x.nombreDest);
+      var codP = adifNormalizarCodigoEst_(x.codEstSig || x.nextStopId || '');
       return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '"' +
         (codO ? ' data-cod-origen="' + esc(codO) + '"' : '') +
+        (codP ? ' data-cod-prox="' + esc(codP) + '"' : '') +
         (codD ? ' data-cod-destino="' + esc(codD) + '"' : '') +
         (esSs ? ' data-sin-salida="1"' : '') + '>' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
