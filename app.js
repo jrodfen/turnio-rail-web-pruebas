@@ -1353,6 +1353,124 @@
     box.innerHTML = arr.map(htmlSolicitudItem_).join('');
   }
 
+  async function cargarAdminExclusiones_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-excl-meta');
+    var lista = document.getElementById('admin-excl-lista');
+    if (meta) meta.textContent = 'Cargando…';
+    try {
+      var d = await call('admin_exclusiones_listar');
+      var items = (d && d.items) || [];
+      var hoy = String((d && d.hoy) || '').slice(0, 10);
+      if (meta) {
+        meta.textContent = items.length
+          ? (items.length + ' exclusiones · 35xxx siempre ignorados')
+          : 'Sin exclusiones manuales · 35xxx siempre ignorados';
+      }
+      if (!lista) return;
+      if (!items.length) {
+        lista.innerHTML = '<div class="empty" style="padding:8px;">No hay exclusiones guardadas.</div>';
+        return;
+      }
+      lista.innerHTML = items.map(function (it) {
+        var hasta = String(it.hasta || '').slice(0, 10);
+        var caducada = !!(hoy && hasta && hasta < hoy);
+        var inactiva = it.activo === false;
+        var titulo = it.tipo === 'relacion'
+          ? ('Tramo ' + (it.origen || '?') + (it.bidireccional === false ? ' → ' : ' ↔ ') + (it.destino || '?'))
+          : ('Tren ' + (it.cod_tren || '?'));
+        if (it.producto) titulo += ' · ' + it.producto;
+        var cls = 'admin-excl-item' + (caducada ? ' caducada' : '') + (inactiva ? ' inactiva' : '');
+        var estado = inactiva ? 'Inactiva' : (caducada ? 'Caducada' : 'Activa');
+        return '<div class="' + cls + '" data-excl-id="' + esc(it.id) + '">' +
+          '<div class="admin-excl-item-main">' +
+          '<div class="admin-excl-item-title">' + esc(titulo) + '</div>' +
+          '<div class="admin-excl-item-meta">' + esc(estado) +
+          ' · hasta ' + esc(hasta || '—') +
+          (it.motivo ? (' · ' + esc(it.motivo)) : '') +
+          (it.created_by_email ? (' · ' + esc(it.created_by_email)) : '') +
+          '</div></div>' +
+          (inactiva ? '' : '<button type="button" class="btn secondary" data-excl-borrar="' +
+            esc(it.id) + '">Quitar</button>') +
+          '</div>';
+      }).join('');
+    } catch (e) {
+      if (meta) meta.textContent = String(e.message || e) || 'No se pudieron cargar exclusiones.';
+      if (lista) lista.innerHTML = '';
+    }
+  }
+
+  function syncAdminExclFormTipo_() {
+    var tipo = String((document.getElementById('admin-excl-tipo') || {}).value || 'tren');
+    var esRel = tipo === 'relacion';
+    var trenW = document.getElementById('admin-excl-tren-wrap');
+    var oW = document.getElementById('admin-excl-origen-wrap');
+    var dW = document.getElementById('admin-excl-destino-wrap');
+    var biW = document.getElementById('admin-excl-bi-wrap');
+    if (trenW) trenW.hidden = esRel;
+    if (oW) oW.hidden = !esRel;
+    if (dW) dW.hidden = !esRel;
+    if (biW) biW.hidden = !esRel;
+  }
+
+  function defaultHastaExcl_() {
+    var d = new Date();
+    d.setDate(d.getDate() + 14);
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  async function guardarAdminExclusiones_(e) {
+    if (e) e.preventDefault();
+    if (!sessionProfile.is_admin) return;
+    var btn = document.getElementById('btn-admin-excl-guardar');
+    var tipo = String((document.getElementById('admin-excl-tipo') || {}).value || 'tren');
+    var payload = {
+      tipo: tipo,
+      hasta: String((document.getElementById('admin-excl-hasta') || {}).value || '').trim(),
+      producto: String((document.getElementById('admin-excl-producto') || {}).value || '').trim(),
+      motivo: String((document.getElementById('admin-excl-motivo') || {}).value || '').trim()
+    };
+    if (tipo === 'tren') {
+      payload.cod_tren = String((document.getElementById('admin-excl-tren') || {}).value || '').trim();
+    } else {
+      payload.origen = String((document.getElementById('admin-excl-origen') || {}).value || '').trim();
+      payload.destino = String((document.getElementById('admin-excl-destino') || {}).value || '').trim();
+      payload.bidireccional = !!(document.getElementById('admin-excl-bidi') || {}).checked;
+    }
+    if (btn) btn.disabled = true;
+    try {
+      await call('admin_exclusiones_guardar', payload);
+      toast('Exclusión guardada.', 'success');
+      var tren = document.getElementById('admin-excl-tren');
+      var origen = document.getElementById('admin-excl-origen');
+      var destino = document.getElementById('admin-excl-destino');
+      var motivo = document.getElementById('admin-excl-motivo');
+      if (tren) tren.value = '';
+      if (origen) origen.value = '';
+      if (destino) destino.value = '';
+      if (motivo) motivo.value = '';
+      await cargarAdminExclusiones_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function borrarAdminExclusiones_(id) {
+    if (!sessionProfile.is_admin || !id) return;
+    try {
+      await call('admin_exclusiones_borrar', { id: id });
+      toast('Exclusión desactivada.', 'success');
+      await cargarAdminExclusiones_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
   async function cargarAdminSolicitudes_() {
     if (!sessionProfile.is_admin) return;
     var meta = document.getElementById('admin-solicitud-meta');
@@ -1505,6 +1623,16 @@
       admin_clave_invalida: 'La clave debe tener entre 8 y 72 caracteres.',
       admin_clave_solo_admin: 'Solo se puede definir clave en perfiles ADMIN.',
       admin_clave_failed: 'No se pudo guardar la clave de acceso.',
+      excl_schema_pending: 'Falta la migración de exclusiones en Supabase (20260805_0007).',
+      excl_hasta_invalida: 'Indica una fecha de caducidad válida.',
+      excl_hasta_pasada: 'La caducidad no puede ser anterior a hoy.',
+      excl_hasta_demasiado_lejana: 'La caducidad no puede superar 180 días.',
+      excl_tren_invalido: 'Número de tren no válido.',
+      excl_tren_es_35: 'Los 35xxx ya se ignoran solos (medio alternativo).',
+      excl_relacion_incompleta: 'Indica origen y destino del tramo.',
+      excl_relacion_misma_estacion: 'Origen y destino no pueden ser la misma estación.',
+      excl_tipo_invalido: 'Tipo de exclusión no válido.',
+      excl_id_invalido: 'Exclusión no válida.',
       solicitud_email_invalido: 'Correo no válido.',
       solicitud_nombre_requerido: 'Indica un nombre para el perfil.',
       solicitud_centro_requerido: 'Indica tu centro o unidad.',
@@ -2816,6 +2944,7 @@
       cargarAdminSolicitudes_();
       cargarAdminMantenimiento_();
       cargarAdminAccesos_();
+      cargarAdminExclusiones_();
     }
   }
 
@@ -6301,7 +6430,27 @@
     cargarAdminSugerencias_();
     cargarAdminMantenimiento_();
     cargarAdminAccesos_();
+    cargarAdminExclusiones_();
   });
+  var btnExclRef = document.getElementById('btn-admin-excl-refrescar');
+  if (btnExclRef) btnExclRef.addEventListener('click', cargarAdminExclusiones_);
+  var exclTipo = document.getElementById('admin-excl-tipo');
+  if (exclTipo) {
+    exclTipo.addEventListener('change', syncAdminExclFormTipo_);
+    syncAdminExclFormTipo_();
+  }
+  var exclHasta = document.getElementById('admin-excl-hasta');
+  if (exclHasta && !exclHasta.value) exclHasta.value = defaultHastaExcl_();
+  var exclForm = document.getElementById('admin-excl-form');
+  if (exclForm) exclForm.addEventListener('submit', guardarAdminExclusiones_);
+  var exclLista = document.getElementById('admin-excl-lista');
+  if (exclLista) {
+    exclLista.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-excl-borrar]');
+      if (!btn) return;
+      borrarAdminExclusiones_(btn.getAttribute('data-excl-borrar'));
+    });
+  }
   var btnAdminMant = document.getElementById('btn-admin-mant-toggle');
   if (btnAdminMant) btnAdminMant.addEventListener('click', toggleAdminMantenimiento_);
   var btnAccesosRef = document.getElementById('btn-admin-accesos-refrescar');

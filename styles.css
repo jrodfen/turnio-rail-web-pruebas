@@ -419,7 +419,16 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .admin-acceso-meta{margin:0;font-size:11px;color:var(--muted);line-height:1.4}
 .login-or{margin:12px 0 8px;text-align:center;font-size:12px;font-weight:700;color:var(--muted)}
 .login-opt{font-weight:600;color:var(--muted);font-size:11px}
-.admin-aviso-box{background:var(--card);border:1px solid rgba(37,99,235,.35);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.admin-excl-form{margin:10px 0 12px}
+.admin-excl-check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text)}
+.admin-excl-check input{width:auto;margin:0}
+.admin-excl-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(37,99,235,.12)}
+.admin-excl-item:last-child{border-bottom:0}
+.admin-excl-item.caducada,.admin-excl-item.inactiva{opacity:.55}
+.admin-excl-item-main{min-width:0;flex:1}
+.admin-excl-item-title{font-size:13px;font-weight:800;color:var(--text)}
+.admin-excl-item-meta{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.35}
+.admin-excl-item .btn{margin:0;padding:6px 10px;width:auto;font-size:12px}
 .admin-sugerencia-box{border-color:rgba(180,83,9,.35)}
 .admin-aviso-label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted);margin:0 0 10px}
 .admin-aviso-label input,.admin-aviso-label textarea,.admin-aviso-label select{width:100%;border:1px solid #dce3ec;border-radius:10px;padding:10px;font-size:14px;background:var(--card);color:var(--text);font-family:inherit;resize:vertical}
