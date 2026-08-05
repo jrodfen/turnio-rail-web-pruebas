@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.55">
+    <link rel="stylesheet" href="./styles.css?v=V.63">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -1124,6 +1124,13 @@
                 <div class="cx-hi-desc">Junto al saludo: <strong>tiempo en Sevilla</strong> y <strong>previsi&oacute;n de 2 d&iacute;as</strong> (como en GAS). Debajo, resumen del Radar (trenes / incidencias del &aacute;mbito) m&aacute;s retrasos &ge; 15 min con enlace a su tarjeta, y avisos de red. Accesos r&aacute;pidos en <strong>Circulaci&oacute;n</strong>.</div>
               </div>
             </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128506;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Atajo al mapa</div>
+                <div class="cx-hi-desc">En la tarjeta de resumen del Radar hay un icono de <strong>mapa</strong> junto al acceso al Radar: abre la flota en vivo sin pasar por Circulaci&oacute;n.</div>
+              </div>
+            </div>
           </div>
 
           <div class="cx-help-section">
@@ -1239,7 +1246,7 @@
               <div class="cx-hi-icon">&#128506;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Flota en vivo</div>
-                <div class="cx-hi-desc">Marcadores de la flota sobre el mapa, filtrables por regi&oacute;n y modo. Colores seg&uacute;n demora. Pulsa un tren para ficha y marcha. Se actualiza peri&oacute;dicamente mientras la pantalla est&aacute; abierta.</div>
+                <div class="cx-hi-desc">Marcadores de la flota sobre el mapa, filtrables por regi&oacute;n y modo (Todos / Larga dist. / Cercan&iacute;as) y por demoras. Colores seg&uacute;n retraso. Cada bola lleva una <strong>flecha de sentido</strong> (hacia la siguiente parada / destino) del mismo color. Pulsa un tren para ficha y marcha. Se actualiza peri&oacute;dicamente mientras la pantalla est&aacute; abierta.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1259,6 +1266,17 @@
                   Ejemplos: <em>Antequera</em>, <em>Antequera-Santa Ana</em>, <em>Antequera Alta Velocidad</em>.
                   Al escribir aparecen sugerencias (tipo: estaci&oacute;n, apeadero, estaci&oacute;n de servicio&hellip; y operador Adif).
                   Al elegir una, el mapa <strong>se centra</strong> en ese punto <strong>sin crear marcador</strong>.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128736;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Capas V&iacute;as, ADIF y LTV</div>
+                <div class="cx-hi-desc">
+                  <span class="help-badge hb-gray">V&iacute;as</span> OpenRailwayMap (infraestructura).<br>
+                  <span class="help-badge hb-blue">ADIF</span> capa oficial IDEADIF (WMS), independiente de ORM.<br>
+                  <span class="help-badge hb-amber">LTV</span> limitaciones temporales de velocidad (Adif). Cada punto muestra la <strong>velocidad</strong> dentro del c&iacute;rculo. Mientras la capa est&eacute; activa se refresca sola cada ~10&nbsp;min.
                 </div>
               </div>
             </div>
@@ -1324,6 +1342,13 @@
               </div>
             </div>
             <div class="cx-help-item">
+              <div class="cx-hi-icon">&#11088;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Mis preferidas</div>
+                <div class="cx-hi-desc">Cada usuario elige sus estaciones de enlace preferidas (se guardan en la cuenta). Bot&oacute;n <span class="help-badge hb-blue">Mis preferidas</span>: ves las ya elegidas como chips con el nombre del Excel (p. ej. <em>Sevilla S.J.</em>) y a&ntilde;ades m&aacute;s con un buscador sobre las estaciones del fichero del d&iacute;a. Los tramos tipo <em>Chamart&iacute;n &ndash; Atocha</em> no se pueden elegir. Si no has elegido ninguna, se usan <strong>todas</strong>.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
               <div class="cx-hi-icon">&#128228;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Publicar / borrar compartido</div>
@@ -1366,9 +1391,42 @@
                 <div class="cx-hi-title">Cuenta y permisos</div>
                 <div class="cx-hi-desc">
                   <span class="help-badge hb-blue">LECTURA</span> consulta.<br>
-                  <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante&hellip;).<br>
-                  <span class="help-badge hb-purple">ADMIN</span> gesti&oacute;n de usuarios en Administraci&oacute;n.
+                  <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante, publicar Combinados&hellip;).<br>
+                  <span class="help-badge hb-amber">COMERCIAL</span> mapa y servicios enlazados (vista reducida).<br>
+                  <span class="help-badge hb-purple">ADMIN</span> gesti&oacute;n de usuarios y acceso en Administraci&oacute;n.
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Novedades recientes (pruebas)</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#11088;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">V.63 &middot; Preferidas Enlazados</div>
+                <div class="cx-hi-desc">Estaciones preferidas por usuario (cuenta). Chips con nombre del Excel + buscador para a&ntilde;adir. Sin elecci&oacute;n = todas. No se eligen tramos de enlace compuestos.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128506;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Mapa &middot; flechas, LTV e Inicio</div>
+                <div class="cx-hi-desc">Flecha de sentido en las bolas de tren; capa <strong>LTV</strong> con velocidad visible y refresco autom&aacute;tico; atajo de mapa junto al Radar en Inicio.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128226;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Radar &middot; avisos y Vigilante</div>
+                <div class="cx-hi-desc">Unidades de flota en tarjetas de alerta; avisos de Red con fecha/hora y m&aacute;s recientes primero; producto alineado con la tarjeta; <strong>Sin salida</strong> solo a Telegram de pruebas (no en Radar); detenidos a&uacute;n en calibraci&oacute;n.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128100;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Acceso y administraci&oacute;n</div>
+                <div class="cx-hi-desc">Solicitud de acceso desde el login; cola de solicitudes en Admin; filtros y registro de accesos; modo mantenimiento ADMIN.</div>
               </div>
             </div>
           </div>
@@ -1433,7 +1491,7 @@
               <div class="cx-hi-icon">&#128642;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Bot&oacute;n Enlace en Radar</div>
-                <div class="cx-hi-desc">Si un tren del Radar tiene conexiones en los combinados de hoy (estaciones preferidas), aparece el bot&oacute;n verde <span class="help-badge hb-green">Enlace</span>. Abre el detalle y desde ah&iacute; puedes ir al panel completo.</div>
+                <div class="cx-hi-desc">Si un tren del Radar tiene conexiones en los combinados de hoy (seg&uacute;n tus estaciones preferidas, o todas si a&uacute;n no has elegido), aparece el bot&oacute;n verde <span class="help-badge hb-green">Enlace</span>. Abre el detalle y desde ah&iacute; puedes ir al panel completo.</div>
               </div>
             </div>
           </div>
@@ -1441,13 +1499,25 @@
           <div class="cx-help-section">
             <h3>Panel de conexiones</h3>
             <div class="cx-help-item">
+              <div class="cx-hi-icon">&#11088;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Mis preferidas</div>
+                <div class="cx-hi-desc">
+                  Bot&oacute;n <span class="help-badge hb-blue">Mis preferidas</span> junto a los filtros de estaci&oacute;n.<br>
+                  <strong>Arriba</strong>: chips de las estaciones que ya tienes (nombre como en el Excel, p. ej. <em>Sevilla S.J.</em>, <em>C&oacute;rdoba</em>). Pulsa &times; para quitar.<br>
+                  <strong>A&ntilde;adir</strong>: escribe en el buscador; aparecen sugerencias de las estaciones de enlace del Excel de hoy (no tramos tipo Chamart&iacute;n&nbsp;&ndash;&nbsp;Atocha). Elige una para a&ntilde;adirla.<br>
+                  <strong>Guardar</strong> las deja en tu cuenta. Si no marcas ninguna (o quitas todas y guardas), se usan <strong>todas</strong> las estaciones.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
               <div class="cx-hi-icon">&#127961;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Filtro de estaci&oacute;n</div>
                 <div class="cx-hi-desc">
                   <span class="help-badge hb-blue">Todas</span> &rarr; Todo el fichero del d&iacute;a.<br>
-                  <span class="help-badge hb-amber">Todas preferidas</span> &rarr; Solo enlaces en Sevilla SJ, C&oacute;rdoba, M&aacute;laga MZ, Antequera AV, Granada y Dos Hermanas.<br>
-                  Chips de estaci&oacute;n &rarr; Filtra por esa parada como origen, enlace o destino.<br>
+                  <span class="help-badge hb-amber">Todas preferidas</span> &rarr; Solo enlaces en las estaciones que guardaste (aparece cuando ya tienes preferidas).<br>
+                  Chips de estaci&oacute;n &rarr; Cada preferida tuya, con el nombre del Excel.<br>
                   Campo <strong>Otra</strong> &rarr; Escribe cualquier estaci&oacute;n del Excel.
                 </div>
               </div>
@@ -1468,7 +1538,7 @@
               <div class="cx-hi-icon">&#128269;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Buscador y orden</div>
-                <div class="cx-hi-desc">Busca por n&uacute;mero de tren, origen, enlace o destino. Ordena por <strong>hora de enlace</strong>, <strong>viajeros</strong> o <strong>espera</strong>.</div>
+                <div class="cx-hi-desc">Busca por n&uacute;mero de tren, origen, enlace o destino. Ordena por <strong>hora de enlace</strong>, <strong>m&aacute;s retraso</strong>, <strong>viajeros</strong> o <strong>espera</strong>. Filtros extra: <strong>En circulaci&oacute;n</strong> (al menos un tren en flota ahora) y <strong>Con retraso</strong>.</div>
               </div>
             </div>
           </div>
@@ -1563,12 +1633,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.55"></script>
-    <script src="./conexiones.js?v=V.55"></script>
+    <script src="./turnio-config.js?v=V.63"></script>
+    <script src="./conexiones.js?v=V.63"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
     <script src="./mallas-gtfs.js?v=mallas9"></script>
-    <script src="./app.js?v=V.55"></script>
+    <script src="./app.js?v=V.63"></script>
   </body>
 </html>
 
