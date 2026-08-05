@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.73">
+    <link rel="stylesheet" href="./styles.css?v=V.74">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -906,6 +906,24 @@
               <label class="admin-aviso-label">Mensaje
                 <textarea id="admin-aviso-cuerpo" rows="4" maxlength="4000" placeholder="Texto del aviso para todos los usuarios"></textarea>
               </label>
+              <fieldset class="admin-aviso-modo">
+                <legend>Notificaci&oacute;n al usuario</legend>
+                <label class="admin-aviso-modo-opt">
+                  <input type="radio" name="admin-aviso-modo" value="ahora" checked>
+                  <span><b>Ahora</b> — modal al entrar de inmediato</span>
+                </label>
+                <label class="admin-aviso-modo-opt">
+                  <input type="radio" name="admin-aviso-modo" value="programar">
+                  <span><b>Programar</b> — modal a partir de fecha/hora</span>
+                </label>
+                <label class="admin-aviso-modo-opt">
+                  <input type="radio" name="admin-aviso-modo" value="sin_modal">
+                  <span><b>No notificar</b> — solo historial (sin modal)</span>
+                </label>
+              </fieldset>
+              <label class="admin-aviso-label" id="admin-aviso-cuando-wrap" hidden>Cu&aacute;ndo (hora local)
+                <input type="datetime-local" id="admin-aviso-cuando">
+              </label>
               <div class="admin-aviso-actions">
                 <button type="button" class="btn primary" id="btn-admin-aviso-publicar">Publicar</button>
                 <button type="button" class="btn secondary" id="btn-admin-aviso-cancelar-form">Cancelar</button>
@@ -1795,13 +1813,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.73"></script>
-    <script src="./conexiones.js?v=V.73"></script>
+    <script src="./turnio-config.js?v=V.74"></script>
+    <script src="./conexiones.js?v=V.74"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.73"></script>
+    <script src="./app.js?v=V.74"></script>
   </body>
 </html>
 

@@ -444,6 +444,11 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .admin-sug-tipo--fallo{border-color:rgba(185,28,28,.3);background:rgba(185,28,28,.08);color:#b91c1c}
 .admin-aviso-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .admin-aviso-form{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.admin-aviso-modo{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(45,127,249,.04)}
+.admin-aviso-modo legend{font-size:12px;font-weight:800;color:var(--muted);padding:0 4px}
+.admin-aviso-modo-opt{display:flex;align-items:flex-start;gap:8px;margin:6px 0;font-size:13px;color:var(--text);cursor:pointer}
+.admin-aviso-modo-opt input{margin-top:3px;flex-shrink:0}
+.admin-pill--prog{background:rgba(180,83,9,.12);color:#9a3412;border-color:rgba(180,83,9,.3)}
 .admin-aviso-hist-title{margin:16px 0 4px;font-size:13px;font-weight:800}
 .admin-aviso-lista,.avisos-app-lista{display:flex;flex-direction:column;gap:8px}
 .admin-aviso-item,.avisos-app-item{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}

@@ -603,13 +603,23 @@
     if (f) meta.push(f);
     if (aviso.created_by) meta.push(aviso.created_by);
     if (aviso.active) meta.push('al entrar');
+    if (aviso.programado && aviso.scheduled_at) {
+      meta.push('programado · ' + (fmtAvisoFecha_(aviso.scheduled_at) || aviso.scheduled_at));
+    } else if (aviso.modo === 'sin_modal') {
+      meta.push('solo historial');
+    }
     var cls = conBorrar ? 'admin-aviso-item' : 'avisos-app-item';
+    var pill = '';
+    if (aviso.active) pill = '<span class="admin-pill admin-pill--role">Al entrar</span>';
+    else if (aviso.programado) pill = '<span class="admin-pill admin-pill--prog">Programado</span>';
+    else if (conBorrar && aviso.modo === 'sin_modal') pill = '<span class="admin-pill">Sin modal</span>';
     return '<article class="' + cls + (aviso.active ? ' is-active' : '') +
+      (aviso.programado ? ' is-programado' : '') +
       '" data-aviso-id="' + esc(aviso.id) + '">' +
       '<button type="button" class="aviso-item-toggle" data-aviso-toggle aria-expanded="false">' +
         '<span class="aviso-item-toggle-main">' +
           '<b>' + esc(aviso.titulo || 'Aviso') + '</b>' +
-          (aviso.active ? '<span class="admin-pill admin-pill--role">Al entrar</span>' : '') +
+          pill +
         '</span>' +
         '<span class="aviso-item-chev" aria-hidden="true">▸</span>' +
       '</button>' +
@@ -636,17 +646,42 @@
     item.classList.toggle('is-open', !open);
   }
 
+  function adminAvisoModoSeleccionado_() {
+    var el = document.querySelector('input[name="admin-aviso-modo"]:checked');
+    return String((el && el.value) || 'ahora');
+  }
+
+  function syncAdminAvisoModoUi_() {
+    var modo = adminAvisoModoSeleccionado_();
+    var wrap = document.getElementById('admin-aviso-cuando-wrap');
+    var btn = document.getElementById('btn-admin-aviso-publicar');
+    if (wrap) wrap.hidden = modo !== 'programar';
+    if (btn) {
+      if (modo === 'programar') btn.textContent = 'Programar';
+      else if (modo === 'sin_modal') btn.textContent = 'Guardar sin notificar';
+      else btn.textContent = 'Publicar ahora';
+    }
+  }
+
+  function resetAdminAvisoFormCampos_() {
+    var tit = document.getElementById('admin-aviso-titulo');
+    var cue = document.getElementById('admin-aviso-cuerpo');
+    var cuando = document.getElementById('admin-aviso-cuando');
+    if (tit) tit.value = '';
+    if (cue) cue.value = '';
+    if (cuando) cuando.value = '';
+    var ahora = document.querySelector('input[name="admin-aviso-modo"][value="ahora"]');
+    if (ahora) ahora.checked = true;
+    syncAdminAvisoModoUi_();
+  }
+
   function setAdminAvisoFormVisible_(visible) {
     var form = document.getElementById('admin-aviso-form');
     var btnOpen = document.getElementById('btn-admin-aviso-abrir-form');
     if (form) form.hidden = !visible;
     if (btnOpen) btnOpen.hidden = !!visible;
-    if (!visible) {
-      var tit = document.getElementById('admin-aviso-titulo');
-      var cue = document.getElementById('admin-aviso-cuerpo');
-      if (tit) tit.value = '';
-      if (cue) cue.value = '';
-    }
+    if (!visible) resetAdminAvisoFormCampos_();
+    else syncAdminAvisoModoUi_();
   }
 
   function pintarAdminAvisoLista_(avisos) {
@@ -660,19 +695,28 @@
     box.innerHTML = list.map(function (a) { return htmlAvisoItem_(a, true); }).join('');
   }
 
-  function pintarAdminAvisoEstado_(aviso, avisos) {
+  function pintarAdminAvisoEstado_(aviso, avisos, programados) {
     var el = document.getElementById('admin-aviso-estado');
     var btnOff = document.getElementById('btn-admin-aviso-desactivar');
     if (Array.isArray(avisos)) avisoAppCache_ = avisos;
     if (!el) return;
+    var bits = [];
     if (aviso && aviso.id) {
-      el.textContent = 'Modal activo · ' + (aviso.titulo || 'Aviso') +
-        (aviso.created_at ? ' · ' + fmtAvisoFecha_(aviso.created_at) : '');
+      bits.push('Modal activo · ' + (aviso.titulo || 'Aviso') +
+        (aviso.created_at ? ' · ' + fmtAvisoFecha_(aviso.created_at) : ''));
       if (btnOff) btnOff.hidden = false;
     } else {
-      el.textContent = 'No hay modal activo (el historial sigue visible).';
+      bits.push('No hay modal activo');
       if (btnOff) btnOff.hidden = true;
     }
+    var progs = Array.isArray(programados) ? programados : (Array.isArray(avisos)
+      ? avisos.filter(function (a) { return a && a.programado; })
+      : []);
+    if (progs.length) {
+      bits.push(progs.length + ' programado' + (progs.length === 1 ? '' : 's') +
+        (progs[0].scheduled_at ? (' (próx. ' + (fmtAvisoFecha_(progs[0].scheduled_at) || '') + ')') : ''));
+    }
+    el.textContent = bits.join(' · ');
     pintarAdminAvisoLista_(Array.isArray(avisos) ? avisos : avisoAppCache_);
   }
 
@@ -935,7 +979,7 @@
     if (el) el.textContent = 'Comprobando aviso activo…';
     try {
       var d = await call('aviso_app_estado', {});
-      pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos);
+      pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos, d && d.programados);
     } catch (err) {
       if (el) el.textContent = 'Error: ' + String(err.message || err);
     }
@@ -948,17 +992,47 @@
     var btn = document.getElementById('btn-admin-aviso-publicar');
     var titulo = String(tit && tit.value || '').trim();
     var cuerpo = String(cue && cue.value || '').trim();
+    var modo = adminAvisoModoSeleccionado_();
     if (!titulo || !cuerpo) {
       toast('Título y mensaje son obligatorios.', 'error');
       return;
     }
-    if (!confirm('¿Publicar este aviso? Lo verán al entrar (modal) y quedará en el historial.')) return;
+    var payload = { titulo: titulo, cuerpo: cuerpo, modo: modo };
+    if (modo === 'programar') {
+      var cuando = document.getElementById('admin-aviso-cuando');
+      var raw = String(cuando && cuando.value || '').trim();
+      if (!raw) {
+        toast('Indica fecha y hora para programar.', 'error');
+        return;
+      }
+      var dt = new Date(raw);
+      if (isNaN(dt.getTime())) {
+        toast('Fecha/hora no válida.', 'error');
+        return;
+      }
+      if (dt.getTime() < Date.now() + 30 * 1000) {
+        toast('La hora programada debe ser futura.', 'error');
+        return;
+      }
+      payload.scheduled_at = dt.toISOString();
+    }
+    var confirmMsg = modo === 'programar'
+      ? '¿Programar este aviso? Se mostrará como modal al entrar a partir de esa hora.'
+      : (modo === 'sin_modal'
+        ? '¿Guardar solo en historial, sin modal al entrar?'
+        : '¿Publicar ahora? Lo verán al entrar (modal) y quedará en el historial.');
+    if (!confirm(confirmMsg)) return;
     if (btn) btn.disabled = true;
     try {
-      var d = await call('aviso_app_publicar', { titulo: titulo, cuerpo: cuerpo });
-      toast('Aviso publicado.', 'success');
+      var d = await call('aviso_app_publicar', payload);
+      toast(
+        modo === 'programar' ? 'Aviso programado.'
+          : (modo === 'sin_modal' ? 'Guardado sin notificar.' : 'Aviso publicado.'),
+        'success'
+      );
       setAdminAvisoFormVisible_(false);
-      pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos);
+      pintarAdminAvisoEstado_(d && d.aviso, d && d.avisos, d && d.programados);
+      if (!d || !d.programados) cargarAdminAviso_();
     } catch (err) {
       toast(String(err.message || err), 'error');
     } finally {
@@ -1738,6 +1812,8 @@
       aviso_no_activo: 'Ese aviso ya no está activo.',
       aviso_ack_failed: 'No se pudo guardar la aceptación.',
       aviso_app_unavailable: 'Avisos de app no disponibles.',
+      aviso_fecha_invalida: 'Fecha/hora de programación no válida.',
+      aviso_fecha_pasada: 'La hora programada debe ser futura.',
       aviso_no_encontrado: 'Ese aviso ya no existe.',
       role_forbidden: 'Tu rol no puede ver el historial de avisos.',
       sugerencia_tipo_invalido: 'Elige Fallo o Sugerencia.',
@@ -6747,6 +6823,10 @@
   if (btnAvCancelForm) {
     btnAvCancelForm.addEventListener('click', function () { setAdminAvisoFormVisible_(false); });
   }
+  document.querySelectorAll('input[name="admin-aviso-modo"]').forEach(function (r) {
+    r.addEventListener('change', syncAdminAvisoModoUi_);
+  });
+  syncAdminAvisoModoUi_();
   var adminAvLista = document.getElementById('admin-aviso-lista');
   if (adminAvLista) {
     adminAvLista.addEventListener('click', function (ev) {
