@@ -1152,6 +1152,13 @@ body.monitor-mode .alert-mat{font-size:13px}
   margin:8px 0;padding:8px 10px;border-radius:10px;
   background:#0f766e;color:#fff;font-size:13px;font-weight:800
 }
+.marcha-via-adif[hidden]{display:none!important}
+.marcha-step-via{
+  display:inline-block;margin-left:6px;vertical-align:middle;
+  background:#0f766e;color:#fff;font-size:10px;font-weight:900;
+  padding:2px 7px;border-radius:999px;font-style:normal;letter-spacing:.02em
+}
+.marcha-step-via[hidden]{display:none!important}
 .pantallas-probe-actions{display:flex;flex-wrap:wrap;gap:8px}
 .pantallas-probe-status--diag{margin-top:8px;opacity:.92}
 .malla-badge{display:inline-block;margin-left:6px;background:rgba(45,127,249,.12);color:var(--primary-dark);font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px}

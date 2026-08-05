@@ -1938,6 +1938,9 @@
   var adifLiveConn_ = null;
   var adifLiveStation_ = '';
   var adifLiveCache_ = Object.create(null);
+  /** @type {Object.<string, Object.<string, {via:string,acceso:string,raw:*,ts:number}>>} */
+  var adifByStation_ = Object.create(null);
+  var adifJoinedStations_ = Object.create(null);
   var adifLiveStarting_ = null;
   var adifLiveLastMsgAt_ = 0;
   var adifLivePollTimer_ = null;
@@ -1966,12 +1969,29 @@
     return args.length === 1 ? args[0] : args;
   }
 
+  function adifExtraerCodigoEstMsg_() {
+    var args = Array.prototype.slice.call(arguments);
+    for (var i = 0; i < args.length; i++) {
+      var a = args[i];
+      if (a == null || a === '') continue;
+      if (typeof a !== 'string') continue;
+      var t = a.trim();
+      if (!t || t.charAt(0) === '{' || t.charAt(0) === '[') continue;
+      if (/^(PRO-)?ECM[-_]?\d+$/i.test(t) || /^\d{4,5}$/.test(t)) {
+        var m = t.match(/(\d{4,5})/);
+        if (m) return adifNormalizarCodigoEst_(m[1]);
+      }
+    }
+    return '';
+  }
+
   function adifRegistrarHandlers_(conn, onMsg) {
     ADIF_EVENTOS_.forEach(function (ev) {
       try {
         conn.on(ev, function () {
           var payload = adifExtraerPayloadMsg_.apply(null, arguments);
-          if (payload != null) onMsg(payload, ev);
+          var st = adifExtraerCodigoEstMsg_.apply(null, arguments);
+          if (payload != null) onMsg(payload, ev, st);
         });
       } catch (_) {}
     });
@@ -1980,7 +2000,8 @@
         conn.onany(function (evName) {
           var args = Array.prototype.slice.call(arguments, 1);
           var payload = adifExtraerPayloadMsg_.apply(null, args);
-          if (payload != null) onMsg(payload, String(evName || 'onany'));
+          var st = adifExtraerCodigoEstMsg_.apply(null, args);
+          if (payload != null) onMsg(payload, String(evName || 'onany'), st);
         });
       } catch (_) {}
     }
@@ -2337,7 +2358,7 @@
     if (state) el.classList.add(state);
   }
 
-  function aplicarCacheAdifDesdePayload_(mensajeCrudo) {
+  function aplicarCacheAdifDesdePayload_(mensajeCrudo, stationCodeOpt) {
     var datos = typeof mensajeCrudo === 'string' ? JSON.parse(mensajeCrudo) : mensajeCrudo;
     if (datos == null) return 0;
     var trenes = Array.isArray(datos.trains) ? datos.trains
@@ -2356,15 +2377,44 @@
       };
       n++;
     });
-    adifLiveCache_ = next;
+    var st = adifNormalizarCodigoEst_(stationCodeOpt || adifLiveStation_) || '';
+    if (st) {
+      adifByStation_[st] = next;
+      adifJoinedStations_[st] = true;
+    }
+    // Cache plana = estación de mallas (chips); no pisar con destinos de marcha.
+    if (!st || !adifLiveStation_ || st === adifLiveStation_) {
+      adifLiveCache_ = next;
+    }
     adifLiveLastMsgAt_ = Date.now();
     return n;
+  }
+
+  function lookupViaAdifEnEstacion_(numTren, stopId) {
+    var num = String(numTren == null ? '' : numTren).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    var st = adifNormalizarCodigoEst_(stopId);
+    if (!num || !st) return null;
+    if (adifByStation_[st] && adifByStation_[st][num]) return adifByStation_[st][num];
+    if (st === adifLiveStation_ && adifLiveCache_[num]) return adifLiveCache_[num];
+    return null;
   }
 
   function lookupViaAdif_(numTren) {
     var num = String(numTren == null ? '' : numTren).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
     if (!num) return null;
-    return adifLiveCache_[num] || null;
+    if (adifLiveStation_ && adifByStation_[adifLiveStation_] && adifByStation_[adifLiveStation_][num]) {
+      return adifByStation_[adifLiveStation_][num];
+    }
+    if (adifLiveCache_[num]) return adifLiveCache_[num];
+    var keys = Object.keys(adifByStation_);
+    for (var i = 0; i < keys.length; i++) {
+      var bucket = adifByStation_[keys[i]];
+      if (bucket && bucket[num] && bucket[num].via) return bucket[num];
+    }
+    for (var j = 0; j < keys.length; j++) {
+      if (adifByStation_[keys[j]] && adifByStation_[keys[j]][num]) return adifByStation_[keys[j]][num];
+    }
+    return null;
   }
 
   function asegurarChipViaAdif_(host, via, acceso) {
@@ -2421,43 +2471,137 @@
   }
 
   async function adifJoinTopics_(conn, codigo) {
-    var padded = String(codigo);
+    var code = adifNormalizarCodigoEst_(codigo);
+    if (!code) return [];
+    var padded = String(code);
     while (padded.length < 5) padded = '0' + padded;
     var topics = [];
-    [codigo, padded].forEach(function (c) {
+    [code, padded].forEach(function (c) {
       ['PRO-ECM-' + c, 'ECM-' + c].forEach(function (ch) {
         if (topics.indexOf(ch) < 0) topics.push(ch);
       });
     });
+    adifJoinedStations_[code] = true;
     for (var i = 0; i < topics.length; i++) {
       try {
         await conn.invoke('JoinInfo', topics[i]);
       } catch (_) {}
       try {
         var ret = await conn.invoke('GetLastMessage', topics[i]);
-        if (ret != null && ret !== '') onAdifLiveMessage_(ret);
+        if (ret != null && ret !== '') onAdifLiveMessage_(ret, 'GetLastMessage', code);
       } catch (_) {}
     }
     return topics;
   }
 
-  function onAdifLiveMessage_(mensajeCrudo, evName) {
+  function onAdifLiveMessage_(mensajeCrudo, evName, stationOpt) {
     try {
-      var n = aplicarCacheAdifDesdePayload_(mensajeCrudo);
+      var st = adifNormalizarCodigoEst_(stationOpt) || adifLiveStation_;
+      var n = aplicarCacheAdifDesdePayload_(mensajeCrudo, st);
       var conVia = 0;
-      Object.keys(adifLiveCache_).forEach(function (k) {
-        if (adifLiveCache_[k] && adifLiveCache_[k].via) conVia++;
+      var bucket = (st && adifByStation_[st]) || adifLiveCache_;
+      Object.keys(bucket).forEach(function (k) {
+        if (bucket[k] && bucket[k].via) conVia++;
       });
       setAdifLiveStatusUi_(
-        'Escuchando PRO-ECM-' + adifLiveStation_ + ' · ' + n + ' tren(es), ' + conVia + ' con vía' +
+        'Escuchando PRO-ECM-' + (st || adifLiveStation_) + ' · ' + n + ' tren(es), ' + conVia + ' con vía' +
           (evName ? ' · ' + evName : '') +
           (adifLiveLastMsgAt_ ? ' · ' + new Date(adifLiveLastMsgAt_).toLocaleTimeString('es-ES') : ''),
         n ? 'is-ok' : 'is-run'
       );
       inyectarViaAdifEnMallas_();
+      document.querySelectorAll('.marcha-list[data-marcha-tren]').forEach(function (list) {
+        var host = list.parentElement;
+        pintarViasEnMarchaPanel_(host, list.getAttribute('data-marcha-tren'));
+      });
     } catch (err) {
       setAdifLiveStatusUi_('Mensaje ADIF no parseable: ' + String(err.message || err), 'is-err');
     }
+  }
+
+  async function adifAsegurarConexion_(preferCode) {
+    var signalR = await cargarSignalRAdif_();
+    var Connected = signalR.HubConnectionState && signalR.HubConnectionState.Connected;
+    if (adifLiveConn_ && Connected != null && adifLiveConn_.state === Connected) {
+      return adifLiveConn_;
+    }
+    var code = adifNormalizarCodigoEst_(preferCode || adifLiveStation_ || codigoEstacionMallasActual_()) || '51003';
+    await escucharInfoStationEstacion_(code);
+    return adifLiveConn_;
+  }
+
+  async function adifPedirViasEstaciones_(codigos) {
+    var uniq = [];
+    (codigos || []).forEach(function (c) {
+      var code = adifNormalizarCodigoEst_(c);
+      if (code && uniq.indexOf(code) < 0) uniq.push(code);
+    });
+    if (!uniq.length) return;
+    var conn = await adifAsegurarConexion_(uniq[0]);
+    if (!conn) return;
+    for (var i = 0; i < uniq.length; i++) {
+      await adifJoinTopics_(conn, uniq[i]);
+    }
+  }
+
+  function paradasClaveViaMarcha_(m) {
+    var paradas = Array.isArray(m && m.paradas) ? m.paradas : [];
+    var next = null;
+    for (var i = 0; i < paradas.length; i++) {
+      var p = paradas[i];
+      if (!p || p.esPasada) continue;
+      next = p;
+      break;
+    }
+    var dest = paradas.length ? paradas[paradas.length - 1] : null;
+    return { next: next, dest: dest };
+  }
+
+  function pintarViasEnMarchaPanel_(panel, numTren) {
+    if (!panel) return;
+    var num = String(numTren == null ? '' : numTren).replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    if (!num) return;
+    panel.querySelectorAll('[data-via-stop]').forEach(function (el) {
+      var st = el.getAttribute('data-via-stop') || '';
+      var info = lookupViaAdifEnEstacion_(num, st);
+      if (info && info.via) {
+        el.hidden = false;
+        el.textContent = 'VÍA ' + info.via + (info.acceso ? ' · Acc. ' + info.acceso : '');
+      } else {
+        el.hidden = true;
+        el.textContent = '';
+      }
+    });
+    var banner = panel.querySelector('[data-via-banner]');
+    if (!banner) return;
+    var parts = [];
+    panel.querySelectorAll('[data-via-stop]').forEach(function (el) {
+      if (el.hidden || !el.textContent) return;
+      var rol = el.getAttribute('data-via-rol') || '';
+      var nom = el.getAttribute('data-via-nombre') || '';
+      parts.push((rol ? rol + ': ' : '') + (nom ? nom + ' · ' : '') + el.textContent);
+    });
+    if (parts.length) {
+      banner.hidden = false;
+      banner.textContent = '📡 EN VIVO – ' + parts.join(' · ');
+    } else {
+      banner.hidden = true;
+      banner.textContent = '';
+    }
+  }
+
+  async function enriquecerMarchaViasAdif_(panel, m) {
+    if (!panel || !m || !m.ok) return;
+    var clave = paradasClaveViaMarcha_(m);
+    var codes = [];
+    if (clave.next && clave.next.stopId) codes.push(clave.next.stopId);
+    if (clave.dest && clave.dest.stopId) codes.push(clave.dest.stopId);
+    pintarViasEnMarchaPanel_(panel, m.numTren);
+    if (!codes.length) return;
+    try {
+      await adifPedirViasEstaciones_(codes);
+    } catch (_) {}
+    pintarViasEnMarchaPanel_(panel, m.numTren);
   }
 
   async function escucharInfoStationEstacion_(codigo) {
@@ -2490,12 +2634,16 @@
         conn.keepAliveIntervalInMilliseconds = 10000;
         conn.serverTimeoutInMilliseconds = 120000;
       } catch (_) {}
-      adifRegistrarHandlers_(conn, function (payload, ev) {
-        onAdifLiveMessage_(payload, ev);
+      adifRegistrarHandlers_(conn, function (payload, ev, st) {
+        onAdifLiveMessage_(payload, ev, st);
       });
       conn.onreconnected(function () {
-        adifJoinTopics_(conn, adifLiveStation_).catch(function () {});
-        adifArrancarPoll_(conn, adifLiveStation_);
+        var stList = Object.keys(adifJoinedStations_);
+        if (!stList.length && adifLiveStation_) stList = [adifLiveStation_];
+        stList.forEach(function (c) {
+          adifJoinTopics_(conn, c).catch(function () {});
+        });
+        adifArrancarPoll_(conn, adifLiveStation_ || stList[0] || '');
       });
       conn.onclose(function () {
         adifPararPoll_();
@@ -2505,6 +2653,7 @@
       adifLiveConn_ = conn;
       adifLiveStation_ = code;
       adifLiveCache_ = Object.create(null);
+      adifJoinedStations_[code] = true;
       var topics = await adifJoinTopics_(conn, code);
       adifArrancarPoll_(conn, code);
       setAdifLiveStatusUi_(
@@ -2536,6 +2685,8 @@
 
   window.TurnioEscucharInfoStation = escucharInfoStationEstacion_;
   window.TurnioLookupViaAdif = lookupViaAdif_;
+  window.TurnioLookupViaAdifEstacion = lookupViaAdifEnEstacion_;
+  window.TurnioPedirViasAdif = adifPedirViasEstaciones_;
 
   function asegurarEstacionesPantallas_() {
     if (pantallasEstaciones) return Promise.resolve(pantallasEstaciones);
@@ -4696,6 +4847,9 @@
     }
     var retraso = Number(m.retrasoMin || 0);
     var paradas = Array.isArray(m.paradas) ? m.paradas : [];
+    var claveVia = paradasClaveViaMarcha_(m);
+    var nextSid = claveVia.next ? adifNormalizarCodigoEst_(claveVia.next.stopId) : '';
+    var destSid = claveVia.dest ? adifNormalizarCodigoEst_(claveVia.dest.stopId) : '';
     var ruta = '';
     if (m.origen || m.destino) {
       ruta = '<div class="marcha-route">' + esc(m.origen || '—') +
@@ -4728,21 +4882,31 @@
       if (horaProg && horaEst && horaProg !== horaEst) {
         horaTxt = horaProg + '\u2192' + horaEst;
       }
+      var sid = adifNormalizarCodigoEst_(p.stopId);
+      var viaSlot = '';
+      if (sid && (sid === nextSid || sid === destSid)) {
+        var rol = sid === nextSid ? 'Próxima' : 'Destino';
+        if (sid === nextSid && sid === destSid) rol = 'Próxima / Destino';
+        else if (sid === destSid && sid !== nextSid) rol = 'Destino';
+        viaSlot = ' <i class="marcha-step-via" hidden data-via-stop="' + esc(sid) +
+          '" data-via-rol="' + esc(rol) +
+          '" data-via-nombre="' + esc(p.nombre || '') + '"></i>';
+      }
       return '<div class="marcha-step ' + cl + '"><b>' + esc(horaTxt) +
-        '</b><span>' + icon + ' ' + esc(p.nombre || 'Parada') + delayHtml + '</span></div>';
+        '</b><span>' + icon + ' ' + esc(p.nombre || 'Parada') + delayHtml + viaSlot + '</span></div>';
     }).join('');
-    var viaLive = lookupViaAdif_(m.numTren);
-    var viaBanner = viaLive && viaLive.via
-      ? '<div class="marcha-via-adif">📡 EN VIVO – VÍA ' + esc(viaLive.via) +
-        (viaLive.acceso ? ' · Acceso ' + esc(viaLive.acceso) : '') + '</div>'
-      : '';
+    var viaBanner =
+      '<div class="marcha-via-adif" data-via-banner hidden></div>';
     panel.innerHTML = '<div class="marcha-head"><strong>&#128225; Marcha en vivo · Tren ' + esc(m.numTren || '') +
       '</strong><span>' + labelStatus(m.status) + '</span></div>' + viaBanner + ruta +
       '<div class="marcha-kpis"><span>' + (retraso > 0 ? '&#9201; ' + esc(retTxt) : '&#9989; Puntual') +
       '</span><span>' + esc(m.stopActualNombre || 'Posición disponible') + '</span></div>' +
-      (rows ? '<div class="marcha-list">' + rows + '</div>' : '<div class="marcha-empty">Sin paradas disponibles en el feed.</div>') +
-      '<div class="marcha-source">Fuente: Renfe GTFS-RT · llegadas registradas en TURNIO' +
-      (viaLive && viaLive.via ? ' · vía ADIF InfoStation' : '') + '</div>';
+      (rows
+        ? '<div class="marcha-list" data-marcha-tren="' + esc(String(m.numTren || '')) + '">' + rows + '</div>'
+        : '<div class="marcha-empty">Sin paradas disponibles en el feed.</div>') +
+      '<div class="marcha-source">Fuente: Renfe GTFS-RT · llegadas registradas en TURNIO · vía ADIF InfoStation</div>';
+    pintarViasEnMarchaPanel_(panel, m.numTren);
+    enriquecerMarchaViasAdif_(panel, m).catch(function () {});
   }
   async function abrirMarcha(card) {
     var panel = card.querySelector('.marcha-panel');
