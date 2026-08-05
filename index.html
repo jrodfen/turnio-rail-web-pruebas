@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.83">
+    <link rel="stylesheet" href="./styles.css?v=V.84">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -1347,14 +1347,14 @@
               <div class="cx-hi-icon">&#128196;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Tarjeta y marcha</div>
-                <div class="cx-hi-desc">Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual, pr&oacute;ximas con demora). Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).</div>
+                <div class="cx-hi-desc">Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual, pr&oacute;ximas con demora). Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, aparece en esa marcha (pr&oacute;xima y destino). Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).</div>
               </div>
             </div>
             <div class="cx-help-item">
               <div class="cx-hi-icon">&#128739;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">V&iacute;a ADIF (InfoStation)</div>
-                <div class="cx-hi-desc">Si ADIF publica la v&iacute;a del tren, la tarjeta del Radar muestra <strong>origen</strong>, <strong>pr&oacute;xima</strong> y <strong>destino</strong>. En la marcha abierta aparece en pr&oacute;xima y destino. La &uacute;ltima v&iacute;a conocida se conserva unos minutos aunque el siguiente snapshot llegue vac&iacute;o. En Mallas, el chip <strong>V&Iacute;A</strong> corresponde a la estaci&oacute;n buscada.</div>
+                <div class="cx-hi-desc">Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, la ver&aacute;s en la <strong>marcha en vivo</strong> del Radar y de Mallas (pr&oacute;xima estaci&oacute;n y destino). En la tarjeta del Radar tambi&eacute;n puede aparecer origen / pr&oacute;xima / destino. En el listado de Mallas, el chip <strong>V&Iacute;A</strong> corresponde a la estaci&oacute;n buscada. Si ADIF no publica v&iacute;a, no se muestra.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1503,7 +1503,7 @@
               <div class="cx-hi-icon">&#128646;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Mallas y horarios</div>
-                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Puedes filtrar por <strong>origen</strong> y, opcionalmente, <strong>destino</strong> (solo trenes que van de A hacia B, destino final o paso). La malla se refresca cada <strong>d&iacute;a operativo</strong> (de 05:00 a 04:59, hora Madrid). Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong>. Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong>. Si InfoStation ADIF entrega datos, aparece el chip <strong>V&Iacute;A</strong>.</div>
+                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Puedes filtrar por <strong>origen</strong> y, opcionalmente, <strong>destino</strong> (solo trenes que van de A hacia B, destino final o paso). La malla se refresca cada <strong>d&iacute;a operativo</strong> (de 05:00 a 04:59, hora Madrid). Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong>. Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong>; si ADIF emite la v&iacute;a de estacionamiento, se muestra en pr&oacute;xima y destino. En el listado, el chip <strong>V&Iacute;A</strong> es el de la estaci&oacute;n buscada.</div>
               </div>
             </div>
             <div class="cx-help-item">
