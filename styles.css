@@ -1335,3 +1335,7 @@ body.monitor-mode #fab-overlay{display:none!important}
 .admin-solicitud-item.is-aprobada .admin-sug-tipo{background:#e7f6ec;color:#146c2e}
 .admin-solicitud-item.is-rechazada .admin-sug-tipo{background:#fdecea;color:#b3261e}
 .admin-solicitud-item .admin-aviso-item-body{white-space:pre-wrap}
+
+.alert.sin-salida{border-left:5px solid #d97706;background:linear-gradient(180deg,#fffbeb 0%,#fff 55%)}
+.ss-enterado-btn{margin:0;padding:8px 12px;border:1px solid rgba(217,119,6,.45);border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.ss-enterado-btn:hover{background:#ffedd5}

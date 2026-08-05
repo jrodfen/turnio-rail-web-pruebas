@@ -3456,6 +3456,77 @@
   var timerVigilanteAutoOn_ = null;
   var VIGILANTE_AUTO_ON_DELAY_MS_ = 60000;
   var trenesYaAlertados = {};
+  var SIN_SALIDA_ACK_LS_ = 'turnio_sin_salida_ack_v1';
+
+  function diaSinSalidaAck_() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date());
+    } catch (_) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  function codTrenSinSalida_(v) {
+    return String(v || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  }
+
+  function esAlertaSinSalidaFront_(a) {
+    if (!a) return false;
+    if (a.categoria === 'sin_salida') return true;
+    return /SIN SALIDA/i.test(String(a.tipo || ''));
+  }
+
+  function leerSinSalidaEnterados_() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(SIN_SALIDA_ACK_LS_) || '{}');
+      if (!raw || raw.dia !== diaSinSalidaAck_()) return {};
+      return raw.ids && typeof raw.ids === 'object' ? raw.ids : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function guardarSinSalidaEnterados_(ids) {
+    try {
+      localStorage.setItem(SIN_SALIDA_ACK_LS_, JSON.stringify({
+        dia: diaSinSalidaAck_(),
+        ids: ids || {}
+      }));
+    } catch (_) { /* */ }
+  }
+
+  function estaSinSalidaEnterado_(codTren) {
+    var n = codTrenSinSalida_(codTren);
+    if (!n) return false;
+    return !!leerSinSalidaEnterados_()[n];
+  }
+
+  function marcarSinSalidaEnterado_(codTren) {
+    var n = codTrenSinSalida_(codTren);
+    if (!n) return;
+    var ids = leerSinSalidaEnterados_();
+    ids[n] = true;
+    guardarSinSalidaEnterados_(ids);
+  }
+
+  function filtrarRadarSinSalidaEnterados_(list) {
+    return (Array.isArray(list) ? list : []).filter(function (a) {
+      if (!esAlertaSinSalidaFront_(a)) return true;
+      return !estaSinSalidaEnterado_(a.codTren);
+    });
+  }
+
+  function enteradoSinSalidaDesdeTarjeta_(codTren) {
+    marcarSinSalidaEnterado_(codTren);
+    var n = codTrenSinSalida_(codTren);
+    if (n) trenesYaAlertados['sin_salida|' + n] = true;
+    radar = filtrarRadarSinSalidaEnterados_(radar);
+    render();
+    toast('Sin salida ' + n + ': enterado (quitado del Radar)', 'success');
+  }
   var trenesPendientesConfirmacion = [];
   var trenesPendientesDetencion = [];
   var chequeoEnCurso = false;
@@ -3625,6 +3696,9 @@
   function procesarCriticos(criticos) {
     if (!Array.isArray(criticos) || !criticos.length) return 0;
     var nuevos = criticos.filter(function (c) {
+      if (c && c.categoria === 'sin_salida') {
+        if (estaSinSalidaEnterado_(c.codTren)) return false;
+      }
       return !trenesYaAlertados[claveCritico(c)];
     });
     if (!nuevos.length) return criticos.length;
@@ -3635,7 +3709,11 @@
       return Number(c.retrasoNum || 0) >= 25;
     });
     if (graves.length) mostrarModalRetrasos(graves);
-    // Sin salida: solo Telegram pruebas (no modal / no lista Radar).
+    // Sin salida: modal ámbar Enterado → quita del Radar.
+    var sinSalida = nuevos.filter(function (c) {
+      return !!(c && c.categoria === 'sin_salida');
+    });
+    if (sinSalida.length) mostrarModalSinSalida(sinSalida);
     // Modal ámbar «Tren detenido»: silenciado (flag arriba).
     if (VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) {
       var detenidos = nuevos.filter(function (c) {
@@ -3658,9 +3736,11 @@
     var avisos = 0;
     radar.forEach(function (a) {
       if (!a || /LIMPIA|ERROR/i.test(String(a.tipo || ''))) return;
-      // Sin salida no cuenta en Radar (Telegram pruebas).
-      if (a.categoria === 'sin_salida' || /SIN SALIDA/i.test(String(a.tipo || ''))) return;
       var r = Number(a.retrasoNum || 0);
+      if (esAlertaSinSalidaFront_(a)) {
+        if (r > 0) avisos++;
+        return;
+      }
       var productoAlta = /^(AVE|AVE Int\.|Avlo|Alvia|Avant|Avant Exp\.|Intercity)$/i.test(String(a.producto || ''));
       var umbral = productoAlta ? 15 : 25;
       if (r >= umbral) altas++;
@@ -3732,9 +3812,16 @@
     cerrarModalVigilante_('modal-retraso-grave');
   }
   function confirmarDetenciones() {
-    trenesPendientesDetencion.forEach(function (k) { trenesYaAlertados[k] = true; });
+    trenesPendientesDetencion.forEach(function (k) {
+      trenesYaAlertados[k] = true;
+      // Clave: "sin_salida|13062" o similar
+      var parts = String(k || '').split('|');
+      if (parts[0] === 'sin_salida' && parts[1]) marcarSinSalidaEnterado_(parts[1]);
+    });
     trenesPendientesDetencion = [];
     cerrarModalVigilante_('modal-detencion-grave');
+    radar = filtrarRadarSinSalidaEnterados_(radar);
+    try { render(); } catch (_) { /* */ }
   }
   function posponerDetenciones() {
     trenesPendientesDetencion = [];
@@ -4165,9 +4252,7 @@
     }
   }
   function typeOf(a) {
-    if (a && (a.categoria === 'sin_salida' || /SIN SALIDA/i.test(String(a.tipo || '')))) {
-      return 'warning';
-    }
+    if (esAlertaSinSalidaFront_(a)) return 'warning sin-salida';
     var x = String(a.tipo || '');
     return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 ? 'warning' : '';
   }
@@ -4353,16 +4438,24 @@
       var matHtml = matTxt
         ? '<div class="alert-mat">&#128667; Unidades: ' + esc(matTxt) + '</div>'
         : '';
-      return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '">' +
+      var esSs = esAlertaSinSalidaFront_(x);
+      return '<article class="alert ' + cls + '" data-cod="' + esc(tren) + '" data-trip="' + esc(trip) + '"' +
+        (esSs ? ' data-sin-salida="1"' : '') + '>' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
         '<div class="train">&#9642; ' + esc(linea) + '</div>' +
         matHtml +
         '<p class="message">' + esc(x.mensaje || ('Demora ' + (delay >= 0 ? '+' : '') + delay + ' min.')) + '</p>' +
-        '<div class="alert-bottom"><span>&#8618; Pulsa para ver la marcha</span>' +
+        '<div class="alert-bottom"><span>' +
+        (esSs ? 'Sin señal viva · puedes marcar enterado' : '&#8618; Pulsa para ver la marcha') +
+        '</span>' +
         '<div class="alert-actions">' +
+        (esSs
+          ? '<button class="ss-enterado-btn" type="button" data-ss-enterado="' + esc(tren) +
+            '" title="Quitar del Radar">&#10003; Enterado</button>'
+          : '') +
         (tieneGps
           ? '<button class="map-btn" type="button" data-map-tren="' + esc(tren) + '">&#128506; Mapa</button>'
-          : '<button class="map-btn disabled" type="button" disabled title="Sin coordenadas GPS">&#128506; Mapa</button>') +
+          : (esSs ? '' : '<button class="map-btn disabled" type="button" disabled title="Sin coordenadas GPS">&#128506; Mapa</button>')) +
         (radarTrenTieneEnlaceVisible_(tren)
           ? '<button class="cx-btn" type="button" data-cx-tren="' + esc(tren) + '" title="Ver servicios enlazados">&#128279; Enlace</button>'
           : '') +
@@ -4484,12 +4577,7 @@
             regiones: regiones
           });
           radar = Array.isArray(data.alertas) ? data.alertas : [];
-          // Defensa: sin_salida no se muestra en Radar (Telegram pruebas).
-          radar = radar.filter(function (a) {
-            if (!a) return false;
-            if (a.categoria === 'sin_salida') return false;
-            return !/SIN SALIDA/i.test(String(a.tipo || ''));
-          });
+          radar = filtrarRadarSinSalidaEnterados_(radar);
           var busy = radar.length === 1 && (
             radar[0]._radarBusy ||
             /ACTUALIZ/i.test(String(radar[0].tipo || '')) ||
@@ -7155,6 +7243,12 @@
     });
   }
   list.addEventListener('click', function (e) {
+    var ssBtn = e.target.closest('[data-ss-enterado]');
+    if (ssBtn) {
+      e.stopPropagation();
+      enteradoSinSalidaDesdeTarjeta_(ssBtn.getAttribute('data-ss-enterado'));
+      return;
+    }
     var mapBtn = e.target.closest('.map-btn');
     if (mapBtn) {
       e.stopPropagation();
@@ -7181,7 +7275,13 @@
       return;
     }
     var card = e.target.closest('.alert');
-    if (card) abrirMarcha(card);
+    if (card) {
+      if (card.getAttribute('data-sin-salida') === '1') {
+        // Sin GPS típico: no abrir marcha; usar Enterado.
+        return;
+      }
+      abrirMarcha(card);
+    }
   });
 
   /* Servicios enlazados (Excel diario → panel estilo SE + botón en Radar) */
