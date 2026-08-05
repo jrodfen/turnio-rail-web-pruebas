@@ -4,12 +4,85 @@
 
   var URL_OPERATIVA =
     'https://raw.githubusercontent.com/jrodfen/turnio-mallas-motor/main/operativa_diaria.json';
-  var CACHE_NAME = 'turnio-operativa-gtfs-v1';
+  /** Caché por día operativo (corte 05:00 Madrid). */
+  var CACHE_NAME = 'turnio-operativa-gtfs-v2';
+  var META_DIA_KEY = 'turnio-operativa-dia-v2';
   var SCHEMA = 'v1.8-7d-r2';
   var cargando = null;
   /** Estación por defecto al abrir Mallas (código ADIF / stop_id GTFS). */
   var ESTACION_DEFAULT_STOP_ID = '51003';
   var ESTACION_DEFAULT_NOMBRE_FALLBACK = 'SEVILLA-SANTA JUSTA';
+
+  /**
+   * Día operativo TURNIO (Europe/Madrid):
+   * 05:00 → 04:59 del día siguiente = mismo día operativo.
+   * Antes de las 05:00 cuenta el día civil anterior.
+   */
+  function partesHoraMadrid_(fecha) {
+    var d = fecha instanceof Date ? fecha : new Date();
+    var parts = {};
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).formatToParts(d).forEach(function (p) {
+      if (p.type !== 'literal') parts[p.type] = p.value;
+    });
+    var hour = parseInt(parts.hour, 10);
+    if (hour === 24) hour = 0;
+    return {
+      year: parseInt(parts.year, 10),
+      month: parseInt(parts.month, 10),
+      day: parseInt(parts.day, 10),
+      hour: hour,
+      iso: parts.year + '-' + parts.month + '-' + parts.day
+    };
+  }
+
+  function diaOperativoMadrid_(fecha) {
+    var p = partesHoraMadrid_(fecha);
+    if (p.hour >= 5) return p.iso;
+    var dt = new Date(Date.UTC(p.year, p.month - 1, p.day));
+    dt.setUTCDate(dt.getUTCDate() - 1);
+    return dt.getUTCFullYear() + '-' +
+      String(dt.getUTCMonth() + 1).padStart(2, '0') + '-' +
+      String(dt.getUTCDate()).padStart(2, '0');
+  }
+
+  function cacheRequestOperativa_(dia) {
+    return new Request(URL_OPERATIVA + '?dia=' + encodeURIComponent(dia || diaOperativoMadrid_()));
+  }
+
+  function leerMetaDiaCache_() {
+    try { return String(localStorage.getItem(META_DIA_KEY) || ''); } catch (e) { return ''; }
+  }
+
+  function guardarMetaDiaCache_(dia) {
+    try { localStorage.setItem(META_DIA_KEY, String(dia || '')); } catch (e) { /* ignore */ }
+  }
+
+  async function limpiarCacheOperativaAntigua_() {
+    try {
+      if (global.caches) {
+        var keys = await caches.keys();
+        for (var i = 0; i < keys.length; i++) {
+          if (keys[i] === 'turnio-operativa-gtfs-v1' || keys[i] === CACHE_NAME) {
+            await caches.delete(keys[i]);
+          }
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function operativaEnMemoriaDelDia_(dia) {
+    return !!(global.horarios && global.horarios.length &&
+      global.viajes && Object.keys(global.viajes).length &&
+      global.TURNIO_GTFS_DIA_OPERATIVO === dia);
+  }
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>'"]/g, function (c) {
@@ -190,10 +263,11 @@
     }
     var fecha = document.getElementById('filtroFechaServicio');
     if (fecha && !fecha.value) {
-      var d = new Date();
-      fecha.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      fecha.min = fecha.value;
-      var max = new Date(d.getTime() + 6 * 86400000);
+      var diaOp = diaOperativoMadrid_();
+      fecha.value = diaOp;
+      fecha.min = diaOp;
+      var max = new Date(diaOp + 'T12:00:00');
+      max.setDate(max.getDate() + 6);
       fecha.max = max.getFullYear() + '-' + String(max.getMonth() + 1).padStart(2, '0') + '-' + String(max.getDate()).padStart(2, '0');
     }
     actualizarIndiceParadasPorTripGTFS();
@@ -217,7 +291,8 @@
   async function asegurarOperativaGtfs(opts) {
     opts = opts || {};
     var silencioso = !!opts.silencioso;
-    if (global.horarios && global.horarios.length && global.viajes && Object.keys(global.viajes).length) {
+    var diaOp = diaOperativoMadrid_();
+    if (operativaEnMemoriaDelDia_(diaOp)) {
       var cargaOk = document.getElementById('gtfs-carga');
       var buscaOk = document.getElementById('gtfs-busqueda');
       if (cargaOk) cargaOk.hidden = true;
@@ -228,6 +303,17 @@
       }
       return true;
     }
+    /* Día operativo cambió → invalidar memoria y forzar recarga. */
+    if (global.TURNIO_GTFS_DIA_OPERATIVO && global.TURNIO_GTFS_DIA_OPERATIVO !== diaOp) {
+      global.horarios = [];
+      global.viajes = {};
+      global.estaciones = {};
+      global.calendarios = {};
+      global.excepcionesCalendario = {};
+      global.limitesViajes = {};
+      global._gtfsIdxParadasTrip = null;
+      global.TURNIO_GTFS_DIA_OPERATIVO = '';
+    }
     if (cargando) return cargando;
     cargando = (async function () {
       var panelCarga = document.getElementById('gtfs-carga');
@@ -235,45 +321,58 @@
       if (panelCarga) panelCarga.hidden = false;
       if (panelBusqueda) panelBusqueda.hidden = true;
       setStatus(silencioso
-        ? 'Precargando operativa diaria en segundo plano…'
-        : 'Sincronizando operativa diaria…');
+        ? ('Precargando malla del día operativo ' + diaOp + '…')
+        : ('Sincronizando malla del día operativo ' + diaOp + '…'));
       setProgress(5);
       var data = null;
+      var metaDia = leerMetaDiaCache_();
       try {
-        if (global.caches) {
+        if (global.caches && metaDia === diaOp) {
           var cache = await caches.open(CACHE_NAME);
-          var cached = await cache.match(URL_OPERATIVA);
+          var cached = await cache.match(cacheRequestOperativa_(diaOp));
           if (cached) {
-            setStatus('Cargando mallas desde caché del dispositivo…');
+            setStatus('Cargando malla del día ' + diaOp + ' desde caché…');
             setProgress(40);
             data = await cached.json();
           }
+        } else if (metaDia && metaDia !== diaOp) {
+          await limpiarCacheOperativaAntigua_();
+          guardarMetaDiaCache_('');
         }
       } catch (e) {}
       if (!data) {
-        setStatus('Descargando operativa (~28 MB). La primera vez puede tardar…');
+        setStatus('Descargando operativa del día (~28 MB). Puede tardar…');
         setProgress(15);
-        var res = await fetch(URL_OPERATIVA + '?_=' + Date.now(), { cache: 'no-store' });
+        var res = await fetch(URL_OPERATIVA + '?dia=' + encodeURIComponent(diaOp) + '&_=' + Date.now(), {
+          cache: 'no-store'
+        });
         if (!res.ok) throw new Error('No se pudo descargar la operativa GTFS.');
         setProgress(55);
         data = await res.json();
         setProgress(80);
         try {
+          await limpiarCacheOperativaAntigua_();
           if (global.caches) {
             var c2 = await caches.open(CACHE_NAME);
-            await c2.put(URL_OPERATIVA, new Response(JSON.stringify(data), {
-              headers: { 'Content-Type': 'application/json' }
+            await c2.put(cacheRequestOperativa_(diaOp), new Response(JSON.stringify(data), {
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Turnio-Dia-Operativo': diaOp
+              }
             }));
           }
+          guardarMetaDiaCache_(diaOp);
         } catch (ePut) {}
       }
       setStatus('Procesando mallas en memoria…');
       setProgress(90);
       procesarJsonOperativaEnMemoria(data);
       global.TURNIO_GTFS_CACHE_SCHEMA = SCHEMA;
+      global.TURNIO_GTFS_DIA_OPERATIVO = diaOp;
       reconstruirSelectores();
       setProgress(100);
-      setStatus('Operativa lista · ' + Object.keys(global.viajes).length.toLocaleString('es-ES') + ' servicios');
+      setStatus('Operativa lista · día ' + diaOp + ' · ' +
+        Object.keys(global.viajes).length.toLocaleString('es-ES') + ' servicios');
       if (panelCarga) panelCarga.hidden = true;
       if (panelBusqueda) panelBusqueda.hidden = false;
       aplicarEstacionPorDefectoMallas_();
@@ -588,7 +687,7 @@
   }
 
   function operativaCargada() {
-    return !!(global.horarios && global.horarios.length && global.viajes && Object.keys(global.viajes).length);
+    return operativaEnMemoriaDelDia_(diaOperativoMadrid_());
   }
 
   function normalizarNombreEst_(s) {
@@ -717,6 +816,7 @@
   global.TurnioMallasGtfs = {
     asegurarOperativaGtfs: asegurarOperativaGtfs,
     operativaCargada: operativaCargada,
+    diaOperativoMadrid: diaOperativoMadrid_,
     buscarSalidasHaciaDestino: buscarSalidasHaciaDestino,
     filtrarListaEstaciones: filtrarListaEstaciones,
     mostrarListaEstaciones: mostrarListaEstaciones,

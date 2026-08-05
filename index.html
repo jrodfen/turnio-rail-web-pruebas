@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.63">
+    <link rel="stylesheet" href="./styles.css?v=V.64">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -253,7 +253,7 @@
         <div id="gtfs-carga" class="mallas-card mallas-card--cuadro">
           <div class="gtfs-carga-ico" aria-hidden="true">&#128646;</div>
           <h3>Sincronizando operativa&hellip;</h3>
-          <p class="mallas-lead">Descargando el archivo de mallas (~28 MB). La primera vez puede tardar; las siguientes saldr&aacute;n de la cach&eacute; del dispositivo.</p>
+          <p class="mallas-lead">Descargando el archivo de mallas (~28 MB) del d&iacute;a operativo (05:00&ndash;04:59 Madrid). La primera vez del d&iacute;a puede tardar; el resto del d&iacute;a sale de la cach&eacute; del dispositivo.</p>
           <div id="gtfs-status" class="mallas-status">Estableciendo conexi&oacute;n&hellip;</div>
           <div id="gtfs-progress-wrap" class="gtfs-progress-wrap" hidden>
             <div id="gtfs-progress-bar" class="gtfs-progress-bar"></div>
@@ -1313,7 +1313,7 @@
               <div class="cx-hi-icon">&#128646;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Mallas y horarios</div>
-                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong> (con retraso si lo hay). Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong> (paradas, demora y posici&oacute;n). Si InfoStation ADIF entrega datos, aparece el chip <strong>V&Iacute;A</strong> (canal PRO-ECM de la estaci&oacute;n del cuadro).</div>
+                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. La malla se refresca cada <strong>d&iacute;a operativo</strong> (de 05:00 a 04:59, hora Madrid): a partir de las 05:00 descarga el pack nuevo de GitHub. Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong> (con retraso si lo hay). Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong>. Si InfoStation ADIF entrega datos, aparece el chip <strong>V&Iacute;A</strong>.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1633,12 +1633,12 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.63"></script>
-    <script src="./conexiones.js?v=V.63"></script>
+    <script src="./turnio-config.js?v=V.64"></script>
+    <script src="./conexiones.js?v=V.64"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=health1"></script>
-    <script src="./mallas-gtfs.js?v=mallas9"></script>
-    <script src="./app.js?v=V.63"></script>
+    <script src="./mallas-gtfs.js?v=mallas10"></script>
+    <script src="./app.js?v=V.64"></script>
   </body>
 </html>
 
