@@ -385,10 +385,10 @@
     }
   }
 
-  function filtrarListaEstaciones() {
-    var input = document.getElementById('inputEstacionBuscar');
-    var lista = document.getElementById('listaEstacionesCustom');
-    var vacio = document.getElementById('msgSinEstacion');
+  function filtrarListaEstacionesCampo_(inputId, listaId, vacioId) {
+    var input = document.getElementById(inputId);
+    var lista = document.getElementById(listaId);
+    var vacio = vacioId ? document.getElementById(vacioId) : null;
     if (!input || !lista) return;
     var q = input.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     var nombres = Object.keys(global.mapaEstacionesGlobal || {}).sort(function (a, b) {
@@ -410,8 +410,20 @@
     lista.hidden = false;
   }
 
+  function filtrarListaEstaciones() {
+    filtrarListaEstacionesCampo_('inputEstacionBuscar', 'listaEstacionesCustom', 'msgSinEstacion');
+  }
+
+  function filtrarListaEstacionesDestino() {
+    filtrarListaEstacionesCampo_('inputEstacionDestino', 'listaEstacionesDestino', 'msgSinEstacionDestino');
+  }
+
   function mostrarListaEstaciones() {
     filtrarListaEstaciones();
+  }
+
+  function mostrarListaEstacionesDestino() {
+    filtrarListaEstacionesDestino();
   }
 
   function seleccionarEstacion(nombre) {
@@ -419,6 +431,54 @@
     var lista = document.getElementById('listaEstacionesCustom');
     if (input) input.value = nombre;
     if (lista) lista.hidden = true;
+  }
+
+  function seleccionarEstacionDestino(nombre) {
+    var input = document.getElementById('inputEstacionDestino');
+    var lista = document.getElementById('listaEstacionesDestino');
+    if (input) input.value = nombre;
+    if (lista) lista.hidden = true;
+  }
+
+  function intercambiarOrigenDestinoMallas_() {
+    var o = document.getElementById('inputEstacionBuscar');
+    var d = document.getElementById('inputEstacionDestino');
+    if (!o || !d) return;
+    var tmp = o.value;
+    o.value = d.value;
+    d.value = tmp;
+    var lo = document.getElementById('listaEstacionesCustom');
+    var ld = document.getElementById('listaEstacionesDestino');
+    if (lo) lo.hidden = true;
+    if (ld) ld.hidden = true;
+  }
+
+  function resolverStopIdsDesdeInput_(texto) {
+    var t = String(texto || '').trim();
+    if (!t) return [];
+    var mapa = global.mapaEstacionesGlobal || {};
+    var keys = Object.keys(mapa);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === t.toLowerCase()) {
+        return (mapa[keys[i]] || []).slice();
+      }
+    }
+    return resolverStopIdsPorNombre_(t);
+  }
+
+  function tripPasaPorDestinoTras_(tripId, sqOrigen, destSet, idxParadas, lim) {
+    var paradas = idxParadas[tripId] || [];
+    for (var i = 0; i < paradas.length; i++) {
+      var p = paradas[i];
+      var psq = parseInt(p.stop_sequence, 10);
+      if (!(psq > sqOrigen)) continue;
+      if (!destSet[p.stop_id]) continue;
+      return {
+        hora: formatTime(p.arrival_time || p.departure_time),
+        esFinal: !!(lim && psq === lim.max)
+      };
+    }
+    return null;
   }
 
   function resolverNombreEstacionDefault_() {
@@ -510,24 +570,37 @@
 
   function mostrarHorarios() {
     var inputBusqueda = (document.getElementById('inputEstacionBuscar') || {}).value.trim();
+    var inputDestino = String((document.getElementById('inputEstacionDestino') || {}).value || '').trim();
     var cont = document.getElementById('resultadosGTFS');
     if (!cont) return;
     cont.innerHTML = '';
     if (!inputBusqueda) {
-      cont.innerHTML = '<div class="empty">Selecciona una estación de la lista.</div>';
+      cont.innerHTML = '<div class="empty">Selecciona una estación de origen de la lista.</div>';
       return;
     }
-    var stopIds = [];
-    Object.keys(global.mapaEstacionesGlobal || {}).some(function (key) {
-      if (key.toLowerCase() === inputBusqueda.toLowerCase()) {
-        stopIds = global.mapaEstacionesGlobal[key];
-        return true;
-      }
-      return false;
-    });
+    var stopIds = resolverStopIdsDesdeInput_(inputBusqueda);
     if (!stopIds.length) {
-      cont.innerHTML = '<div class="empty error-text">Estación no válida. Escoge una de la lista.</div>';
+      cont.innerHTML = '<div class="empty error-text">Origen no válido. Escoge una estación de la lista.</div>';
       return;
+    }
+
+    var destSet = null;
+    var nombreDestFiltro = '';
+    if (inputDestino) {
+      var stopDest = resolverStopIdsDesdeInput_(inputDestino);
+      if (!stopDest.length) {
+        cont.innerHTML = '<div class="empty error-text">Destino no válido. Escoge una estación de la lista o déjalo vacío.</div>';
+        return;
+      }
+      destSet = Object.create(null);
+      stopDest.forEach(function (id) { destSet[id] = true; });
+      // Evitar origen === destino (mismos stop_id).
+      var solapa = stopIds.some(function (id) { return destSet[id]; });
+      if (solapa) {
+        cont.innerHTML = '<div class="empty">Origen y destino no pueden ser la misma estación.</div>';
+        return;
+      }
+      nombreDestFiltro = inputDestino;
     }
 
     var tipoParada = (document.getElementById('filtroTipoParada') || {}).value || '';
@@ -558,6 +631,12 @@
       var orgNombre = extremos ? extremos.org : (global.estaciones[lim.origen] || 'Desc.');
       var destNombre = extremos ? extremos.dest : (global.estaciones[lim.destino] || 'Desc.');
 
+      var hitDest = null;
+      if (destSet) {
+        hitDest = tripPasaPorDestinoTras_(h.trip_id, sq, destSet, idxParadas, lim);
+        if (!hitDest) return;
+      }
+
       if (sq !== lim.max && (!prod || dv.productoFiltro === prod)) {
         todasParaProximos.push({
           hora_salida: hl, _extMinsSalida: extMinsSalida, num: numeroLimpioDisplay,
@@ -573,8 +652,12 @@
         hora_salida: hl,
         _extMinsSalida: extMinsSalida,
         hora_llegada_estacion: formatTime(h.arrival_time),
-        hora_llegada_destino: (lim.hora_llegada_destino && /^\d{1,2}:\d{2}/.test(String(lim.hora_llegada_destino)))
-          ? formatTime(lim.hora_llegada_destino) : (lim.hora_llegada_destino || 'Desc.'),
+        hora_llegada_destino: hitDest && hitDest.hora
+          ? hitDest.hora
+          : ((lim.hora_llegada_destino && /^\d{1,2}:\d{2}/.test(String(lim.hora_llegada_destino)))
+            ? formatTime(lim.hora_llegada_destino) : (lim.hora_llegada_destino || 'Desc.')),
+        dest_filtro: nombreDestFiltro || '',
+        dest_es_paso: !!(hitDest && !hitDest.esFinal),
         prod: dv.productoFiltro,
         tren_front: dv.nombreVisualFrontal,
         es_cerc: dv.esCercanias,
@@ -636,9 +719,15 @@
     }
 
     var cnt = document.getElementById('contadorResultadosGTFS');
-    if (cnt) cnt.textContent = trenesUtiles.length + ' próximos';
+    if (cnt) {
+      cnt.textContent = trenesUtiles.length + (destSet ? ' (origen→destino)' : ' próximos');
+    }
     if (!trenesUtiles.length) {
-      cont.innerHTML = '<div class="empty">No hay próximos trenes con estos filtros.</div>';
+      cont.innerHTML = '<div class="empty">' +
+        (destSet
+          ? 'No hay trenes de ese origen hacia ese destino con estos filtros.'
+          : 'No hay próximos trenes con estos filtros.') +
+        '</div>';
       return;
     }
 
@@ -655,6 +744,9 @@
       var badgeHtml = s.num ? '<span class="gtfs-badge">Nº ' + esc(s.num) + '</span>' : '';
       var badgeLinea = (s.es_cerc && s.lin && s.lin !== 'undefined')
         ? '<span class="gtfs-badge gtfs-badge--line">' + esc(s.lin) + '</span>' : '';
+      var finLabel = s.dest_filtro
+        ? (esc(s.dest_filtro) + (s.dest_es_paso ? ' (paso)' : '') + ' (' + esc(s.hora_llegada_destino) + ')')
+        : (esc(s.dest) + ' (' + esc(s.hora_llegada_destino) + ')');
       return '<article class="flip-card" data-tid="' + esc(s.tid) + '" data-num="' + esc(s.num || '') + '">' +
         '<div class="flip-card-inner">' +
         '<div class="flip-card-front">' +
@@ -663,11 +755,14 @@
         '<div class="train-type">🚆 ' + esc(s.tren_front || s.prod || 'Tren') + ' ' + badgeLinea + '</div>' +
         '<div>' + badgeHtml + ' <span class="gtfs-val">📅 ' + esc(s.val) + '</span></div>' +
         '<div class="ruta-delantera">📍 ' + esc(s.org) + ' ➔ ' + esc(s.dest) + '</div>' +
-        '<div class="malla-hint">Toca para ver hoja de ruta</div>' +
+        (s.dest_filtro
+          ? '<div class="malla-hint">Llegada a ' + esc(s.dest_filtro) + ': ' + esc(s.hora_llegada_destino) +
+            (s.dest_es_paso ? ' (paso)' : '') + '</div>'
+          : '<div class="malla-hint">Toca para ver hoja de ruta</div>') +
         '</div></div>' +
         '<div class="flip-card-back">' +
         '<div class="back-detail"><span><strong>Origen:</strong> ' + esc(s.org) + '</span><span><strong>Serv:</strong> ' + esc(s.prod) + '</span></div>' +
-        '<div class="back-detail"><span><strong>Tu andén:</strong> ' + esc(s.hora_llegada_estacion) + '</span><span><strong>Fin:</strong> ' + esc(s.dest) + ' (' + esc(s.hora_llegada_destino) + ')</span></div>' +
+        '<div class="back-detail"><span><strong>Tu andén:</strong> ' + esc(s.hora_llegada_estacion) + '</span><span><strong>Fin:</strong> ' + finLabel + '</span></div>' +
         '<div class="back-detail"><span><strong>Acceso:</strong> ' + esc(s.acc) + '</span><span><strong>Nº:</strong> ' + esc(s.num || 'N/D') + '</span></div>' +
         '<div class="back-detail" data-via-adif-slot></div>' +
         '<div class="back-detail back-detail--col"><span><strong>Siguientes a ' + esc(s.dest) + ':</strong></span><div class="prox-row">' + pxHtml + '</div></div>' +
@@ -825,8 +920,12 @@
     diaOperativoMadrid: diaOperativoMadrid_,
     buscarSalidasHaciaDestino: buscarSalidasHaciaDestino,
     filtrarListaEstaciones: filtrarListaEstaciones,
+    filtrarListaEstacionesDestino: filtrarListaEstacionesDestino,
     mostrarListaEstaciones: mostrarListaEstaciones,
+    mostrarListaEstacionesDestino: mostrarListaEstacionesDestino,
     seleccionarEstacion: seleccionarEstacion,
+    seleccionarEstacionDestino: seleccionarEstacionDestino,
+    intercambiarOrigenDestino: intercambiarOrigenDestinoMallas_,
     aplicarEstacionPorDefectoMallas: aplicarEstacionPorDefectoMallas_,
     mostrarHorarios: mostrarHorarios,
     mostrarDiasCirculacionCuadro: mostrarDiasCirculacionCuadro,

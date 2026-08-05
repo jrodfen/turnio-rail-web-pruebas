@@ -6841,11 +6841,33 @@
       inpEst.addEventListener('focus', gtfs.mostrarListaEstaciones);
       inpEst.addEventListener('input', gtfs.filtrarListaEstaciones);
     }
-    document.getElementById('listaEstacionesCustom').addEventListener('click', function (e) {
-      var opt = e.target.closest('[data-estacion]');
-      if (!opt) return;
-      gtfs.seleccionarEstacion(opt.getAttribute('data-estacion'));
-    });
+    var inpDest = document.getElementById('inputEstacionDestino');
+    if (inpDest) {
+      inpDest.addEventListener('focus', gtfs.mostrarListaEstacionesDestino);
+      inpDest.addEventListener('input', gtfs.filtrarListaEstacionesDestino);
+    }
+    var listaOrig = document.getElementById('listaEstacionesCustom');
+    if (listaOrig) {
+      listaOrig.addEventListener('click', function (e) {
+        var opt = e.target.closest('[data-estacion]');
+        if (!opt) return;
+        gtfs.seleccionarEstacion(opt.getAttribute('data-estacion'));
+      });
+    }
+    var listaDest = document.getElementById('listaEstacionesDestino');
+    if (listaDest) {
+      listaDest.addEventListener('click', function (e) {
+        var opt = e.target.closest('[data-estacion]');
+        if (!opt) return;
+        gtfs.seleccionarEstacionDestino(opt.getAttribute('data-estacion'));
+      });
+    }
+    var btnSwapOd = document.getElementById('btn-mallas-od-swap');
+    if (btnSwapOd) {
+      btnSwapOd.addEventListener('click', function () {
+        gtfs.intercambiarOrigenDestino();
+      });
+    }
     document.getElementById('btn-generar-cuadro').addEventListener('click', function () {
       gtfs.mostrarHorarios();
     });
@@ -6863,10 +6885,11 @@
       }
     });
     document.addEventListener('click', function (e) {
-      var lista = document.getElementById('listaEstacionesCustom');
-      var wrap = document.querySelector('.searchable-select-container');
-      if (!lista || !wrap) return;
-      if (!wrap.contains(e.target)) lista.hidden = true;
+      document.querySelectorAll('#gtfs-busqueda .searchable-select-container').forEach(function (wrap) {
+        var lista = wrap.querySelector('.searchable-select-list');
+        if (!lista) return;
+        if (!wrap.contains(e.target)) lista.hidden = true;
+      });
     });
   }
   document.getElementById('btn-monitor').addEventListener('click', function () {

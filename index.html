@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.65">
+    <link rel="stylesheet" href="./styles.css?v=V.66">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -263,12 +263,25 @@
           <div class="gtfs-head-row">
             <h3>&#128269; Buscador de horarios oficial</h3>
           </div>
-          <p class="mallas-lead">Consulta por estaci&oacute;n, producto, fecha y hora. Pulsa las tarjetas para ver la hoja de ruta.</p>
-          <label class="aviso-label" for="inputEstacionBuscar">Estaci&oacute;n</label>
-          <div class="searchable-select-container">
-            <input id="inputEstacionBuscar" type="search" placeholder="Por defecto: Sevilla Santa Justa (51003)" autocomplete="off">
-            <div id="listaEstacionesCustom" class="searchable-select-list" hidden></div>
-            <div id="msgSinEstacion" class="searchable-empty" hidden>No se encontr&oacute; ninguna estaci&oacute;n</div>
+          <p class="mallas-lead">Consulta por origen y, si quieres, destino (trenes que van de A a B). Tambi&eacute;n por producto, fecha y hora. Pulsa las tarjetas para ver la hoja de ruta.</p>
+          <div class="mallas-od-row">
+            <div class="mallas-od-field">
+              <label class="aviso-label" for="inputEstacionBuscar">Origen</label>
+              <div class="searchable-select-container">
+                <input id="inputEstacionBuscar" type="search" placeholder="Por defecto: Sevilla Santa Justa (51003)" autocomplete="off" aria-autocomplete="list" aria-controls="listaEstacionesCustom">
+                <div id="listaEstacionesCustom" class="searchable-select-list" hidden></div>
+                <div id="msgSinEstacion" class="searchable-empty" hidden>No se encontr&oacute; ninguna estaci&oacute;n</div>
+              </div>
+            </div>
+            <button type="button" class="btn secondary mallas-od-swap" id="btn-mallas-od-swap" title="Intercambiar origen y destino">&#8644;</button>
+            <div class="mallas-od-field">
+              <label class="aviso-label" for="inputEstacionDestino">Destino <span class="mallas-od-opt">(opcional)</span></label>
+              <div class="searchable-select-container">
+                <input id="inputEstacionDestino" type="search" placeholder="Ej. Madrid Puerta de Atocha" autocomplete="off" aria-autocomplete="list" aria-controls="listaEstacionesDestino">
+                <div id="listaEstacionesDestino" class="searchable-select-list" hidden></div>
+                <div id="msgSinEstacionDestino" class="searchable-empty" hidden>No se encontr&oacute; ninguna estaci&oacute;n</div>
+              </div>
+            </div>
           </div>
           <div class="filters-grid">
             <div>
@@ -1313,7 +1326,7 @@
               <div class="cx-hi-icon">&#128646;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Mallas y horarios</div>
-                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. La malla se refresca cada <strong>d&iacute;a operativo</strong> (de 05:00 a 04:59, hora Madrid): a partir de las 05:00 descarga el pack nuevo de GitHub. Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong> (con retraso si lo hay). Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong>. Si InfoStation ADIF entrega datos, aparece el chip <strong>V&Iacute;A</strong>.</div>
+                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Puedes filtrar por <strong>origen</strong> y, opcionalmente, <strong>destino</strong> (solo trenes que van de A hacia B, destino final o paso). La malla se refresca cada <strong>d&iacute;a operativo</strong> (de 05:00 a 04:59, hora Madrid). Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong>. Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong>. Si InfoStation ADIF entrega datos, aparece el chip <strong>V&Iacute;A</strong>.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1634,13 +1647,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.65"></script>
-    <script src="./conexiones.js?v=V.65"></script>
+    <script src="./turnio-config.js?v=V.66"></script>
+    <script src="./conexiones.js?v=V.66"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
-    <script src="./mallas-gtfs.js?v=mallas11"></script>
-    <script src="./app.js?v=V.65"></script>
+    <script src="./mallas-gtfs.js?v=mallas12"></script>
+    <script src="./app.js?v=V.66"></script>
   </body>
 </html>
 
