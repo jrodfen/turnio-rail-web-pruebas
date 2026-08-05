@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.74">
+    <link rel="stylesheet" href="./styles.css?v=V.75">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -668,21 +668,20 @@
       <section id="screen-ajustes" class="screen">
         <header class="circ-head">
           <h2 class="circ-title">Ajustes</h2>
-          <p class="circ-lead">Comunicaci&oacute;n, actualizaci&oacute;n de la app y cuenta. La sesi&oacute;n se mantiene al actualizar el c&oacute;digo.</p>
+          <p class="circ-lead">Comunicaci&oacute;n, app y cuenta.</p>
         </header>
 
         <div class="circ-layout circ-layout--ajustes">
           <div class="circ-group circ-group--ajustes-com" data-ocultar-invitado>
             <h3 class="circ-group-title">Comunicaci&oacute;n</h3>
-            <p class="circ-note">Avisos de Administraci&oacute;n y canal de feedback.</p>
             <div class="circ-grid circ-grid--ajustes">
               <button type="button" class="circ-tile circ-tile--avisos" id="btn-ir-avisos-app" data-go="avisos-app">
                 <b>&#128276; Avisos TURNIO</b>
                 <span>Publicados por Administraci&oacute;n</span>
               </button>
               <button type="button" class="circ-tile circ-tile--sug" id="btn-ir-sugerencias" data-go="sugerencias">
-                <b>&#128172; Sugerencias y fallos</b>
-                <span>Notifica un problema o mejora</span>
+                <b>&#128172; Sugerencias</b>
+                <span>Fallos y propuestas</span>
               </button>
             </div>
           </div>
@@ -692,15 +691,14 @@
               <h3 class="circ-group-title">Aplicaci&oacute;n</h3>
               <span class="circ-chip">TURNIO &middot; <span data-turnio-version>V.13</span></span>
             </div>
-            <p class="circ-note">Actualiza el c&oacute;digo en m&oacute;vil o consulta el manual completo.</p>
             <div class="circ-grid circ-grid--ajustes">
               <button type="button" class="circ-tile circ-tile--update" id="btn-obtener-actualizacion">
-                <b>&#128640; Nueva actualizaci&oacute;n</b>
-                <span>Descarga el c&oacute;digo y recarga la app</span>
+                <b>&#128640; Actualizar</b>
+                <span>Descarga y recarga la app</span>
               </button>
               <button type="button" class="circ-tile circ-tile--ayuda" id="btn-ayuda-app">
-                <b>&#128214; Manual de TURNIO</b>
-                <span>Inicio, Radar, Vigilante, Mapa y m&aacute;s</span>
+                <b>&#128214; Manual</b>
+                <span>Gu&iacute;a de uso de TURNIO</span>
               </button>
             </div>
           </div>
@@ -710,11 +708,10 @@
               <h3 class="circ-group-title">Administraci&oacute;n</h3>
               <span class="circ-chip circ-chip--green">Solo ADMIN</span>
             </div>
-            <p class="circ-note">Roles, activaci&oacute;n, caducidad de invitados y avisos al entrar.</p>
             <div class="circ-grid circ-grid--ajustes circ-grid--ajustes-1">
               <button type="button" class="circ-tile circ-tile--admin" id="btn-ir-admin" data-go="admin">
-                <b>&#128101; Usuarios TURNIO</b>
-                <span>Gestionar perfiles y avisos</span>
+                <b>&#128101; Panel de administraci&oacute;n</b>
+                <span>Usuarios, avisos, exclusiones y m&aacute;s</span>
               </button>
             </div>
           </div>
@@ -1813,13 +1810,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.74"></script>
-    <script src="./conexiones.js?v=V.74"></script>
+    <script src="./turnio-config.js?v=V.75"></script>
+    <script src="./conexiones.js?v=V.75"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.74"></script>
+    <script src="./app.js?v=V.75"></script>
   </body>
 </html>
 

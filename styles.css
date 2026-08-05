@@ -336,8 +336,16 @@ body.monitor-mode #screen-mapa{display:none!important}
 @keyframes fillCheck{100%{box-shadow:inset 0 0 0 50px var(--green)}}
 @keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* Ajustes (mismo lenguaje visual que Circulación) */
-#screen-ajustes{max-width:920px;margin:0 auto}
+/* Ajustes: una columna estable (no hereda el grid 2-col de Circulación) */
+#screen-ajustes{
+  max-width:560px;
+  margin:0 auto;
+  width:100%;
+  min-width:0;
+  padding-bottom:28px;
+}
+#screen-ajustes .circ-head{margin-bottom:12px}
+#screen-ajustes .circ-lead{margin:0}
 .ajustes-title{margin:0 0 6px;font-size:22px}
 .ajustes-lead{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.4}
 .ajustes-danger{color:var(--red)!important}
@@ -345,6 +353,55 @@ body.monitor-mode #screen-mapa{display:none!important}
 .home-comercial-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:420px){.home-comercial-grid{grid-template-columns:1fr}}
 html.turnio-es-comercial #fab-container{display:none!important}
+
+#screen-ajustes .circ-layout--ajustes{
+  display:grid;
+  grid-template-columns:1fr !important;
+  gap:12px;
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+}
+#screen-ajustes .circ-group{
+  grid-column:1 / -1 !important;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+#screen-ajustes .circ-group-head{
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+#screen-ajustes .circ-chip{
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#screen-ajustes .circ-note{margin:0 0 10px}
+#screen-ajustes .circ-grid--ajustes{
+  grid-template-columns:1fr;
+  gap:8px;
+}
+@media (min-width:480px){
+  #screen-ajustes .circ-grid--ajustes:not(.circ-grid--ajustes-1){
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+#screen-ajustes .circ-tile{
+  min-height:72px;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+  word-break:break-word;
+}
+#screen-ajustes .circ-tile b,
+#screen-ajustes .circ-tile span{
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
 .circ-group--ajustes-com{border-top:3px solid #2563eb}
 .circ-group--ajustes-app{border-top:3px solid var(--primary)}
 .circ-group--ajustes-admin{border-top:3px solid #059669}
@@ -357,13 +414,6 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .circ-tile--ayuda{border-color:rgba(100,116,139,.3);background:linear-gradient(160deg,rgba(100,116,139,.07),var(--bg))}
 .circ-tile--admin{border-color:rgba(5,150,105,.4);background:linear-gradient(160deg,rgba(5,150,105,.1),var(--bg))}
 .circ-tile--logout{border-color:rgba(185,28,28,.28);background:linear-gradient(160deg,rgba(185,28,28,.05),var(--bg))}
-@media (min-width:640px){
-  .circ-layout--ajustes{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
-  .circ-group--ajustes-admin,.circ-group--ajustes-cuenta{grid-column:1/-1}
-}
-@media (max-width:420px){
-  .circ-grid--ajustes{grid-template-columns:1fr}
-}
 
 /* Administración (solo ADMIN) */
 #screen-admin{max-width:640px;margin:0 auto}
