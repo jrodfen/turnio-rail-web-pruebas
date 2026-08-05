@@ -5107,15 +5107,22 @@
       ? ('+' + retraso + ' min' + (m.hDestPrevista && m.destino
         ? ' · Llegada prevista a ' + m.destino + ': ' + m.hDestPrevista + 'h' : ''))
       : 'Puntual');
-    var rows = paradas.map(function (p) {
+    var rows = paradas.map(function (p, idx) {
       var cl = p.esActual ? 'actual' : p.esPasada ? 'pasada' : '';
       var icon = p.esActual ? '&#128205;' : p.esPasada ? '&#10003;' : '&#9675;';
       var dMin = Number(p.delayMin || 0);
+      var esOrigenSalida = idx === 0;
       var delayHtml = '';
       if (dMin > 0) {
-        var etiqueta = p.retrasoLlegada || p.esPasada
-          ? ('llegó +' + dMin + ' min')
-          : ('+' + dMin + ' min');
+        var etiqueta;
+        if (esOrigenSalida) {
+          // Origen = salida: nunca "llegó", siempre demora de salida.
+          etiqueta = 'sale +' + dMin + ' min';
+        } else if (p.retrasoLlegada || p.esPasada) {
+          etiqueta = 'llegó +' + dMin + ' min';
+        } else {
+          etiqueta = '+' + dMin + ' min';
+        }
         delayHtml = ' <em class="marcha-delay">' + etiqueta + '</em>';
       } else if (p.esPasada || p.retrasoLlegada) {
         delayHtml = ' <em class="marcha-ontime">puntual</em>';
