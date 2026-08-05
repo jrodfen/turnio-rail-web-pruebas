@@ -2937,14 +2937,34 @@
         go('ajustes');
         return;
       }
-      cargarAdminPerfiles_();
-      cargarAdminAviso_();
-      cargarAdminSugerencias_();
-      cargarAdminSolicitudes_();
-      cargarAdminMantenimiento_();
-      cargarAdminAccesos_();
-      cargarAdminExclusiones_();
+      mostrarAdminHub_();
     }
+  }
+
+  function mostrarAdminHub_() {
+    var hub = document.getElementById('admin-hub');
+    if (hub) hub.hidden = false;
+    document.querySelectorAll('.admin-panel').forEach(function (p) { p.hidden = true; });
+  }
+
+  function abrirAdminPanel_(panelId) {
+    var id = String(panelId || '').trim();
+    if (!id || !sessionProfile.is_admin) return;
+    var hub = document.getElementById('admin-hub');
+    var panel = document.querySelector('.admin-panel[data-admin-panel-view="' + id + '"]');
+    if (!panel) return;
+    if (hub) hub.hidden = true;
+    document.querySelectorAll('.admin-panel').forEach(function (p) { p.hidden = true; });
+    panel.hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (id === 'mant') cargarAdminMantenimiento_();
+    else if (id === 'accesos') cargarAdminAccesos_();
+    else if (id === 'excl') cargarAdminExclusiones_();
+    else if (id === 'aviso') cargarAdminAviso_();
+    else if (id === 'sugerencias') cargarAdminSugerencias_();
+    else if (id === 'solicitudes') cargarAdminSolicitudes_();
+    else if (id === 'perfiles') cargarAdminPerfiles_();
+    else if (id === 'nuevo') syncAdminNuevoCaduca_();
   }
 
   function invalidateMapaSiHay_() {
@@ -6541,13 +6561,14 @@
     });
   }
   var btnAdminRef = document.getElementById('btn-admin-refrescar');
-  if (btnAdminRef) btnAdminRef.addEventListener('click', function () {
-    cargarAdminPerfiles_();
-    cargarAdminAviso_();
-    cargarAdminSugerencias_();
-    cargarAdminMantenimiento_();
-    cargarAdminAccesos_();
-    cargarAdminExclusiones_();
+  if (btnAdminRef) btnAdminRef.addEventListener('click', cargarAdminPerfiles_);
+  document.querySelectorAll('[data-admin-panel]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      abrirAdminPanel_(btn.getAttribute('data-admin-panel'));
+    });
+  });
+  document.querySelectorAll('[data-admin-back]').forEach(function (btn) {
+    btn.addEventListener('click', function () { mostrarAdminHub_(); });
   });
   var btnExclRef = document.getElementById('btn-admin-excl-refrescar');
   if (btnExclRef) btnExclRef.addEventListener('click', cargarAdminExclusiones_);

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.71">
+    <link rel="stylesheet" href="./styles.css?v=V.72">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -710,19 +710,66 @@
         </div>
       </section>
       <section id="screen-admin" class="screen">
-        <button type="button" class="back" data-go="ajustes">&larr; Ajustes</button>
-        <h2 class="ajustes-title">Administraci&oacute;n</h2>
-        <p class="ajustes-lead">Pulsa cada cabecera para desplegar. Los cambios se auditan. No puedes degradarte ni desactivarte a ti mismo.</p>
+        <div id="admin-hub">
+          <button type="button" class="back" data-go="ajustes">&larr; Ajustes</button>
+          <header class="circ-head">
+            <h2 class="circ-title">Administraci&oacute;n</h2>
+            <p class="circ-lead">Elige una herramienta. Los cambios se auditan.</p>
+          </header>
+          <div class="circ-layout">
+            <div class="circ-group">
+              <h3 class="circ-group-title">Operaci&oacute;n</h3>
+              <div class="circ-grid circ-grid--turnio" id="admin-hub-grid">
+                <button type="button" class="circ-tile circ-tile--admin" data-admin-panel="mant">
+                  <b>&#128721; Mantenimiento</b>
+                  <span>Bloqueo de acceso</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--radar" data-admin-panel="accesos">
+                  <b>&#128202; Accesos</b>
+                  <span>Registros IP / ciudad</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--mallas" data-admin-panel="excl">
+                  <b>&#128683; Exclusiones</b>
+                  <span>Sin salida / tramos</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--avisos" data-admin-panel="aviso">
+                  <b>&#128172; Aviso al entrar</b>
+                  <span>Modal de bienvenida</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--sug" data-admin-panel="sugerencias">
+                  <b>&#128221; Sugerencias</b>
+                  <span>Fallos y propuestas</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--pantallas" data-admin-panel="solicitudes">
+                  <b>&#128203; Solicitudes</b>
+                  <span>Altas pendientes</span>
+                </button>
+              </div>
+            </div>
+            <div class="circ-group">
+              <h3 class="circ-group-title">Usuarios</h3>
+              <div class="circ-grid circ-grid--turnio">
+                <button type="button" class="circ-tile circ-tile--kms" data-admin-panel="clave">
+                  <b>&#128274; Clave ADMIN</b>
+                  <span>Entrar sin OTP</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--mapa" data-admin-panel="nuevo">
+                  <b>&#10133; A&ntilde;adir usuario</b>
+                  <span>Perfil + acceso OTP</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--conex" data-admin-panel="perfiles">
+                  <b>&#128101; Usuarios</b>
+                  <span>Roles y estado</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <details class="admin-fold admin-mant-box" id="admin-mant-box">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Modo mantenimiento</span>
-              <span class="admin-fold-sub">Bloqueo de acceso (solo ADMIN entra)</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
+        <div class="admin-panel" id="admin-panel-mant" data-admin-panel-view="mant" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Modo mantenimiento</h2>
+          <div class="admin-panel-card admin-mant-box">
             <p class="admin-nuevo-help">Apaga el acceso a todos los usuarios excepto ADMIN. &Uacute;til para deploys o labores t&eacute;cnicas.</p>
             <div class="admin-mant-head">
               <p id="admin-mant-meta" class="admin-meta" style="margin:0">Comprobando estado&hellip;</p>
@@ -732,18 +779,13 @@
               </button>
             </div>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold admin-accesos-box" id="admin-accesos-box">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Accesos</span>
-              <span class="admin-fold-sub">Registros de entrada · IP / ciudad</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
-            <p class="admin-nuevo-help">Entradas con ciudad/regi&oacute;n aproximada (IP). Aviso autom&aacute;tico si un email usa &ge;2 IPs en 2 h (posible clave compartida).</p>
+        <div class="admin-panel" id="admin-panel-accesos" data-admin-panel-view="accesos" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Accesos</h2>
+          <div class="admin-panel-card admin-accesos-box" id="admin-accesos-box">
+            <p class="admin-nuevo-help">Entradas con ciudad/regi&oacute;n aproximada (IP). Aviso si un email usa &ge;2 IPs en 2 h.</p>
             <div class="admin-fold-toolbar">
               <button type="button" class="btn secondary" id="btn-admin-accesos-refrescar">Actualizar</button>
             </div>
@@ -775,18 +817,13 @@
             <div id="admin-accesos-resumen" class="admin-accesos-resumen" hidden></div>
             <div id="admin-accesos-lista" class="admin-accesos-lista" aria-live="polite"></div>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold" id="admin-excl-box">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Exclusiones de circulaci&oacute;n</span>
-              <span class="admin-fold-sub">Trenes / tramos fuera de sin salida</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
-            <p class="admin-nuevo-help">Quita de <strong>sin salida</strong> (y detenidos) trenes o tramos que no circulan. Los <strong>35xxx</strong> (bus/taxi) se ignoran siempre. Caducidad obligatoria: la fija el Admin.</p>
+        <div class="admin-panel" id="admin-panel-excl" data-admin-panel-view="excl" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Exclusiones de circulaci&oacute;n</h2>
+          <div class="admin-panel-card" id="admin-excl-box">
+            <p class="admin-nuevo-help">Quita de <strong>sin salida</strong> trenes o tramos. Los <strong>35xxx</strong> se ignoran siempre. Caducidad obligatoria.</p>
             <div class="admin-fold-toolbar">
               <button type="button" class="btn secondary" id="btn-admin-excl-refrescar">Actualizar</button>
             </div>
@@ -809,10 +846,10 @@
                   <input type="text" id="admin-excl-producto" placeholder="Ej. MD (vac&iacute;o = todos)" maxlength="40" autocomplete="off">
                 </label>
                 <label id="admin-excl-origen-wrap" hidden>Origen tramo
-                  <input type="text" id="admin-excl-origen" placeholder="Ej. Jaén" maxlength="120" autocomplete="off">
+                  <input type="text" id="admin-excl-origen" placeholder="Ej. Ja&eacute;n" maxlength="120" autocomplete="off">
                 </label>
                 <label id="admin-excl-destino-wrap" hidden>Destino tramo
-                  <input type="text" id="admin-excl-destino" placeholder="Ej. Córdoba" maxlength="120" autocomplete="off">
+                  <input type="text" id="admin-excl-destino" placeholder="Ej. C&oacute;rdoba" maxlength="120" autocomplete="off">
                 </label>
                 <label class="admin-nuevo-exp" id="admin-excl-bi-wrap" hidden>
                   <span class="admin-excl-check">
@@ -821,7 +858,7 @@
                   </span>
                 </label>
                 <label class="admin-nuevo-exp">Motivo
-                  <input type="text" id="admin-excl-motivo" placeholder="Ej. Corte Algeciras–Antequera AV / bus 35" maxlength="280" autocomplete="off">
+                  <input type="text" id="admin-excl-motivo" placeholder="Ej. Corte Algeciras–Antequera AV" maxlength="280" autocomplete="off">
                 </label>
               </div>
               <button type="submit" class="btn primary admin-nuevo-btn" id="btn-admin-excl-guardar">A&ntilde;adir exclusi&oacute;n</button>
@@ -829,18 +866,13 @@
             <h4 class="admin-aviso-hist-title">Activas / caducadas</h4>
             <div id="admin-excl-lista" class="admin-aviso-lista" aria-live="polite"></div>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold" id="admin-aviso-box">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Aviso al entrar</span>
-              <span class="admin-fold-sub">Modal de bienvenida / publicados</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
-            <p class="admin-nuevo-help">Mensaje al abrir TURNIO. Cerrar (X) = vuelve a salir; <strong>Aceptar</strong> = no se repite. Queda en publicados hasta borrarlo.</p>
+        <div class="admin-panel" id="admin-panel-aviso" data-admin-panel-view="aviso" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Aviso al entrar</h2>
+          <div class="admin-panel-card" id="admin-aviso-box">
+            <p class="admin-nuevo-help">Mensaje al abrir TURNIO. Cerrar (X) = vuelve a salir; <strong>Aceptar</strong> = no se repite.</p>
             <p id="admin-aviso-estado" class="admin-meta">Comprobando aviso activo&hellip;</p>
             <div class="admin-aviso-actions">
               <button type="button" class="btn primary" id="btn-admin-aviso-abrir-form">A&ntilde;adir aviso</button>
@@ -862,57 +894,41 @@
             <p class="admin-nuevo-help">Pulsa un t&iacute;tulo para ver el mensaje y borrarlo.</p>
             <div id="admin-aviso-lista" class="admin-aviso-lista" aria-live="polite"></div>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold admin-sugerencia-box" id="admin-sugerencia-box">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Sugerencias y fallos</span>
-              <span class="admin-fold-sub">Mensajes recibidos de usuarios</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
-            <p class="admin-nuevo-help">Mensajes de usuarios. Al entrar ver&aacute;s un modal por cada uno pendiente (Aceptar = no se repite). Quedan aqu&iacute; hasta borrarlos.</p>
+        <div class="admin-panel" id="admin-panel-sugerencias" data-admin-panel-view="sugerencias" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Sugerencias y fallos</h2>
+          <div class="admin-panel-card admin-sugerencia-box" id="admin-sugerencia-box">
+            <p class="admin-nuevo-help">Mensajes de usuarios. Quedan aqu&iacute; hasta borrarlos.</p>
             <p id="admin-sugerencia-meta" class="admin-meta">Cargando&hellip;</p>
             <h4 class="admin-aviso-hist-title">Recibidos</h4>
-            <p class="admin-nuevo-help">Pulsa un t&iacute;tulo para ver el mensaje y borrarlo.</p>
             <div id="admin-sugerencia-lista" class="admin-aviso-lista" aria-live="polite"></div>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold" id="admin-solicitud-box">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Solicitudes de acceso</span>
-              <span class="admin-fold-sub">Altas pendientes desde el login</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
-            <p class="admin-nuevo-help">Peticiones desde el login. Al aprobar eliges el rol (el usuario no lo elige). Rechazar cierra la solicitud.</p>
+        <div class="admin-panel" id="admin-panel-solicitudes" data-admin-panel-view="solicitudes" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Solicitudes de acceso</h2>
+          <div class="admin-panel-card" id="admin-solicitud-box">
+            <p class="admin-nuevo-help">Peticiones desde el login. Al aprobar eliges el rol.</p>
             <div class="admin-fold-toolbar">
               <button type="button" class="btn secondary" id="btn-admin-solicitud-refrescar">Actualizar</button>
             </div>
             <p id="admin-solicitud-meta" class="admin-meta">Cargando&hellip;</p>
             <div id="admin-solicitud-lista" class="admin-aviso-lista" aria-live="polite"></div>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold admin-clave-box" id="admin-clave-fold">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Clave de acceso ADMIN</span>
-              <span class="admin-fold-sub">Contrase&ntilde;a sin OTP</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
+        <div class="admin-panel" id="admin-panel-clave" data-admin-panel-view="clave" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Clave de acceso ADMIN</h2>
+          <div class="admin-panel-card admin-clave-box">
             <form id="admin-form-clave" class="admin-nuevo admin-nuevo--nested" autocomplete="off">
-              <p class="admin-nuevo-help">Define una contrase&ntilde;a para entrar sin c&oacute;digo por correo. Solo perfiles ADMIN. M&iacute;nimo 8 caracteres.</p>
+              <p class="admin-nuevo-help">Contrase&ntilde;a para entrar sin c&oacute;digo por correo. M&iacute;nimo 8 caracteres.</p>
               <div class="admin-nuevo-grid">
                 <label>Clave nueva
-                  <input type="password" id="admin-clave-pass" minlength="8" maxlength="72" required autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+                  <input type="password" id="admin-clave-pass" minlength="8" maxlength="72" required autocomplete="new-password" placeholder="M&iacute;nimo 8 caracteres">
                 </label>
                 <label>Repetir clave
                   <input type="password" id="admin-clave-pass2" minlength="8" maxlength="72" required autocomplete="new-password" placeholder="Repite la clave">
@@ -921,19 +937,14 @@
               <button type="submit" class="btn primary admin-nuevo-btn" id="btn-admin-clave">Guardar clave</button>
             </form>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold" id="admin-nuevo-fold">
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">A&ntilde;adir usuario</span>
-              <span class="admin-fold-sub">Alta de perfil + OTP</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
+        <div class="admin-panel" id="admin-panel-nuevo" data-admin-panel-view="nuevo" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">A&ntilde;adir usuario</h2>
+          <div class="admin-panel-card">
             <form id="admin-form-nuevo" class="admin-nuevo admin-nuevo--nested" autocomplete="off">
-              <p class="admin-nuevo-help">Crea el perfil y el acceso OTP. Si el rol es ADMIN puedes fijar ya una clave de acceso.</p>
+              <p class="admin-nuevo-help">Crea el perfil y el acceso OTP. Si el rol es ADMIN puedes fijar ya una clave.</p>
               <div class="admin-nuevo-grid">
                 <label>Email<input type="email" id="admin-nuevo-email" required placeholder="usuario@ejemplo.com" maxlength="120"></label>
                 <label>Nombre<input type="text" id="admin-nuevo-nombre" placeholder="Nombre visible" maxlength="80"></label>
@@ -950,23 +961,18 @@
                   <input type="date" id="admin-nuevo-caduca">
                 </label>
                 <label id="admin-nuevo-clave-wrap" class="admin-nuevo-exp" hidden>Clave ADMIN
-                  <input type="password" id="admin-nuevo-clave" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Opcional · mín. 8">
+                  <input type="password" id="admin-nuevo-clave" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Opcional · m&iacute;n. 8">
                 </label>
               </div>
               <button type="submit" class="btn primary admin-nuevo-btn" id="btn-admin-crear">A&ntilde;adir</button>
             </form>
           </div>
-        </details>
+        </div>
 
-        <details class="admin-fold" id="admin-perfiles-fold" open>
-          <summary class="admin-fold-sum">
-            <span class="admin-fold-titles">
-              <span class="admin-fold-title">Usuarios y perfiles</span>
-              <span class="admin-fold-sub">Listado, roles y estado</span>
-            </span>
-            <span class="admin-fold-chev" aria-hidden="true"></span>
-          </summary>
-          <div class="admin-fold-body">
+        <div class="admin-panel" id="admin-panel-perfiles" data-admin-panel-view="perfiles" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Usuarios y perfiles</h2>
+          <div class="admin-panel-card">
             <div class="admin-toolbar">
               <input type="search" id="admin-buscar" class="admin-buscar" placeholder="Buscar nombre o email&hellip;" autocomplete="off">
               <button type="button" class="action-btn" id="btn-admin-refrescar">Actualizar</button>
@@ -974,8 +980,9 @@
             </div>
             <div id="admin-lista" class="admin-lista" aria-live="polite"></div>
           </div>
-        </details>
+        </div>
       </section>
+
       <section id="screen-perfil" class="screen coming-screen">
         <h2>Cuenta</h2>
         <p id="profile-name"></p>
@@ -1767,13 +1774,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.71"></script>
-    <script src="./conexiones.js?v=V.71"></script>
+    <script src="./turnio-config.js?v=V.72"></script>
+    <script src="./conexiones.js?v=V.72"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.71"></script>
+    <script src="./app.js?v=V.72"></script>
   </body>
 </html>
 
