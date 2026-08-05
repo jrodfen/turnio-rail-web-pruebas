@@ -1626,7 +1626,6 @@
       excl_schema_pending: 'Falta la migración de exclusiones en Supabase (20260805_0007).',
       excl_hasta_invalida: 'Indica una fecha de caducidad válida.',
       excl_hasta_pasada: 'La caducidad no puede ser anterior a hoy.',
-      excl_hasta_demasiado_lejana: 'La caducidad no puede superar 180 días.',
       excl_tren_invalido: 'Número de tren no válido.',
       excl_tren_es_35: 'Los 35xxx ya se ignoran solos (medio alternativo).',
       excl_relacion_incompleta: 'Indica origen y destino del tramo.',
