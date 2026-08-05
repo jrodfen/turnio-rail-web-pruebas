@@ -9,11 +9,14 @@
   var LIMIT = 8;
 
   function norm(s) {
+    if (global.TurnioCxEstaciones && global.TurnioCxEstaciones.normalizar) {
+      return global.TurnioCxEstaciones.normalizar(s);
+    }
     return String(s == null ? '' : s)
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\./g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -32,6 +35,9 @@
   }
 
   function coincideEst(a, b) {
+    if (global.TurnioCxEstaciones && global.TurnioCxEstaciones.coinciden) {
+      return global.TurnioCxEstaciones.coinciden(a, b);
+    }
     var x = norm(a);
     var y = norm(b);
     return !!(x && y && (y.indexOf(x) >= 0 || x.indexOf(y) >= 0));

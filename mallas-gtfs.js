@@ -691,16 +691,22 @@
   }
 
   function normalizarNombreEst_(s) {
+    if (global.TurnioCxEstaciones && global.TurnioCxEstaciones.normalizar) {
+      return global.TurnioCxEstaciones.normalizar(s);
+    }
     return String(s == null ? '' : s)
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\./g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
 
   function resolverStopIdsPorNombre_(nombre) {
+    if (global.TurnioCxEstaciones && global.TurnioCxEstaciones.resolverStopIds) {
+      return global.TurnioCxEstaciones.resolverStopIds(nombre, global.mapaEstacionesGlobal || {});
+    }
     var q = normalizarNombreEst_(nombre);
     if (!q || !global.mapaEstacionesGlobal) return [];
     var exact = [];
