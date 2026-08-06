@@ -1695,13 +1695,29 @@
       } }
     ];
     var colsStop = [
-      { label: 'Parada', cell: function (r) { return r.stop_id || '—'; } },
+      {
+        label: 'Estación',
+        cell: function (r) {
+          var nom = r.nombre || r.stop_nombre || '';
+          var sid = r.stop_id || '';
+          if (nom && sid && nom !== sid) return nom + ' (' + sid + ')';
+          return nom || sid || '—';
+        }
+      },
       { label: 'Muestras', cell: function (r) { return r.muestras != null ? r.muestras : '—'; } },
       { label: 'Media', cell: function (r) { return adminStatsFmtNum_(r.delay_media, ' min'); } },
       { label: 'Pico', cell: function (r) { return adminStatsFmtNum_(r.delay_pico, ' min'); } }
     ];
     var colsDelta = [
-      { label: 'Parada', cell: function (r) { return r.stop_id || '—'; } },
+      {
+        label: 'Estación',
+        cell: function (r) {
+          var nom = r.nombre || r.stop_nombre || '';
+          var sid = r.stop_id || '';
+          if (nom && sid && nom !== sid) return nom + ' (' + sid + ')';
+          return nom || sid || '—';
+        }
+      },
       { label: 'Tramos', cell: function (r) { return r.tramos != null ? r.tramos : '—'; } },
       { label: 'Min perdidos', cell: function (r) { return adminStatsFmtNum_(r.minutos_perdidos_media, ' min'); } }
     ];
