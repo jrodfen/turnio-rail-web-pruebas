@@ -6222,20 +6222,41 @@
     leyenda.onAdd = function () {
       var div = L.DomUtil.create('div', 'mapa-leyenda');
       div.innerHTML =
-        '<strong style="display:block;margin-bottom:6px;">Retraso (Renfe)</strong>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#008000;"></div> ≤ 15 min</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FFDE21;"></div> 16 – 60 min</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>' +
-        '<strong style="display:block;margin:8px 0 6px;">Icono (producto)</strong>' +
-        '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('cercanias') + ' Cercanías</div>' +
-        '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('md') + ' MD / Regional</div>' +
-        '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('ld') + ' LD / AVE</div>' +
-        '<div style="font-size:10px;color:#64748b;margin:2px 0 0;">Anillo = retraso · icono = producto</div>' +
-        '<strong style="display:block;margin:8px 0 6px;">LTV Adif</strong>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#dc2626;"></div> ≤ 30 km/h</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ea580c;"></div> ≤ 60 km/h</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ca8a04;"></div> ≤ 100 km/h</div>' +
-        '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#2563eb;"></div> &gt; 100 km/h</div>';
+        '<div class="mapa-leyenda-toggle" role="button" tabindex="0" aria-expanded="false" title="Mostrar u ocultar leyenda">' +
+          '<span>Leyenda</span><span aria-hidden="true">▸</span>' +
+        '</div>' +
+        '<div class="mapa-leyenda-body">' +
+          '<strong style="display:block;margin-bottom:6px;">Retraso (Renfe)</strong>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#008000;"></div> ≤ 15 min</div>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FFDE21;"></div> 16 – 60 min</div>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>' +
+          '<strong style="display:block;margin:8px 0 6px;">Icono (producto)</strong>' +
+          '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('cercanias') + ' Cercanías</div>' +
+          '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('md') + ' MD / Regional</div>' +
+          '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('ld') + ' LD / AVE</div>' +
+          '<div style="font-size:10px;color:#64748b;margin:2px 0 0;">Anillo = retraso · icono = producto</div>' +
+          '<strong style="display:block;margin:8px 0 6px;">LTV Adif</strong>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#dc2626;"></div> ≤ 30 km/h</div>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ea580c;"></div> ≤ 60 km/h</div>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ca8a04;"></div> ≤ 100 km/h</div>' +
+          '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#2563eb;"></div> &gt; 100 km/h</div>' +
+        '</div>';
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
+      function toggleLeyenda_(ev) {
+        if (ev) L.DomEvent.stop(ev);
+        var abierto = div.classList.toggle('is-open');
+        var btn = div.querySelector('.mapa-leyenda-toggle');
+        if (btn) {
+          btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+          var chevron = btn.querySelector('span:last-child');
+          if (chevron) chevron.textContent = abierto ? '▾' : '▸';
+        }
+      }
+      L.DomEvent.on(div, 'click', toggleLeyenda_);
+      L.DomEvent.on(div, 'keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') toggleLeyenda_(ev);
+      });
       return div;
     };
     leyenda.addTo(map);
