@@ -1640,6 +1640,131 @@
     }
   }
 
+  function adminStatsDias_() {
+    var el = document.getElementById('admin-stats-dias');
+    var n = Number(el && el.value);
+    if (!isFinite(n) || n < 1) n = 14;
+    return Math.min(90, Math.max(1, Math.round(n)));
+  }
+
+  function adminStatsFmtNum_(v, suf) {
+    if (v == null || v === '' || !isFinite(Number(v))) return '—';
+    return String(v) + (suf || '');
+  }
+
+  function pintarAdminStatsTablaTrenes_(rows, cols) {
+    rows = Array.isArray(rows) ? rows : [];
+    if (!rows.length) {
+      return '<div class="empty" style="padding:8px;">Sin datos en este periodo.</div>';
+    }
+    var head = cols.map(function (c) { return '<th>' + esc(c.label) + '</th>'; }).join('');
+    var body = rows.map(function (r) {
+      return '<tr>' + cols.map(function (c) {
+        return '<td>' + esc(String(c.cell(r))) + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    return '<div class="admin-stats-table-wrap"><table class="admin-stats-table"><thead><tr>' +
+      head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+
+  function pintarAdminStats_(d) {
+    var box = document.getElementById('admin-stats-contenido');
+    var meta = document.getElementById('admin-stats-meta');
+    if (!box) return;
+    d = d || {};
+    var n = Number(d.muestras_tren_dia || 0) || 0;
+    if (meta) {
+      meta.textContent = n
+        ? (n + ' tren·día desde ' + String(d.desde || '—') + ' · ' + String(d.dias || '') + ' d')
+        : ('Sin histórico aún (desde ' + String(d.desde || '—') + '). Usa «Archivar hoy» o espera al cron.');
+    }
+    if (!n) {
+      box.innerHTML = '<div class="empty" style="padding:10px;">Todavía no hay filas en <code>marcha_hist</code>. ' +
+        'Si ya corriste el SQL en Supabase, pulsa <b>Archivar hoy</b> para volcar el KV.</div>';
+      return;
+    }
+    var colsTren = [
+      { label: 'Tren', cell: function (r) { return r.tren || '—'; } },
+      { label: 'Días', cell: function (r) { return r.dias != null ? r.dias : '—'; } },
+      { label: 'Máx media', cell: function (r) { return adminStatsFmtNum_(r.delay_max_media, ' min'); } },
+      { label: 'Pico', cell: function (r) { return adminStatsFmtNum_(r.delay_max_pico, ' min'); } },
+      { label: 'Origen', cell: function (r) { return adminStatsFmtNum_(r.delay_origen_media, ' min'); } },
+      { label: 'Destino', cell: function (r) { return adminStatsFmtNum_(r.delay_destino_media, ' min'); } },
+      { label: 'Fiab. %', cell: function (r) {
+        return r.fiabilidad_pct_destino_le5 == null ? '—' : String(r.fiabilidad_pct_destino_le5) + '%';
+      } }
+    ];
+    var colsStop = [
+      { label: 'Parada', cell: function (r) { return r.stop_id || '—'; } },
+      { label: 'Muestras', cell: function (r) { return r.muestras != null ? r.muestras : '—'; } },
+      { label: 'Media', cell: function (r) { return adminStatsFmtNum_(r.delay_media, ' min'); } },
+      { label: 'Pico', cell: function (r) { return adminStatsFmtNum_(r.delay_pico, ' min'); } }
+    ];
+    var colsDelta = [
+      { label: 'Parada', cell: function (r) { return r.stop_id || '—'; } },
+      { label: 'Tramos', cell: function (r) { return r.tramos != null ? r.tramos : '—'; } },
+      { label: 'Min perdidos', cell: function (r) { return adminStatsFmtNum_(r.minutos_perdidos_media, ' min'); } }
+    ];
+    box.innerHTML =
+      '<section class="admin-stats-sec">' +
+        '<h4 class="admin-aviso-hist-title">Peores trenes (demora máx. media)</h4>' +
+        pintarAdminStatsTablaTrenes_(d.peores_trenes, colsTren) +
+      '</section>' +
+      '<section class="admin-stats-sec">' +
+        '<h4 class="admin-aviso-hist-title">Más fiables (destino ≤ 5′)</h4>' +
+        pintarAdminStatsTablaTrenes_(d.mas_fiables, colsTren) +
+      '</section>' +
+      '<section class="admin-stats-sec">' +
+        '<h4 class="admin-aviso-hist-title">Suelen salir tarde (origen ≥ 8′)</h4>' +
+        pintarAdminStatsTablaTrenes_(d.salen_tarde, colsTren) +
+      '</section>' +
+      '<section class="admin-stats-sec">' +
+        '<h4 class="admin-aviso-hist-title">Estaciones con más demora</h4>' +
+        pintarAdminStatsTablaTrenes_(d.estaciones_mas_retraso, colsStop) +
+      '</section>' +
+      '<section class="admin-stats-sec">' +
+        '<h4 class="admin-aviso-hist-title">Dónde pierden minutos (Δ entre paradas)</h4>' +
+        pintarAdminStatsTablaTrenes_(d.estaciones_donde_pierden, colsDelta) +
+      '</section>';
+  }
+
+  async function cargarAdminStats_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-stats-meta');
+    var box = document.getElementById('admin-stats-contenido');
+    if (meta) meta.textContent = 'Cargando…';
+    if (box) box.innerHTML = '';
+    try {
+      var d = await call('marcha_hist_resumen', { dias: adminStatsDias_(), limit: 20 });
+      pintarAdminStats_(d);
+    } catch (err) {
+      if (meta) meta.textContent = 'Error: ' + String(err.message || err);
+      if (box) {
+        box.innerHTML = '<div class="empty" style="padding:10px;">' +
+          esc(String(err.message || err)) +
+          '<br><span class="admin-meta">Si falta la migración, ejecuta 20260806_0008_marcha_hist.sql en Supabase.</span></div>';
+      }
+    }
+  }
+
+  async function archivarAdminStatsHoy_() {
+    if (!sessionProfile.is_admin) return;
+    var btn = document.getElementById('btn-admin-stats-archivar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Archivando…'; }
+    try {
+      var d = await call('marcha_hist_archivar', { force: true });
+      var msg = d && d.vacio
+        ? 'Archivo OK pero KV de hoy vacío (aún no hay mp:v2).'
+        : ('Archivado: ' + String((d && d.trenes) || 0) + ' trenes · ' + String((d && d.paradas) || 0) + ' paradas');
+      toast(msg, 'success');
+      await cargarAdminStats_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Archivar hoy'; }
+    }
+  }
+
   async function crearAdminPerfil_(ev) {
     if (ev) ev.preventDefault();
     if (!sessionProfile.is_admin) return;
@@ -3517,6 +3642,7 @@
     else if (id === 'aviso') cargarAdminAviso_();
     else if (id === 'sugerencias') cargarAdminSugerencias_();
     else if (id === 'solicitudes') cargarAdminSolicitudes_();
+    else if (id === 'stats') cargarAdminStats_();
     else if (id === 'perfiles') cargarAdminPerfiles_();
     else if (id === 'nuevo') syncAdminNuevoCaduca_();
   }
@@ -4054,6 +4180,13 @@
     return /SIN SALIDA/i.test(String(a.tipo || ''));
   }
 
+  function esAlertaDetenidoFront_(a) {
+    if (!a) return false;
+    var cat = String(a.categoria || '');
+    if (cat === 'detenido_estacion' || cat === 'detenido_via' || cat === 'detencion') return true;
+    return /DETENIDO (ESTACI|V)/i.test(String(a.tipo || ''));
+  }
+
   function leerSinSalidaEnterados_() {
     try {
       var raw = JSON.parse(localStorage.getItem(SIN_SALIDA_ACK_LS_) || '{}');
@@ -4214,9 +4347,10 @@
     modal.hidden = false;
   }
 
-  // Modal ámbar «Tren detenido»: OFF hasta que el detector funcione al 100%.
+  // Modal ámbar «Tren detenido»: OFF hasta OK de calibración (Telegram pruebas sí).
   // El modal rojo de críticos (retraso grave) sigue activo.
   // Modal ámbar «Sin salida» (malla − vivo): activo.
+  // Categorías radar: detenido_estacion | detenido_via (payload listo; modal gated).
   var VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_ = false;
 
   function pintarModalAmbarVigilante_(items, titulo, lead) {
@@ -4264,7 +4398,7 @@
     pintarModalAmbarVigilante_(
       items,
       'Tren sin salida',
-      'Debería haber salido según malla y aún no hay señal viva (GTFS/flota). Enterado lo quita del Radar.'
+      'Debería haber salido según malla y aún no ha iniciado marcha (sin feed, o parado en origen). Enterado lo quita del Radar.'
     );
   }
 
@@ -4309,6 +4443,7 @@
     // Modal rojo: críticos por demora grave (≥25). Sin detenidos / sin_salida.
     var graves = nuevos.filter(function (c) {
       if (c && c.categoria === 'detencion') return false;
+      if (c && esAlertaDetenidoFront_(c)) return false;
       if (c && c.categoria === 'sin_salida') return false;
       return Number(c.retrasoNum || 0) >= 25;
     });
@@ -4318,17 +4453,17 @@
       return !!(c && c.categoria === 'sin_salida');
     });
     if (sinSalida.length) mostrarModalSinSalida(sinSalida);
-    // Modal ámbar «Tren detenido»: silenciado (flag arriba).
+    // Modal ámbar «Tren detenido»: silenciado hasta OK calibración.
     if (VIGILANTE_UI_MOSTRAR_MODAL_DETENIDOS_) {
       var detenidos = nuevos.filter(function (c) {
-        if (c && c.categoria === 'detencion') return true;
+        if (c && esAlertaDetenidoFront_(c)) return true;
         if (c && c.categoria === 'sin_salida') return false;
         if (c && c.categoria === 'retraso') {
           return Number(c.retrasoNum || 0) < 25;
         }
         var et = String((c && c.etiquetaModal) || '');
         if (/^Parado\b/i.test(et) || /·\s*parado\b/i.test(et)) return true;
-        return Number(c.retrasoNum || 0) < 25;
+        return false;
       });
       if (detenidos.length) mostrarModalDetenciones(detenidos);
     }
@@ -4857,8 +4992,9 @@
   }
   function typeOf(a) {
     if (esAlertaSinSalidaFront_(a)) return 'warning sin-salida';
+    if (esAlertaDetenidoFront_(a)) return 'warning detenido';
     var x = String(a.tipo || '');
-    return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 ? 'warning' : '';
+    return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 || x.indexOf('DETENIDO') >= 0 ? 'warning' : '';
   }
   function filtered() {
     var q = String(document.getElementById('search').value || '').toLowerCase();
@@ -5057,7 +5193,7 @@
         matHtml +
         '<p class="message">' + esc(x.mensaje || ('Demora ' + (delay >= 0 ? '+' : '') + delay + ' min.')) + '</p>' +
         '<div class="alert-bottom"><span>' +
-        (esSs ? 'Sin señal viva · puedes marcar enterado' : '&#8618; Pulsa para ver la marcha') +
+        (esSs ? 'Sin marcha iniciada · puedes marcar enterado' : '&#8618; Pulsa para ver la marcha') +
         '</span>' +
         '<div class="alert-actions">' +
         (esSs
@@ -5334,12 +5470,8 @@
           if (data && Array.isArray(data.avisos)) return ordenarAvisosRed_(data.avisos);
         }
       } catch (_) {}
-      try {
-        var dataGas = await call('avisos_red', {});
-        return ordenarAvisosRed_(Array.isArray(dataGas.avisos) ? dataGas.avisos : []);
-      } catch (_) {
-        return ordenarAvisosRed_(cacheAvisosRed.slice());
-      }
+      // Sin puente GAS: si falla el Worker, se mantiene la caché local.
+      return ordenarAvisosRed_(cacheAvisosRed.slice());
     })();
     try {
       return await cargandoAvisosRed;
@@ -5555,7 +5687,7 @@
     flotaCargaPromise = (async function () {
       try {
         var d = null;
-        // Preferente: Worker (sin cuota GAS). Fallback: acción GAS cacheada.
+        // Solo Worker Cloudflare (GAS desconectado).
         try {
           var r = await fetch(api + '/api/flota', { method: 'GET', cache: 'no-store' });
           if (r.ok) {
@@ -5563,7 +5695,7 @@
             if (j && j.ok !== false && Array.isArray(j.trenes)) d = j;
           }
         } catch (_) {}
-        if (!d) d = await call('flota_mapa', {});
+        if (!d) throw new Error('No se pudo cargar la flota (Worker).');
         flotaMapa = Array.isArray(d.trenes) ? d.trenes : [];
         if (window.TurnioCxRetrasos) {
           window.TurnioCxRetrasos.aplicarDesdeFlota(flotaMapa, 'turnio-flota');
@@ -7181,6 +7313,12 @@
   if (btnAdminMant) btnAdminMant.addEventListener('click', toggleAdminMantenimiento_);
   var btnAccesosRef = document.getElementById('btn-admin-accesos-refrescar');
   if (btnAccesosRef) btnAccesosRef.addEventListener('click', cargarAdminAccesos_);
+  var btnStatsRef = document.getElementById('btn-admin-stats-refrescar');
+  if (btnStatsRef) btnStatsRef.addEventListener('click', cargarAdminStats_);
+  var btnStatsArch = document.getElementById('btn-admin-stats-archivar');
+  if (btnStatsArch) btnStatsArch.addEventListener('click', archivarAdminStatsHoy_);
+  var statsDias = document.getElementById('admin-stats-dias');
+  if (statsDias) statsDias.addEventListener('change', cargarAdminStats_);
   ['admin-accesos-periodo', 'admin-accesos-resultado'].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', cargarAdminAccesos_);

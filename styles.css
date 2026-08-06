@@ -519,6 +519,15 @@ html.turnio-es-comercial #fab-container{display:none!important}
 }
 .admin-acceso-chip b{font-size:12px}
 .admin-accesos-lista{display:grid;gap:8px;max-height:min(42vh,360px);overflow:auto;margin-top:8px}
+.admin-stats-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;margin:0 0 8px}
+.admin-stats-contenido{display:grid;gap:14px;margin-top:8px}
+.admin-stats-sec{margin:0}
+.admin-stats-table-wrap{overflow:auto;max-height:min(36vh,320px);border:1px solid var(--line);border-radius:12px}
+.admin-stats-table{width:100%;border-collapse:collapse;font-size:12px}
+.admin-stats-table th,.admin-stats-table td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.admin-stats-table th{position:sticky;top:0;background:var(--card);font-weight:800;color:var(--muted);z-index:1}
+.admin-stats-table tbody tr:last-child td{border-bottom:0}
+.admin-stats-table td:first-child{font-weight:800}
 .admin-acceso-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
 .admin-acceso-item.is-denied{border-color:rgba(185,28,28,.35);background:rgba(185,28,28,.05)}
 .admin-acceso-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin:0 0 4px}
@@ -1470,6 +1479,7 @@ body.monitor-mode #fab-overlay{display:none!important}
 .admin-solicitud-item .admin-aviso-item-body{white-space:pre-wrap}
 
 .alert.sin-salida{border-left:5px solid #d97706;background:linear-gradient(180deg,#fffbeb 0%,#fff 55%)}
+.alert.detenido{border-left:5px solid #b45309;background:linear-gradient(180deg,#fff7ed 0%,#fff 55%)}
 .ss-enterado-btn{margin:0;padding:8px 12px;border:1px solid rgba(217,119,6,.45);border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
 .ss-enterado-btn:hover{background:#ffedd5}
 .admin-panel{margin:0 0 8px}
@@ -1477,6 +1487,7 @@ body.monitor-mode #fab-overlay{display:none!important}
 .admin-panel-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
 .admin-panel-card.admin-mant-box{border-color:rgba(185,28,28,.4)}
 .admin-panel-card.admin-accesos-box{border-color:rgba(37,99,235,.35)}
+.admin-panel-card.admin-stats-box{border-color:rgba(5,150,105,.35)}
 .admin-panel-card.admin-sugerencia-box{border-color:rgba(180,83,9,.35)}
 .admin-panel-card.admin-clave-box{border-color:rgba(15,118,110,.35)}
 .admin-fold-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}

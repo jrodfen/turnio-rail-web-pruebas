@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.86">
+    <link rel="stylesheet" href="./styles.css?v=V.90">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -716,7 +716,7 @@
             <div class="circ-grid circ-grid--ajustes circ-grid--ajustes-1">
               <button type="button" class="circ-tile circ-tile--admin" id="btn-ir-admin" data-go="admin">
                 <b>&#128101; Panel de administraci&oacute;n</b>
-                <span>Usuarios, avisos, exclusiones y m&aacute;s</span>
+                <span>Usuarios, avisos, fiabilidad y m&aacute;s</span>
               </button>
             </div>
           </div>
@@ -766,6 +766,10 @@
                 <button type="button" class="circ-tile circ-tile--pantallas" data-admin-panel="solicitudes">
                   <b>&#128203; Solicitudes</b>
                   <span>Altas pendientes</span>
+                </button>
+                <button type="button" class="circ-tile circ-tile--radar" data-admin-panel="stats">
+                  <b>&#128200; Fiabilidad</b>
+                  <span>Retrasos y tendencias</span>
                 </button>
               </div>
             </div>
@@ -958,6 +962,33 @@
             </div>
             <p id="admin-solicitud-meta" class="admin-meta">Cargando&hellip;</p>
             <div id="admin-solicitud-lista" class="admin-aviso-lista" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="admin-panel-stats" data-admin-panel-view="stats" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Fiabilidad / retrasos</h2>
+          <div class="admin-panel-card admin-stats-box" id="admin-stats-box">
+            <p class="admin-nuevo-help">
+              Hist&oacute;rico desde demoras congeladas (<code>mp:v2</code> → Supabase).
+              El cron archiva ~23:30 Madrid. Con pocos d&iacute;as ver&aacute;s poco; las tendencias mejoran con el tiempo.
+            </p>
+            <div class="admin-stats-toolbar">
+              <label class="admin-acceso-filtro">Periodo
+                <select id="admin-stats-dias">
+                  <option value="7">7 d&iacute;as</option>
+                  <option value="14" selected>14 d&iacute;as</option>
+                  <option value="30">30 d&iacute;as</option>
+                  <option value="90">90 d&iacute;as</option>
+                </select>
+              </label>
+              <div class="admin-fold-toolbar" style="margin:0">
+                <button type="button" class="btn secondary" id="btn-admin-stats-refrescar">Actualizar</button>
+                <button type="button" class="btn primary" id="btn-admin-stats-archivar" title="Volcar KV de hoy a Supabase">Archivar hoy</button>
+              </div>
+            </div>
+            <p id="admin-stats-meta" class="admin-meta">Cargando&hellip;</p>
+            <div id="admin-stats-contenido" class="admin-stats-contenido" aria-live="polite"></div>
           </div>
         </div>
 
@@ -1417,7 +1448,7 @@
               <div class="cx-hi-icon">&#128683;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Sin salida</div>
-                <div class="cx-hi-desc">Aparece en Radar cuando la malla dice que el tren <strong>circula hoy</strong>, ya debi&oacute; salir (&ge;12&nbsp;min) y no hay se&ntilde;al viva (ventana ~45&nbsp;min). No alerta trenes de otros d&iacute;as de circulaci&oacute;n. Los <strong>35xxx</strong> (bus/taxi) se ignoran siempre. Modal &aacute;mbar del Vigilante y bot&oacute;n <strong>Enterado</strong> en la tarjeta: lo quita del Radar el resto del d&iacute;a (Madrid). Telegram de pruebas. No se mezcla con detenidos.</div>
+                <div class="cx-hi-desc">Aparece en Radar cuando la malla dice que el tren <strong>circula hoy</strong>, ya debi&oacute; salir (&ge;12&nbsp;min) y <strong>a&uacute;n no ha iniciado marcha</strong> (ventana ~45&nbsp;min): sin feed, o con feed pero sin <code>IN_TRANSIT_TO</code> ni GPS lejos del origen (~800&nbsp;m). No basta se&ntilde;al viva sola ni <code>STOPPED_AT</code> en origen. No alerta otros d&iacute;as. Los <strong>35xxx</strong> se ignoran. Modal &aacute;mbar + <strong>Enterado</strong> + Telegram pruebas. Independiente de detenidos.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1431,7 +1462,7 @@
               <div class="cx-hi-icon">&#128679;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Detenidos (en calibraci&oacute;n)</div>
-                <div class="cx-hi-desc">El detector nuevo de detenci&oacute;n (estaci&oacute;n / v&iacute;a) est&aacute; en pruebas en paralelo. <strong>No se muestra a&uacute;n</strong> como modal operativo en el Vigilante del Radar hasta completar calibraci&oacute;n y OK expl&iacute;cito. Retraso grave s&iacute; sigue en Radar; <strong>Sin salida</strong> s&iacute; (Enterado lo oculta).</div>
+                <div class="cx-hi-desc">Detector v2 (estaci&oacute;n / v&iacute;a) en cron Cloudflare: Telegram de pruebas activo; categor&iacute;as <code>detenido_estacion</code> / <code>detenido_via</code> pueden aparecer en Radar. Modal &aacute;mbar del Vigilante <strong>sigue OFF</strong> hasta OK expl&iacute;cito de calibraci&oacute;n. Independiente de sin salida.</div>
               </div>
             </div>
           </div>
@@ -1812,13 +1843,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.86"></script>
-    <script src="./conexiones.js?v=V.86"></script>
+    <script src="./turnio-config.js?v=V.90"></script>
+    <script src="./conexiones.js?v=V.90"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.86"></script>
+    <script src="./app.js?v=V.90"></script>
   </body>
 </html>
 
