@@ -2989,6 +2989,7 @@
 
   var adifRadarEnrichTimer_ = null;
   var adifRadarEnrichBusy_ = false;
+  var adifViaFailToastAt_ = 0;
 
   function codigosViaRadarVisibles_() {
     var uniq = [];
@@ -3045,12 +3046,63 @@
     adifRadarEnrichBusy_ = true;
     try {
       await adifPedirViasEstaciones_(codes);
-    } catch (_) {
-      /* InfoStation a veces no responde; la tarjeta queda sin vía. */
+    } catch (err) {
+      setAdifLiveStatusUi_('InfoStation (vías): ' + String(err && err.message ? err.message : err), 'is-err');
+      if (Date.now() - adifViaFailToastAt_ > 120000) {
+        adifViaFailToastAt_ = Date.now();
+        toast('No se pudo leer la vía ADIF desde este equipo (red/firewall). En móvil suele funcionar.', 'error');
+      }
     } finally {
       adifRadarEnrichBusy_ = false;
     }
     inyectarViaAdifEnRadar_();
+  }
+
+  async function adifCrearConexionInfoStation_(signalR) {
+    // En móvil el WS directo suele ir; en escritorio Renfe/Zscaler a menudo lo bloquea.
+    // Probamos WS y, si falla, negociación con SSE/LongPolling.
+    var Http = signalR.HttpTransportType || {};
+    var intents = [
+      {
+        label: 'WebSockets',
+        urlOpts: {
+          skipNegotiation: true,
+          transport: Http.WebSockets
+        }
+      },
+      {
+        label: 'SSE+LongPolling',
+        urlOpts: {
+          transport: (Http.ServerSentEvents || 0) | (Http.LongPolling || 0)
+        }
+      },
+      {
+        label: 'Negotiate auto',
+        urlOpts: {}
+      }
+    ];
+    var lastErr = null;
+    for (var i = 0; i < intents.length; i++) {
+      var intent = intents[i];
+      if (intent.urlOpts.transport === 0) continue;
+      var conn = new signalR.HubConnectionBuilder()
+        .withUrl('https://info.adif.es/InfoStation', intent.urlOpts)
+        .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
+        .build();
+      try {
+        conn.keepAliveIntervalInMilliseconds = 10000;
+        conn.serverTimeoutInMilliseconds = 120000;
+      } catch (_) {}
+      try {
+        await conn.start();
+        conn._turnioAdifTransport = intent.label;
+        return conn;
+      } catch (e) {
+        lastErr = e;
+        try { await conn.stop(); } catch (_) {}
+      }
+    }
+    throw lastErr || new Error('InfoStation no disponible');
   }
 
   async function escucharInfoStationEstacion_(codigo) {
@@ -3064,6 +3116,7 @@
         adifArrancarPoll_(adifLiveConn_, code);
         setAdifLiveStatusUi_('Re-suscrito PRO-ECM-' + code + ' (cache ' + Object.keys(adifLiveCache_).length + ')', 'is-run');
         inyectarViaAdifEnMallas_();
+        inyectarViaAdifEnRadar_();
         return;
       }
       if (adifLiveConn_) {
@@ -3072,17 +3125,7 @@
         adifLiveConn_ = null;
       }
       setAdifLiveStatusUi_('Conectando InfoStation · PRO-ECM-' + code + '…', 'is-run');
-      var conn = new signalR.HubConnectionBuilder()
-        .withUrl('https://info.adif.es/InfoStation', {
-          skipNegotiation: true,
-          transport: signalR.HttpTransportType.WebSockets
-        })
-        .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 30000])
-        .build();
-      try {
-        conn.keepAliveIntervalInMilliseconds = 10000;
-        conn.serverTimeoutInMilliseconds = 120000;
-      } catch (_) {}
+      var conn = await adifCrearConexionInfoStation_(signalR);
       adifRegistrarHandlers_(conn, function (payload, ev, st) {
         onAdifLiveMessage_(payload, ev, st);
       });
@@ -3098,15 +3141,15 @@
         adifPararPoll_();
         setAdifLiveStatusUi_('InfoStation desconectado.', 'is-err');
       });
-      await conn.start();
       adifLiveConn_ = conn;
       adifLiveStation_ = code;
       adifLiveCache_ = Object.create(null);
       adifJoinedStations_[code] = true;
       var topics = await adifJoinTopics_(conn, code);
       adifArrancarPoll_(conn, code);
+      var transport = conn._turnioAdifTransport || 'WS';
       setAdifLiveStatusUi_(
-        'Conectado · ' + topics[0] + ' (y fallbacks). Esperando trenes…',
+        'Conectado (' + transport + ') · ' + topics[0] + '. Esperando trenes…',
         'is-run'
       );
       setTimeout(function () {
