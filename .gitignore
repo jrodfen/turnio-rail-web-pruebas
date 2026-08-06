@@ -1,2 +1,10 @@
 .DS_Store
 Thumbs.db
+
+# wrangler / deploy
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+_site/

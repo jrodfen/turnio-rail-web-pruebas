@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "turnio-rail-web-pruebas",
+  "compatibility_date": "2026-08-05",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "./_site",
+    "not_found_handling": "404-page"
+  },
+  // Route sobre el hostname existente (CNAME GitHub). El Worker sirve el origen;
+  // DNS se limpia después a custom_domain cuando se pueda borrar el CNAME.
+  "routes": [
+    {
+      "pattern": "pruebas.turniorail.es/*",
+      "zone_name": "turniorail.es"
+    }
+  ]
+}
