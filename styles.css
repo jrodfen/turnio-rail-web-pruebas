@@ -1604,6 +1604,30 @@ body.monitor-mode #fab-overlay{display:none!important}
 
 .alert.sin-salida{border-left:5px solid #d97706;background:linear-gradient(180deg,#fffbeb 0%,#fff 55%)}
 .alert.detenido{border-left:5px solid #b45309;background:linear-gradient(180deg,#fff7ed 0%,#fff 55%)}
+@media (prefers-color-scheme: dark) {
+  .alert.sin-salida{
+    border-left-color:#f59e0b;
+    background:linear-gradient(180deg,rgba(245,158,11,.22) 0%,#2d2d2d 60%);
+    color:var(--text);
+  }
+  .alert.detenido{
+    border-left-color:#fbbf24;
+    background:linear-gradient(180deg,rgba(180,83,9,.28) 0%,#2d2d2d 60%);
+    color:var(--text);
+  }
+  .alert.sin-salida .train,
+  .alert.sin-salida .message,
+  .alert.detenido .train,
+  .alert.detenido .message{color:var(--text)}
+  .alert.sin-salida .alert-head,
+  .alert.detenido .alert-head{color:#fbbf24}
+  .ss-enterado-btn{
+    background:rgba(180,83,9,.25);
+    border-color:rgba(251,191,36,.45);
+    color:#fde68a;
+  }
+  .ss-enterado-btn:hover{background:rgba(180,83,9,.4)}
+}
 .ss-enterado-btn{margin:0;padding:8px 12px;border:1px solid rgba(217,119,6,.45);border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
 .ss-enterado-btn:hover{background:#ffedd5}
 .admin-panel{margin:0 0 8px}
