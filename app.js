@@ -505,6 +505,7 @@
             '</span>' +
             '<span class="admin-row-tags">' +
               '<span class="admin-pill admin-pill--role">' + esc(role) + '</span>' +
+              (p.telegram_chat_id ? '<span class="admin-pill admin-pill--tg">TG</span>' : '') +
               (p.active ? '' : '<span class="admin-pill">Off</span>') +
               (p.linked ? '' : '<span class="admin-pill">Sin Auth</span>') +
             '</span>' +
@@ -517,6 +518,12 @@
                 (p.active ? ' checked' : '') + (esYo ? ' disabled' : '') + '> Activo</label>' +
               '<label class="admin-exp-lab">Caduca (INVITADO)<input type="date" class="admin-expires" value="' +
                 esc(isoAFechaInput_(p.expires_at)) + '"' + (role === 'INVITADO' ? '' : ' disabled') + '></label>' +
+              '<label class="admin-tg-lab">Telegram chat id' +
+                '<input type="text" class="admin-telegram" inputmode="numeric" autocomplete="off" ' +
+                'placeholder="ej. 808833752 (vacío = no avisar)" value="' +
+                esc(p.telegram_chat_id || '') + '">' +
+                '<small class="admin-tg-hint">Retrasos graves → @RadarAndaluciaBot. Vaciar para quitar.</small>' +
+              '</label>' +
             '</div>' +
             '<div class="admin-card-foot">' +
               '<span class="admin-card-meta">Actualizado: ' + esc(fmtFechaCorta_(p.updated_at)) +
@@ -562,18 +569,25 @@
     var roleSel = card.querySelector('.admin-role');
     var activeEl = card.querySelector('.admin-active');
     var expEl = card.querySelector('.admin-expires');
+    var tgEl = card.querySelector('.admin-telegram');
     var btn = card.querySelector('.admin-save');
     if (!id || !roleSel) return;
     var role = String(roleSel.value || '').toUpperCase();
     var active = !!(activeEl && activeEl.checked);
     var expiresAt = role === 'INVITADO' ? fechaInputAIso_(expEl && expEl.value) : '';
+    var telegramChatId = tgEl ? String(tgEl.value || '').trim() : '';
+    if (telegramChatId && !/^-?\d{5,20}$/.test(telegramChatId)) {
+      toast('Telegram chat id inválido (solo números, opcional -).', 'error');
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
     try {
       await call('admin_actualizar_perfil', {
         profile_id: id,
         role_code: role,
         active: active,
-        expires_at: expiresAt || null
+        expires_at: expiresAt || null,
+        telegram_chat_id: telegramChatId
       });
       toast('Perfil actualizado.', 'success');
       await cargarAdminPerfiles_();
@@ -1990,6 +2004,7 @@
       admin_invalid_role: 'Rol no válido.',
       admin_invalid_profile_id: 'Perfil no válido.',
       admin_invalid_expires_at: 'Fecha de caducidad no válida.',
+      admin_invalid_telegram_chat_id: 'Telegram chat id inválido (solo números).',
       admin_cannot_deactivate_self: 'No puedes desactivar tu propia cuenta.',
       admin_cannot_delete_self: 'No puedes borrar tu propio perfil.',
       admin_cannot_demote_self: 'No puedes quitarte el rol ADMIN a ti mismo.',

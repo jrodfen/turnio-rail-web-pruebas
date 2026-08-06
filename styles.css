@@ -738,10 +738,13 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .admin-row-edit{padding:0 12px 12px;border-top:1px dashed var(--line)}
 .admin-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
 .admin-card-grid label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:var(--muted)}
-.admin-card-grid select,.admin-card-grid input[type="date"]{width:100%;border:1px solid #dce3ec;border-radius:10px;padding:10px;font-size:14px;background:var(--card);color:var(--text)}
+.admin-card-grid select,.admin-card-grid input[type="date"],.admin-card-grid input[type="text"]{width:100%;border:1px solid #dce3ec;border-radius:10px;padding:10px;font-size:14px;background:var(--card);color:var(--text)}
 .admin-active-lab{flex-direction:row!important;align-items:center;gap:8px!important;padding-top:22px}
 .admin-active-lab input{width:auto;accent-color:var(--green)}
 .admin-exp-lab{grid-column:1 / -1}
+.admin-tg-lab{grid-column:1 / -1}
+.admin-tg-hint{font-size:10px;font-weight:600;color:var(--muted);line-height:1.3;margin-top:2px}
+.admin-pill--tg{background:rgba(34,158,217,.12);color:#0284c7;border-color:rgba(34,158,217,.3)}
 .admin-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .admin-card-meta{font-size:11px;color:var(--muted);line-height:1.35;flex:1;min-width:120px}
 .admin-card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
@@ -751,7 +754,7 @@ html.turnio-es-comercial #fab-container{display:none!important}
 }
 .admin-card-foot .admin-del:hover{background:rgba(185,28,28,.08)}
 @media(max-width:520px){.admin-card-grid,.admin-nuevo-grid{grid-template-columns:1fr}.admin-active-lab{padding-top:0}.admin-row-tags{max-width:40%}}
-@media(prefers-color-scheme:dark){.admin-pill{background:#2d2d2d;color:var(--muted)}.admin-pill--role{background:rgba(59,130,246,.18);color:#93c5fd;border-color:rgba(59,130,246,.35)}.admin-card-grid select,.admin-card-grid input[type="date"],.admin-nuevo-grid input,.admin-nuevo-grid select,.admin-buscar{background:#2d2d2d;border-color:var(--line)}.admin-row-main:hover,.admin-row.open .admin-row-main{background:rgba(59,130,246,.12)}}
+@media(prefers-color-scheme:dark){.admin-pill{background:#2d2d2d;color:var(--muted)}.admin-pill--role{background:rgba(59,130,246,.18);color:#93c5fd;border-color:rgba(59,130,246,.35)}.admin-pill--tg{background:rgba(56,189,248,.15);color:#7dd3fc;border-color:rgba(56,189,248,.35)}.admin-card-grid select,.admin-card-grid input[type="date"],.admin-card-grid input[type="text"],.admin-nuevo-grid input,.admin-nuevo-grid select,.admin-buscar{background:#2d2d2d;border-color:var(--line)}.admin-row-main:hover,.admin-row.open .admin-row-main{background:rgba(59,130,246,.12)}}
 
 /* Circulación hub */
 #screen-trafico{width:100%;max-width:1180px;margin:0 auto;padding-left:16px;padding-right:16px}
