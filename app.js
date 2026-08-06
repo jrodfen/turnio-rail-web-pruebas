@@ -1647,6 +1647,26 @@
     return Math.min(90, Math.max(1, Math.round(n)));
   }
 
+  function adminStatsRegion_() {
+    var el = document.getElementById('admin-stats-region');
+    var r = String(el && el.value || 'andalucia').trim().toLowerCase();
+    if (!r) r = 'andalucia';
+    return r;
+  }
+
+  function adminStatsRegionLabel_(r) {
+    var map = {
+      andalucia: 'SP Andalucía',
+      madrid: 'Madrid',
+      cataluna: 'Cataluña',
+      levante: 'Levante',
+      norte: 'Norte',
+      espana: 'España',
+      todas: 'Todo'
+    };
+    return map[r] || r;
+  }
+
   function adminStatsFmtNum_(v, suf) {
     if (v == null || v === '' || !isFinite(Number(v))) return '—';
     return String(v) + (suf || '');
@@ -1673,10 +1693,11 @@
     if (!box) return;
     d = d || {};
     var n = Number(d.muestras_tren_dia || 0) || 0;
+    var reg = String(d.region || adminStatsRegion_() || 'andalucia');
     if (meta) {
       meta.textContent = n
-        ? (n + ' tren·día desde ' + String(d.desde || '—') + ' · ' + String(d.dias || '') + ' d')
-        : ('Sin histórico aún (desde ' + String(d.desde || '—') + '). Usa «Archivar hoy» o espera al cron.');
+        ? (n + ' tren·día · ' + adminStatsRegionLabel_(reg) + ' · desde ' + String(d.desde || '—') + ' · ' + String(d.dias || '') + ' d')
+        : ('Sin datos en ' + adminStatsRegionLabel_(reg) + ' (desde ' + String(d.desde || '—') + '). Archiva hoy o cambia ámbito/periodo.');
     }
     if (!n) {
       box.innerHTML = '<div class="empty" style="padding:10px;">Todavía no hay filas en <code>marcha_hist</code>. ' +
@@ -1751,7 +1772,11 @@
     if (meta) meta.textContent = 'Cargando…';
     if (box) box.innerHTML = '';
     try {
-      var d = await call('marcha_hist_resumen', { dias: adminStatsDias_(), limit: 20 });
+      var d = await call('marcha_hist_resumen', {
+        dias: adminStatsDias_(),
+        region: adminStatsRegion_(),
+        limit: 20
+      });
       pintarAdminStats_(d);
     } catch (err) {
       if (meta) meta.textContent = 'Error: ' + String(err.message || err);
@@ -7335,6 +7360,8 @@
   if (btnStatsArch) btnStatsArch.addEventListener('click', archivarAdminStatsHoy_);
   var statsDias = document.getElementById('admin-stats-dias');
   if (statsDias) statsDias.addEventListener('change', cargarAdminStats_);
+  var statsRegion = document.getElementById('admin-stats-region');
+  if (statsRegion) statsRegion.addEventListener('change', cargarAdminStats_);
   ['admin-accesos-periodo', 'admin-accesos-resultado'].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', cargarAdminAccesos_);

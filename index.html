@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.91">
+    <link rel="stylesheet" href="./styles.css?v=V.92">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -982,6 +982,16 @@
                   <option value="90">90 d&iacute;as</option>
                 </select>
               </label>
+              <label class="admin-acceso-filtro">&Aacute;mbito
+                <select id="admin-stats-region">
+                  <option value="andalucia" selected>SP Andaluc&iacute;a</option>
+                  <option value="madrid">Madrid</option>
+                  <option value="cataluna">Catalu&ntilde;a</option>
+                  <option value="levante">Levante</option>
+                  <option value="norte">Norte</option>
+                  <option value="espana">Espa&ntilde;a (todo)</option>
+                </select>
+              </label>
               <div class="admin-fold-toolbar" style="margin:0">
                 <button type="button" class="btn secondary" id="btn-admin-stats-refrescar">Actualizar</button>
                 <button type="button" class="btn primary" id="btn-admin-stats-archivar" title="Volcar KV de hoy a Supabase">Archivar hoy</button>
@@ -1843,13 +1853,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.91"></script>
-    <script src="./conexiones.js?v=V.91"></script>
+    <script src="./turnio-config.js?v=V.92"></script>
+    <script src="./conexiones.js?v=V.92"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.91"></script>
+    <script src="./app.js?v=V.92"></script>
   </body>
 </html>
 
