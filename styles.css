@@ -702,7 +702,12 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .admin-exp-lab{grid-column:1 / -1}
 .admin-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .admin-card-meta{font-size:11px;color:var(--muted);line-height:1.35;flex:1;min-width:120px}
+.admin-card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
 .admin-card-foot .action-btn{width:auto;margin:0}
+.admin-card-foot .admin-del{
+  background:transparent;color:#b91c1c;border:1px solid rgba(185,28,28,.35);
+}
+.admin-card-foot .admin-del:hover{background:rgba(185,28,28,.08)}
 @media(max-width:520px){.admin-card-grid,.admin-nuevo-grid{grid-template-columns:1fr}.admin-active-lab{padding-top:0}.admin-row-tags{max-width:40%}}
 @media(prefers-color-scheme:dark){.admin-pill{background:#2d2d2d;color:var(--muted)}.admin-pill--role{background:rgba(59,130,246,.18);color:#93c5fd;border-color:rgba(59,130,246,.35)}.admin-card-grid select,.admin-card-grid input[type="date"],.admin-nuevo-grid input,.admin-nuevo-grid select,.admin-buscar{background:#2d2d2d;border-color:var(--line)}.admin-row-main:hover,.admin-row.open .admin-row-main{background:rgba(59,130,246,.12)}}
 
