@@ -5766,7 +5766,7 @@
     }
     return '+' + r;
   }
-  /** Forma del marcador: cercanias | md | ld (color = retraso). */
+  /** Forma del marcador: cercanias | md | ld. Color de retraso = anillo. */
   function familiaIconoMapa_(a) {
     if (!a) return 'ld';
     if (String(a.modo || '').toUpperCase() === 'CERCANIAS') return 'cercanias';
@@ -5779,28 +5779,56 @@
     ) return 'md';
     return 'ld';
   }
-  function svgPathFamiliaMapa_(familia) {
+  /** SVG interno (definición fija); el anillo de retraso va aparte. */
+  function svgIconoFamiliaMapa_(familia) {
     if (familia === 'cercanias') {
-      // Frente redondeado (EMU Cercanías).
-      return 'M12 11c0-5.5 3.6-9 8-9s8 3.5 8 9v14.5c0 2.5-2 4.5-4.5 4.5h-7C14 30 12 28 12 25.5V11zm3.2 3.2h3.2v3.4h-3.2v-3.4zm5.6 0h3.2v3.4h-3.2v-3.4zM14.5 26.2h11v2.2h-11v-2.2z';
+      // Frente EMU Cercanías (parabrisas + faros).
+      return '<g fill="#1e293b">' +
+        '<path d="M13.5 9.2c0-3.8 2.9-6.7 6.5-6.7s6.5 2.9 6.5 6.7v14.8c0 2-1.6 3.6-3.6 3.6h-5.8c-2 0-3.6-1.6-3.6-3.6V9.2z"/>' +
+        '<path d="M18.2 3.2h3.6c.5 0 .9.4.9.9v1.1h-5.4V4.1c0-.5.4-.9.9-.9z"/>' +
+        '<rect x="15.8" y="10.6" width="3.6" height="4.2" rx=".8" fill="#e2e8f0"/>' +
+        '<rect x="20.6" y="10.6" width="3.6" height="4.2" rx=".8" fill="#e2e8f0"/>' +
+        '<rect x="15.2" y="17.2" width="9.6" height="1.4" rx=".4" fill="#334155"/>' +
+        '<circle cx="16.6" cy="24.8" r="1.25" fill="#fbbf24"/>' +
+        '<circle cx="23.4" cy="24.8" r="1.25" fill="#fbbf24"/>' +
+        '</g>';
     }
     if (familia === 'md') {
-      // Perfil lateral clásico (MD / Regional).
-      return 'M5 14.5h3.2l2.3-4.2h16.2c1.7 0 3.1 1.4 3.1 3.1v11.1c0 1.7-1.4 3.1-3.1 3.1H8.2C6.4 27.6 5 26.2 5 24.5V14.5zm8.5 1.6h4.2v3.6h-4.2v-3.6zm6.2 0h4.2v3.6h-4.2v-3.6zM7.2 23.8h21.2v2.4H7.2v-2.4z';
+      // Perfil lateral MD / Regional.
+      return '<g fill="#1e293b">' +
+        '<path d="M5.2 15.2h3.4l2.1-3.8h17.4c1.5 0 2.7 1.2 2.7 2.7v10.6c0 1.5-1.2 2.7-2.7 2.7H8.4c-1.8 0-3.2-1.4-3.2-3.2V15.2z"/>' +
+        '<path d="M8.8 13.2l1.4-2.5h3.2v2.5H8.8z" fill="#334155"/>' +
+        '<rect x="14.2" y="16.4" width="4" height="3.4" rx=".6" fill="#e2e8f0"/>' +
+        '<rect x="19.4" y="16.4" width="4" height="3.4" rx=".6" fill="#e2e8f0"/>' +
+        '<rect x="24.6" y="16.4" width="3.4" height="3.4" rx=".6" fill="#cbd5e1"/>' +
+        '<rect x="7" y="24.2" width="24.2" height="1.6" rx=".4"/>' +
+        '<circle cx="11.2" cy="27.2" r="1.6"/><circle cx="11.2" cy="27.2" r=".7" fill="#fff"/>' +
+        '<circle cx="27.2" cy="27.2" r="1.6"/><circle cx="27.2" cy="27.2" r=".7" fill="#fff"/>' +
+        '</g>';
     }
-    // LD / AVE: morro afilado.
-    return 'M3.5 20.5L14 9.8h16.2c1.6 0 2.9 1.3 2.9 2.9v15c0 1.6-1.3 2.9-2.9 2.9H14L3.5 20.5zm13.2-5.4h4.1v3.5h-4.1v-3.5zm5.8 0h4.1v3.5h-4.1v-3.5zM12.8 24.2h16.8v2.3H12.8v-2.3z';
+    // LD / AVE: morro afilado tipo alta velocidad.
+    return '<g fill="#1e293b">' +
+      '<path d="M2.8 21.2L13.2 9.6h18.4c1.5 0 2.7 1.2 2.7 2.7v14.2c0 1.5-1.2 2.7-2.7 2.7H13.2L2.8 21.2z"/>' +
+      '<path d="M13.2 9.6l-4.2 4.8h4.2V9.6z" fill="#0f172a"/>' +
+      '<path d="M14.4 11.4h5.2l-2.4 3.2h-5.2l2.4-3.2z" fill="#93c5fd"/>' +
+      '<rect x="20.2" y="14.8" width="3.6" height="3.2" rx=".55" fill="#e2e8f0"/>' +
+      '<rect x="24.6" y="14.8" width="3.6" height="3.2" rx=".55" fill="#e2e8f0"/>' +
+      '<rect x="29" y="14.8" width="3.2" height="3.2" rx=".55" fill="#cbd5e1"/>' +
+      '<rect x="12.4" y="24.4" width="20.6" height="1.5" rx=".4"/>' +
+      '<circle cx="17.2" cy="27.4" r="1.55"/><circle cx="17.2" cy="27.4" r=".65" fill="#fff"/>' +
+      '<circle cx="28.6" cy="27.4" r="1.55"/><circle cx="28.6" cy="27.4" r=".65" fill="#fff"/>' +
+      '</g>';
   }
   function htmlIconoMarcadorMapa_(familia, color, ink, texto) {
-    var path = svgPathFamiliaMapa_(familia);
-    return '<div class="mapa-marker mapa-marker--' + familia + '" style="color:' + color + ';">' +
+    return '<div class="mapa-marker mapa-marker--' + familia + '" style="--ring:' + color + ';">' +
       '<svg class="mapa-marker-svg" viewBox="0 0 40 40" aria-hidden="true">' +
-      '<path fill="currentColor" d="' + path + '"/></svg>' +
-      '<span class="mapa-marker-txt" style="color:' + ink + ';">' + texto + '</span></div>';
+      svgIconoFamiliaMapa_(familia) + '</svg>' +
+      '<span class="mapa-marker-badge" style="background:' + color + ';color:' + ink + ';">' +
+      texto + '</span></div>';
   }
   function htmlLeyendaIconoFamilia_(familia) {
-    return '<span class="mapa-leyenda-ico" aria-hidden="true"><svg viewBox="0 0 40 40">' +
-      '<path fill="currentColor" d="' + svgPathFamiliaMapa_(familia) + '"/></svg></span>';
+    return '<span class="mapa-leyenda-ico mapa-leyenda-ico--ring" aria-hidden="true">' +
+      '<svg viewBox="0 0 40 40">' + svgIconoFamiliaMapa_(familia) + '</svg></span>';
   }
   function flotaFiltrada() {
     return flotaMapa.filter(function (t) {
@@ -6046,10 +6074,11 @@
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#008000;"></div> ≤ 15 min</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FFDE21;"></div> 16 – 60 min</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>' +
-        '<strong style="display:block;margin:8px 0 6px;">Forma (producto)</strong>' +
+        '<strong style="display:block;margin:8px 0 6px;">Icono (producto)</strong>' +
         '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('cercanias') + ' Cercanías</div>' +
         '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('md') + ' MD / Regional</div>' +
         '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('ld') + ' LD / AVE</div>' +
+        '<div style="font-size:10px;color:#64748b;margin:2px 0 0;">Anillo = retraso · icono = producto</div>' +
         '<strong style="display:block;margin:8px 0 6px;">LTV Adif</strong>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#dc2626;"></div> ≤ 30 km/h</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ea580c;"></div> ≤ 60 km/h</div>' +
