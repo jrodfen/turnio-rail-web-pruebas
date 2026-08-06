@@ -424,6 +424,16 @@ html.turnio-es-comercial #fab-container{display:none!important}
   min-width:0;
   padding-bottom:28px;
 }
+#screen-admin.screen-admin--wide{
+  max-width:min(1280px,96vw);
+}
+@media (min-width:900px){
+  #screen-admin.screen-admin--wide{
+    max-width:min(1400px,98vw);
+    padding-left:8px;
+    padding-right:8px;
+  }
+}
 #screen-admin .circ-layout{
   display:grid !important;
   grid-template-columns:1fr !important;
@@ -520,14 +530,89 @@ html.turnio-es-comercial #fab-container{display:none!important}
 .admin-acceso-chip b{font-size:12px}
 .admin-accesos-lista{display:grid;gap:8px;max-height:min(42vh,360px);overflow:auto;margin-top:8px}
 .admin-stats-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;margin:0 0 8px}
-.admin-stats-contenido{display:grid;gap:14px;margin-top:8px}
-.admin-stats-sec{margin:0}
-.admin-stats-table-wrap{overflow:auto;max-height:min(36vh,320px);border:1px solid var(--line);border-radius:12px}
+.admin-stats-contenido{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin-top:12px;
+  width:100%;
+  min-width:0;
+}
+@media (min-width:720px){
+  .admin-stats-contenido{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+  }
+  .admin-stats-card--wide{grid-column:1 / -1}
+}
+@media (min-width:1100px){
+  .admin-stats-contenido{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px;
+  }
+}
+.admin-stats-card{
+  margin:0;
+  min-width:0;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px 12px 10px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.admin-stats-card-head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:6px 10px;
+}
+.admin-stats-card-head h4{
+  margin:0;
+  font-size:14px;
+  font-weight:900;
+  color:var(--text);
+}
+.admin-stats-card-head span{
+  font-size:11px;
+  font-weight:700;
+  color:var(--muted);
+}
+.admin-stats-table-wrap{
+  overflow:auto;
+  max-height:min(42vh,380px);
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--bg);
+  width:100%;
+}
 .admin-stats-table{width:100%;border-collapse:collapse;font-size:12px}
-.admin-stats-table th,.admin-stats-table td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-.admin-stats-table th{position:sticky;top:0;background:var(--card);font-weight:800;color:var(--muted);z-index:1}
+.admin-stats-table th,.admin-stats-table td{
+  padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);
+}
+.admin-stats-table th{
+  position:sticky;top:0;background:var(--card);font-weight:800;color:var(--muted);z-index:1;
+  white-space:nowrap;
+}
+.admin-stats-table td{white-space:nowrap}
+.admin-stats-table td:first-child{
+  font-weight:800;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  max-width:220px;
+}
+@media (min-width:720px){
+  .admin-stats-table td:first-child{max-width:280px}
+}
 .admin-stats-table tbody tr:last-child td{border-bottom:0}
-.admin-stats-table td:first-child{font-weight:800}
+.admin-panel-card.admin-stats-box{
+  border-color:rgba(5,150,105,.35);
+  width:100%;
+  max-width:100%;
+}
 .admin-acceso-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
 .admin-acceso-item.is-denied{border-color:rgba(185,28,28,.35);background:rgba(185,28,28,.05)}
 .admin-acceso-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin:0 0 4px}
@@ -1487,7 +1572,6 @@ body.monitor-mode #fab-overlay{display:none!important}
 .admin-panel-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow)}
 .admin-panel-card.admin-mant-box{border-color:rgba(185,28,28,.4)}
 .admin-panel-card.admin-accesos-box{border-color:rgba(37,99,235,.35)}
-.admin-panel-card.admin-stats-box{border-color:rgba(5,150,105,.35)}
 .admin-panel-card.admin-sugerencia-box{border-color:rgba(180,83,9,.35)}
 .admin-panel-card.admin-clave-box{border-color:rgba(15,118,110,.35)}
 .admin-fold-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}

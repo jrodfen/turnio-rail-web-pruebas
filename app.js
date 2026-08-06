@@ -1743,24 +1743,24 @@
       { label: 'Min perdidos', cell: function (r) { return adminStatsFmtNum_(r.minutos_perdidos_media, ' min'); } }
     ];
     box.innerHTML =
-      '<section class="admin-stats-sec">' +
-        '<h4 class="admin-aviso-hist-title">Peores trenes (demora máx. media)</h4>' +
+      '<section class="admin-stats-card">' +
+        '<header class="admin-stats-card-head"><h4>Peores trenes</h4><span>Demora máx. media</span></header>' +
         pintarAdminStatsTablaTrenes_(d.peores_trenes, colsTren) +
       '</section>' +
-      '<section class="admin-stats-sec">' +
-        '<h4 class="admin-aviso-hist-title">Más fiables (destino ≤ 5′)</h4>' +
+      '<section class="admin-stats-card">' +
+        '<header class="admin-stats-card-head"><h4>Más fiables</h4><span>Destino ≤ 5 min</span></header>' +
         pintarAdminStatsTablaTrenes_(d.mas_fiables, colsTren) +
       '</section>' +
-      '<section class="admin-stats-sec">' +
-        '<h4 class="admin-aviso-hist-title">Suelen salir tarde (origen ≥ 8′)</h4>' +
+      '<section class="admin-stats-card">' +
+        '<header class="admin-stats-card-head"><h4>Suelen salir tarde</h4><span>Origen ≥ 8 min</span></header>' +
         pintarAdminStatsTablaTrenes_(d.salen_tarde, colsTren) +
       '</section>' +
-      '<section class="admin-stats-sec">' +
-        '<h4 class="admin-aviso-hist-title">Estaciones con más demora</h4>' +
+      '<section class="admin-stats-card">' +
+        '<header class="admin-stats-card-head"><h4>Estaciones con más demora</h4><span>Media en parada</span></header>' +
         pintarAdminStatsTablaTrenes_(d.estaciones_mas_retraso, colsStop) +
       '</section>' +
-      '<section class="admin-stats-sec">' +
-        '<h4 class="admin-aviso-hist-title">Dónde pierden minutos (Δ entre paradas)</h4>' +
+      '<section class="admin-stats-card admin-stats-card--wide">' +
+        '<header class="admin-stats-card-head"><h4>Dónde pierden minutos</h4><span>Δ entre paradas consecutivas</span></header>' +
         pintarAdminStatsTablaTrenes_(d.estaciones_donde_pierden, colsDelta) +
       '</section>';
   }
@@ -3665,6 +3665,8 @@
     var hub = document.getElementById('admin-hub');
     if (hub) hub.hidden = false;
     document.querySelectorAll('.admin-panel').forEach(function (p) { p.hidden = true; });
+    var screenAdmin = document.getElementById('screen-admin');
+    if (screenAdmin) screenAdmin.classList.remove('screen-admin--wide');
   }
 
   function abrirAdminPanel_(panelId) {
@@ -3676,6 +3678,11 @@
     if (hub) hub.hidden = true;
     document.querySelectorAll('.admin-panel').forEach(function (p) { p.hidden = true; });
     panel.hidden = false;
+    var screenAdmin = document.getElementById('screen-admin');
+    if (screenAdmin) {
+      if (id === 'stats') screenAdmin.classList.add('screen-admin--wide');
+      else screenAdmin.classList.remove('screen-admin--wide');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (id === 'mant') cargarAdminMantenimiento_();
     else if (id === 'accesos') cargarAdminAccesos_();
