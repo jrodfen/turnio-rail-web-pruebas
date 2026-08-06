@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.94">
+    <link rel="stylesheet" href="./styles.css?v=V.95">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -410,6 +410,47 @@
           </div>
         </div>
       </section>
+
+      <section id="screen-fiabilidad" class="screen">
+        <button class="back" type="button" data-go="trafico" data-ocultar-comercial>&#11013; Volver a Circulaci&oacute;n</button>
+        <header class="circ-head" style="margin-bottom:10px">
+          <h2 class="circ-title">Fiabilidad / retrasos</h2>
+          <p class="circ-lead">Tendencias de demora por tren y estaci&oacute;n (hist&oacute;rico archivado).</p>
+        </header>
+        <div class="admin-panel-card admin-stats-box" id="admin-stats-box">
+          <p class="admin-nuevo-help">
+            Datos desde demoras congeladas. El archivo diario corre ~23:30 Madrid.
+            Con pocos d&iacute;as ver&aacute;s poco; las tendencias mejoran con el tiempo.
+          </p>
+          <div class="admin-stats-toolbar">
+            <label class="admin-acceso-filtro">Periodo
+              <select id="admin-stats-dias">
+                <option value="7">7 d&iacute;as</option>
+                <option value="14" selected>14 d&iacute;as</option>
+                <option value="30">30 d&iacute;as</option>
+                <option value="90">90 d&iacute;as</option>
+              </select>
+            </label>
+            <label class="admin-acceso-filtro">&Aacute;mbito
+              <select id="admin-stats-region">
+                <option value="andalucia" selected>SP Andaluc&iacute;a</option>
+                <option value="madrid">Madrid</option>
+                <option value="cataluna">Catalu&ntilde;a</option>
+                <option value="levante">Levante</option>
+                <option value="norte">Norte</option>
+                <option value="espana">Espa&ntilde;a (todo)</option>
+              </select>
+            </label>
+            <div class="admin-fold-toolbar" style="margin:0">
+              <button type="button" class="btn secondary" id="btn-admin-stats-refrescar">Actualizar</button>
+              <button type="button" class="btn primary" id="btn-admin-stats-archivar" data-requiere-admin hidden title="Volcar KV de hoy a Supabase">Archivar hoy</button>
+            </div>
+          </div>
+          <p id="admin-stats-meta" class="admin-meta">Cargando&hellip;</p>
+          <div id="admin-stats-contenido" class="admin-stats-contenido" aria-live="polite"></div>
+        </div>
+      </section>
+
       <section id="screen-pantallas" class="screen">
         <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
         <div class="pantallas-card">
@@ -510,6 +551,10 @@
               <button type="button" class="circ-tile circ-tile--excl" data-go="exclusiones" data-ocultar-comercial>
                 <b>&#128683; Exclusiones</b>
                 <span>Fuera de sin salida</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--stats" data-go="fiabilidad" data-ocultar-comercial>
+                <b>&#128200; Fiabilidad</b>
+                <span>Retrasos y tendencias</span>
               </button>
             </div>
           </div>
@@ -767,10 +812,6 @@
                   <b>&#128203; Solicitudes</b>
                   <span>Altas pendientes</span>
                 </button>
-                <button type="button" class="circ-tile circ-tile--radar" data-admin-panel="stats">
-                  <b>&#128200; Fiabilidad</b>
-                  <span>Retrasos y tendencias</span>
-                </button>
               </div>
             </div>
             <div class="circ-group circ-group--admin-users">
@@ -962,43 +1003,6 @@
             </div>
             <p id="admin-solicitud-meta" class="admin-meta">Cargando&hellip;</p>
             <div id="admin-solicitud-lista" class="admin-aviso-lista" aria-live="polite"></div>
-          </div>
-        </div>
-
-        <div class="admin-panel" id="admin-panel-stats" data-admin-panel-view="stats" hidden>
-          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
-          <h2 class="ajustes-title">Fiabilidad / retrasos</h2>
-          <div class="admin-panel-card admin-stats-box" id="admin-stats-box">
-            <p class="admin-nuevo-help">
-              Hist&oacute;rico desde demoras congeladas (<code>mp:v2</code> → Supabase).
-              El cron archiva ~23:30 Madrid. Con pocos d&iacute;as ver&aacute;s poco; las tendencias mejoran con el tiempo.
-            </p>
-            <div class="admin-stats-toolbar">
-              <label class="admin-acceso-filtro">Periodo
-                <select id="admin-stats-dias">
-                  <option value="7">7 d&iacute;as</option>
-                  <option value="14" selected>14 d&iacute;as</option>
-                  <option value="30">30 d&iacute;as</option>
-                  <option value="90">90 d&iacute;as</option>
-                </select>
-              </label>
-              <label class="admin-acceso-filtro">&Aacute;mbito
-                <select id="admin-stats-region">
-                  <option value="andalucia" selected>SP Andaluc&iacute;a</option>
-                  <option value="madrid">Madrid</option>
-                  <option value="cataluna">Catalu&ntilde;a</option>
-                  <option value="levante">Levante</option>
-                  <option value="norte">Norte</option>
-                  <option value="espana">Espa&ntilde;a (todo)</option>
-                </select>
-              </label>
-              <div class="admin-fold-toolbar" style="margin:0">
-                <button type="button" class="btn secondary" id="btn-admin-stats-refrescar">Actualizar</button>
-                <button type="button" class="btn primary" id="btn-admin-stats-archivar" title="Volcar KV de hoy a Supabase">Archivar hoy</button>
-              </div>
-            </div>
-            <p id="admin-stats-meta" class="admin-meta">Cargando&hellip;</p>
-            <div id="admin-stats-contenido" class="admin-stats-contenido" aria-live="polite"></div>
           </div>
         </div>
 
@@ -1853,13 +1857,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.94"></script>
-    <script src="./conexiones.js?v=V.94"></script>
+    <script src="./turnio-config.js?v=V.95"></script>
+    <script src="./conexiones.js?v=V.95"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.94"></script>
+    <script src="./app.js?v=V.95"></script>
   </body>
 </html>
 

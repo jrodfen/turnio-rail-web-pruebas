@@ -1806,9 +1806,14 @@
   }
 
   async function cargarAdminStats_() {
-    if (!sessionProfile.is_admin) return;
+    if (esComercial_()) return;
     var meta = document.getElementById('admin-stats-meta');
     var box = document.getElementById('admin-stats-contenido');
+    var btnArch = document.getElementById('btn-admin-stats-archivar');
+    if (btnArch) {
+      btnArch.hidden = !sessionProfile.is_admin;
+      btnArch.disabled = !sessionProfile.is_admin;
+    }
     if (meta) meta.textContent = 'Cargando…';
     if (box) box.innerHTML = '';
     try {
@@ -3652,6 +3657,14 @@
       }
       cargarExclusionesLectura_();
     }
+    if (screen === 'fiabilidad') {
+      if (esComercial_()) {
+        toast('Tu perfil COMERCIAL no tiene acceso a Fiabilidad.', 'error');
+        go('home');
+        return;
+      }
+      cargarAdminStats_();
+    }
     if (screen === 'pantallas') abrirPantallas();
     if (screen === 'kms') abrirKms();
     if (screen === 'mapa') openMapa();
@@ -3708,8 +3721,6 @@
     var hub = document.getElementById('admin-hub');
     if (hub) hub.hidden = false;
     document.querySelectorAll('.admin-panel').forEach(function (p) { p.hidden = true; });
-    var screenAdmin = document.getElementById('screen-admin');
-    if (screenAdmin) screenAdmin.classList.remove('screen-admin--wide');
   }
 
   function abrirAdminPanel_(panelId) {
@@ -3721,11 +3732,6 @@
     if (hub) hub.hidden = true;
     document.querySelectorAll('.admin-panel').forEach(function (p) { p.hidden = true; });
     panel.hidden = false;
-    var screenAdmin = document.getElementById('screen-admin');
-    if (screenAdmin) {
-      if (id === 'stats') screenAdmin.classList.add('screen-admin--wide');
-      else screenAdmin.classList.remove('screen-admin--wide');
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (id === 'mant') cargarAdminMantenimiento_();
     else if (id === 'accesos') cargarAdminAccesos_();
@@ -3733,7 +3739,6 @@
     else if (id === 'aviso') cargarAdminAviso_();
     else if (id === 'sugerencias') cargarAdminSugerencias_();
     else if (id === 'solicitudes') cargarAdminSolicitudes_();
-    else if (id === 'stats') cargarAdminStats_();
     else if (id === 'perfiles') cargarAdminPerfiles_();
     else if (id === 'nuevo') syncAdminNuevoCaduca_();
   }
