@@ -17,6 +17,18 @@
   var clientKey = 'turnio_external_client_id';
   var sessionKey = 'turnio_external_session_token';
   var mode = 'TODOS';
+  /** Filtro fino por producto (AVE, Alvia…). Vacío = todos. */
+  var productFilter = '';
+  var RADAR_PRODUCTO_MATCH_ = {
+    AVE: ['AVE', 'AVE Int.', 'AVE TGV'],
+    Avlo: ['Avlo'],
+    Alvia: ['Alvia'],
+    Avant: ['Avant', 'Avant Exp.'],
+    Intercity: ['Intercity'],
+    Euromed: ['Euromed'],
+    MD: ['MD', 'Regional', 'Regional Exp.', 'TRD', 'IR', 'AC', 'LD', 'Talgo', 'Altaria', 'Diurno', 'Estrella', 'Tren Hotel', 'Andalucía Exp.', 'Catalunya Exp.', 'AV City'],
+    'Cercanías': ['Cercanías']
+  };
   var radar = [];
   var sessionEmail = '';
   // El Worker entrega este perfil tras validar Supabase. Nunca se toma el rol
@@ -5244,9 +5256,31 @@
     var x = String(a.tipo || '');
     return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 || x.indexOf('DETENIDO') >= 0 ? 'warning' : '';
   }
+  function alertaPasaFiltroProducto_(a) {
+    if (!productFilter) return true;
+    var p = productoDesdeAlertaRadar_(a);
+    var match = RADAR_PRODUCTO_MATCH_[productFilter];
+    if (match && match.length) return match.indexOf(p) >= 0;
+    return p === productFilter;
+  }
+
+  function syncRadarProductoUi_() {
+    document.querySelectorAll('#radar-product-filters .filter--prod').forEach(function (x) {
+      var val = x.getAttribute('data-producto') || '';
+      x.classList.toggle('active', val === productFilter);
+    });
+  }
+
+  function syncRadarModeUi_() {
+    document.querySelectorAll('#radar-filters .filter[data-mode]').forEach(function (x) {
+      x.classList.toggle('active', x.dataset.mode === mode);
+    });
+  }
+
   function filtered() {
     var q = String(document.getElementById('search').value || '').toLowerCase();
     return radar.filter(function (a) {
+      if (!alertaPasaFiltroProducto_(a)) return false;
       return !q || JSON.stringify(a).toLowerCase().indexOf(q) >= 0;
     });
   }
@@ -5356,9 +5390,9 @@
     }
     pendingRadarFocusCod_ = tren;
     mode = 'TODOS';
-    document.querySelectorAll('.filter').forEach(function (x) {
-      x.classList.toggle('active', x.dataset.mode === 'TODOS');
-    });
+    productFilter = '';
+    syncRadarModeUi_();
+    syncRadarProductoUi_();
     var search = document.getElementById('search');
     if (search) search.value = '';
     go('radar');
@@ -5392,6 +5426,10 @@
     if (!radar.length || (radar.length === 1 && /LIMPIA/i.test(String(radar[0].tipo || '')))) {
       var msg = radar[0] && radar[0].mensaje || 'Red operando con normalidad.';
       list.innerHTML = '<div class="empty clean">' + esc(msg) + '</div>';
+      return;
+    }
+    if (!a.length) {
+      list.innerHTML = '<div class="empty">Ningún tren con el filtro de producto actual.</div>';
       return;
     }
     var head = isFinite(total)
@@ -7450,13 +7488,30 @@
   });
   wirePantallasUi_();
   wireKmsUi_();
-  document.querySelectorAll('.filter').forEach(function (b) {
+  document.querySelectorAll('#radar-filters .filter[data-mode]').forEach(function (b) {
     b.addEventListener('click', function () {
       mode = b.dataset.mode;
-      document.querySelectorAll('.filter').forEach(function (x) {
-        x.classList.toggle('active', x === b);
-      });
+      productFilter = '';
+      syncRadarModeUi_();
+      syncRadarProductoUi_();
       loadRadar();
+    });
+  });
+  document.querySelectorAll('#radar-product-filters .filter--prod').forEach(function (b) {
+    b.addEventListener('click', function () {
+      productFilter = b.getAttribute('data-producto') || '';
+      syncRadarProductoUi_();
+      // Ampliar ámbito si el producto no cabe en el modo actual.
+      var needMode = '';
+      if (productFilter === 'Cercanías' && mode === 'LD') needMode = 'CERCANIAS';
+      else if (productFilter && productFilter !== 'Cercanías' && mode === 'CERCANIAS') needMode = 'LD';
+      if (needMode) {
+        mode = needMode;
+        syncRadarModeUi_();
+        loadRadar();
+        return;
+      }
+      render();
     });
   });
   document.getElementById('btn-regiones').addEventListener('click', abrirModalRegiones);

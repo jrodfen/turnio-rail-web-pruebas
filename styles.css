@@ -25,6 +25,7 @@ body.monitor-mode .radar-top-row,
 body.monitor-mode #region,
 body.monitor-mode #btn-regiones,
 body.monitor-mode #radar-filters,
+body.monitor-mode #radar-product-filters,
 body.monitor-mode #radar-manual,
 body.monitor-mode #radar-search-box,
 body.monitor-mode .red-chip,
@@ -1662,4 +1663,31 @@ body.monitor-mode #fab-overlay{display:none!important}
   .top-user-email{display:none}
   .vigilante-btn{padding:6px 10px;font-size:10px;gap:6px}
   .top-brand h1{font-size:15px}
+}
+
+/* Radar: fila de productos (filtro fino) */
+.filters--productos{
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:-8px;
+  margin-bottom:12px;
+}
+.filters--productos .filter--prod{
+  flex:0 0 auto;
+  padding:6px 9px;
+  font-size:11px;
+  border-radius:999px;
+}
+.filters--productos .filter--prod.active{
+  color:#fff;
+  background:var(--primary);
+  border-color:var(--primary);
+  box-shadow:none;
+}
+@media(prefers-color-scheme:dark){
+  .filters--productos .filter--prod.active{
+    color:#0b1220;
+    background:var(--primary-dark);
+    border-color:var(--primary-dark);
+  }
 }

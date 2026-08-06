@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.103">
+    <link rel="stylesheet" href="./styles.css?v=V.104">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -184,6 +184,17 @@
             <button class="filter" data-mode="CERCANIAS" type="button">&#128642; CERC.</button>
             <button class="filter" data-mode="LD" type="button">&#128644; MD/LD</button>
             <button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button>
+          </div>
+          <div class="filters filters--productos" id="radar-product-filters" role="group" aria-label="Filtro por producto">
+            <button class="filter filter--prod active" data-producto="" type="button">Prod. todos</button>
+            <button class="filter filter--prod" data-producto="AVE" type="button">AVE</button>
+            <button class="filter filter--prod" data-producto="Avlo" type="button">Avlo</button>
+            <button class="filter filter--prod" data-producto="Alvia" type="button">Alvia</button>
+            <button class="filter filter--prod" data-producto="Avant" type="button">Avant</button>
+            <button class="filter filter--prod" data-producto="Intercity" type="button">IC</button>
+            <button class="filter filter--prod" data-producto="Euromed" type="button">Euromed</button>
+            <button class="filter filter--prod" data-producto="MD" type="button">MD</button>
+            <button class="filter filter--prod" data-producto="Cercanías" type="button">Cerc.</button>
           </div>
           <button type="button" class="manual" id="radar-manual" data-requiere-escritura>&#128221; Redactar Aviso Manual (Tren no detectado)</button>
           <button type="button" class="text-btn excl-radar-link" id="btn-radar-exclusiones" data-go="exclusiones" data-ocultar-comercial>&#128683; Ver exclusiones de l&iacute;nea</button>
@@ -1381,11 +1392,12 @@
             <div class="cx-help-item">
               <div class="cx-hi-icon">&#128646;</div>
               <div class="cx-hi-body">
-                <div class="cx-hi-title">Filtros CERC. / MD-LD / TODOS</div>
+                <div class="cx-hi-title">Filtros CERC. / MD-LD / TODOS y producto</div>
                 <div class="cx-hi-desc">
                   <span class="help-badge hb-green">CERC.</span> solo Cercan&iacute;as.<br>
                   <span class="help-badge hb-blue">MD/LD</span> Media y Larga Distancia (AVE, Alvia, Avant, Intercity&hellip;).<br>
-                  <span class="help-badge hb-purple">TODOS</span> ambos &aacute;mbitos.
+                  <span class="help-badge hb-purple">TODOS</span> ambos &aacute;mbitos.<br>
+                  Debajo: filtro fino por <strong>producto</strong> (AVE, Avlo, Alvia, Avant, IC, Euromed, MD, Cerc.). Se combina con el &aacute;mbito.
                 </div>
               </div>
             </div>
@@ -1883,13 +1895,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.103"></script>
+    <script src="./turnio-config.js?v=V.104"></script>
     <script src="./conexiones.js?v=V.101"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.103"></script>
+    <script src="./app.js?v=V.104"></script>
   </body>
 </html>
 
