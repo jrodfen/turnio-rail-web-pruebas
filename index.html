@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.95">
+    <link rel="stylesheet" href="./styles.css?v=V.96">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -1348,7 +1348,7 @@
               <div class="cx-hi-icon">&#127968;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Primer vistazo</div>
-                <div class="cx-hi-desc">Junto al saludo: <strong>tiempo en Sevilla</strong> y <strong>previsi&oacute;n de 2 d&iacute;as</strong> (como en GAS). Debajo, resumen del Radar (trenes / incidencias del &aacute;mbito) m&aacute;s retrasos &ge; 15 min con enlace a su tarjeta, y avisos de red. Accesos r&aacute;pidos en <strong>Circulaci&oacute;n</strong>.</div>
+                <div class="cx-hi-desc">Junto al saludo: <strong>tiempo en Sevilla</strong> y <strong>previsi&oacute;n de 2 d&iacute;as</strong>. Debajo, resumen del Radar (trenes / incidencias del &aacute;mbito) m&aacute;s retrasos &ge; 15 min con enlace a su tarjeta, y avisos de red. Accesos r&aacute;pidos en <strong>Circulaci&oacute;n</strong>.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1398,7 +1398,7 @@
               <div class="cx-hi-icon">&#128196;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Tarjeta y marcha</div>
-                <div class="cx-hi-desc">Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual, pr&oacute;ximas con demora). Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, aparece en esa marcha (pr&oacute;xima y destino). Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).</div>
+                <div class="cx-hi-desc">Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual, pr&oacute;ximas con demora). En cada parada puedes ver minutos de retraso; en origen se muestra como salida demorada cuando aplica. Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, aparece en esa marcha (pr&oacute;xima y destino). Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1462,7 +1462,12 @@
               <div class="cx-hi-icon">&#128683;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Sin salida</div>
-                <div class="cx-hi-desc">Aparece en Radar cuando la malla dice que el tren <strong>circula hoy</strong>, ya debi&oacute; salir (&ge;12&nbsp;min) y <strong>a&uacute;n no ha iniciado marcha</strong> (ventana ~45&nbsp;min): sin feed, o con feed pero sin <code>IN_TRANSIT_TO</code> ni GPS lejos del origen (~800&nbsp;m). No basta se&ntilde;al viva sola ni <code>STOPPED_AT</code> en origen. No alerta otros d&iacute;as. Los <strong>35xxx</strong> se ignoran. Modal &aacute;mbar + <strong>Enterado</strong> + Telegram pruebas. Independiente de detenidos.</div>
+                <div class="cx-hi-desc">
+                  Aparece en el Radar cuando el tren <strong>circula hoy</strong> seg&uacute;n malla, ya debi&oacute; salir y
+                  <strong>a&uacute;n no ha iniciado marcha</strong> (sin posici&oacute;n &uacute;til, o todav&iacute;a en origen).
+                  Puedes marcarlo como <strong>Enterado</strong> para quitarlo de tu vista el resto del d&iacute;a.
+                  Independiente de los detenidos. Los servicios <strong>35xxx</strong> (bus/taxi) no se alertan.
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1475,8 +1480,12 @@
             <div class="cx-help-item">
               <div class="cx-hi-icon">&#128679;</div>
               <div class="cx-hi-body">
-                <div class="cx-hi-title">Detenidos (en calibraci&oacute;n)</div>
-                <div class="cx-hi-desc">Detector v2 (estaci&oacute;n / v&iacute;a) en cron Cloudflare: Telegram de pruebas activo; categor&iacute;as <code>detenido_estacion</code> / <code>detenido_via</code> pueden aparecer en Radar. Modal &aacute;mbar del Vigilante <strong>sigue OFF</strong> hasta OK expl&iacute;cito de calibraci&oacute;n. Independiente de sin salida.</div>
+                <div class="cx-hi-title">Tren detenido</div>
+                <div class="cx-hi-desc">
+                  El Radar puede mostrar trenes <strong>detenidos en estaci&oacute;n</strong> o <strong>en plena v&iacute;a</strong>
+                  cuando hay posici&oacute;n y el tren no avanza de forma significativa.
+                  Es distinto de <em>sin salida</em> (aquel a&uacute;n no ha arrancado). Independiente del modal de retraso grave.
+                </div>
               </div>
             </div>
           </div>
@@ -1529,7 +1538,22 @@
               <div class="cx-hi-icon">&#128642;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Hub de herramientas</div>
-                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas, Enlazados y <strong>Exclusiones</strong>. Perfiles con escritura pueden cargar el Excel de combinados y publicarlo o borrarlo para el resto. Atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas, Enlazados, <strong>Exclusiones</strong> y <strong>Fiabilidad</strong>. Perfiles con escritura pueden cargar el Excel de combinados y publicarlo o borrarlo para el resto. Atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128200;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Fiabilidad / retrasos</div>
+                <div class="cx-hi-desc">
+                  Tile <strong>Fiabilidad</strong> en Circulaci&oacute;n. Consulta tendencias de demora:
+                  peores trenes, m&aacute;s puntuales, los que suelen salir tarde, estaciones con m&aacute;s retraso
+                  y d&oacute;nde se pierden minutos entre paradas.
+                  Puedes filtrar por <strong>periodo</strong> (7 / 14 / 30 / 90 d&iacute;as) y por <strong>&aacute;mbito</strong>
+                  (p. ej. SP Andaluc&iacute;a, Madrid, Espa&ntilde;a&hellip;). Las estaciones se muestran por nombre.
+                  Disponible para perfiles operativos (no en la vista reducida COMERCIAL).
+                  Los datos se van acumulando d&iacute;a a d&iacute;a: con poco hist&oacute;rico ver&aacute;s poco al principio.
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1647,7 +1671,7 @@
                 <div class="cx-hi-desc">
                   <span class="help-badge hb-blue">LECTURA</span> consulta.<br>
                   <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante, publicar Combinados&hellip;).<br>
-                  <span class="help-badge hb-amber">COMERCIAL</span> mapa, mallas/horarios y servicios enlazados (vista reducida; sin Radar ni exclusiones).<br>
+                  <span class="help-badge hb-amber">COMERCIAL</span> mapa, mallas/horarios y servicios enlazados (vista reducida; sin Radar, exclusiones ni Fiabilidad).<br>
                   <span class="help-badge hb-gray">INVITADO</span> consulta limitada (sin avisos TURNIO ni sugerencias).
                 </div>
               </div>
@@ -1857,13 +1881,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.95"></script>
-    <script src="./conexiones.js?v=V.95"></script>
+    <script src="./turnio-config.js?v=V.96"></script>
+    <script src="./conexiones.js?v=V.96"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.95"></script>
+    <script src="./app.js?v=V.96"></script>
   </body>
 </html>
 
