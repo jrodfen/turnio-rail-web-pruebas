@@ -5766,6 +5766,42 @@
     }
     return '+' + r;
   }
+  /** Forma del marcador: cercanias | md | ld (color = retraso). */
+  function familiaIconoMapa_(a) {
+    if (!a) return 'ld';
+    if (String(a.modo || '').toUpperCase() === 'CERCANIAS') return 'cercanias';
+    var p = etiquetaProductoAviso_(a.producto);
+    if (!p) p = etiquetaProductoAviso_(tipoPorNumeroTren(a.codTren)) || '';
+    if (/^Cercanías$/i.test(p)) return 'cercanias';
+    if (
+      p === 'MD' || p === 'Regional' || p === 'Regional Exp.' || p === 'TRD' ||
+      p === 'Andalucía Exp.' || p === 'Catalunya Exp.' || p === 'IR' || p === 'AC'
+    ) return 'md';
+    return 'ld';
+  }
+  function svgPathFamiliaMapa_(familia) {
+    if (familia === 'cercanias') {
+      // Frente redondeado (EMU Cercanías).
+      return 'M12 11c0-5.5 3.6-9 8-9s8 3.5 8 9v14.5c0 2.5-2 4.5-4.5 4.5h-7C14 30 12 28 12 25.5V11zm3.2 3.2h3.2v3.4h-3.2v-3.4zm5.6 0h3.2v3.4h-3.2v-3.4zM14.5 26.2h11v2.2h-11v-2.2z';
+    }
+    if (familia === 'md') {
+      // Perfil lateral clásico (MD / Regional).
+      return 'M5 14.5h3.2l2.3-4.2h16.2c1.7 0 3.1 1.4 3.1 3.1v11.1c0 1.7-1.4 3.1-3.1 3.1H8.2C6.4 27.6 5 26.2 5 24.5V14.5zm8.5 1.6h4.2v3.6h-4.2v-3.6zm6.2 0h4.2v3.6h-4.2v-3.6zM7.2 23.8h21.2v2.4H7.2v-2.4z';
+    }
+    // LD / AVE: morro afilado.
+    return 'M3.5 20.5L14 9.8h16.2c1.6 0 2.9 1.3 2.9 2.9v15c0 1.6-1.3 2.9-2.9 2.9H14L3.5 20.5zm13.2-5.4h4.1v3.5h-4.1v-3.5zm5.8 0h4.1v3.5h-4.1v-3.5zM12.8 24.2h16.8v2.3H12.8v-2.3z';
+  }
+  function htmlIconoMarcadorMapa_(familia, color, ink, texto) {
+    var path = svgPathFamiliaMapa_(familia);
+    return '<div class="mapa-marker mapa-marker--' + familia + '" style="color:' + color + ';">' +
+      '<svg class="mapa-marker-svg" viewBox="0 0 40 40" aria-hidden="true">' +
+      '<path fill="currentColor" d="' + path + '"/></svg>' +
+      '<span class="mapa-marker-txt" style="color:' + ink + ';">' + texto + '</span></div>';
+  }
+  function htmlLeyendaIconoFamilia_(familia) {
+    return '<span class="mapa-leyenda-ico" aria-hidden="true"><svg viewBox="0 0 40 40">' +
+      '<path fill="currentColor" d="' + svgPathFamiliaMapa_(familia) + '"/></svg></span>';
+  }
   function flotaFiltrada() {
     return flotaMapa.filter(function (t) {
       if (flotaModo === 'LD' && t.modo !== 'LD') return false;
@@ -6010,6 +6046,10 @@
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#008000;"></div> ≤ 15 min</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FFDE21;"></div> 16 – 60 min</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#FF0000;"></div> &gt; 60 min</div>' +
+        '<strong style="display:block;margin:8px 0 6px;">Forma (producto)</strong>' +
+        '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('cercanias') + ' Cercanías</div>' +
+        '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('md') + ' MD / Regional</div>' +
+        '<div class="mapa-leyenda-item">' + htmlLeyendaIconoFamilia_('ld') + ' LD / AVE</div>' +
         '<strong style="display:block;margin:8px 0 6px;">LTV Adif</strong>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#dc2626;"></div> ≤ 30 km/h</div>' +
         '<div class="mapa-leyenda-item"><div class="mapa-leyenda-dot" style="background:#ea580c;"></div> ≤ 60 km/h</div>' +
@@ -6341,9 +6381,10 @@
       var color = colorMarcador(a);
       var texto = textoRetrasoFlota(a.retrasoNum);
       var ink = color === '#FFDE21' ? '#111' : '#fff';
+      var familia = familiaIconoMapa_(a);
       var bearing = Number(a.bearing);
       var tieneRumbo = Number.isFinite(bearing);
-      // Flecha por encima del borde de la bola; caja 56px para que Leaflet no la recorte.
+      // Flecha por encima del icono; caja 56px para que Leaflet no la recorte.
       var arrowHtml = tieneRumbo
         ? '<span class="mapa-marker-arrow" style="border-bottom-color:' + color +
           ';transform:translate(-50%,-50%) rotate(' + Math.round(bearing) + 'deg) translateY(-23px);"></span>'
@@ -6351,8 +6392,8 @@
       var icon = L.divIcon({
         className: 'mapa-div-icon',
         html: '<div class="mapa-marker-shell">' +
-          '<div class="mapa-marker" style="width:30px;height:30px;background:' + color + ';color:' + ink + ';">' +
-          texto + '</div>' + arrowHtml + '</div>',
+          htmlIconoMarcadorMapa_(familia, color, ink, texto) +
+          arrowHtml + '</div>',
         iconSize: [56, 56],
         iconAnchor: [28, 28],
         popupAnchor: [0, -18]
