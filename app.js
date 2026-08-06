@@ -510,7 +510,10 @@
               '<span class="admin-card-meta">Actualizado: ' + esc(fmtFechaCorta_(p.updated_at)) +
                 (p.expires_at && role === 'INVITADO' ? ' · Fin: ' + esc(fmtFechaCorta_(p.expires_at)) : '') +
               '</span>' +
-              '<button type="button" class="action-btn admin-save" data-admin-save="' + id + '">Guardar</button>' +
+              '<div class="admin-card-actions">' +
+                (esYo ? '' : '<button type="button" class="action-btn admin-del" data-admin-del="' + id + '">Borrar</button>') +
+                '<button type="button" class="action-btn admin-save" data-admin-save="' + id + '">Guardar</button>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</article>'
@@ -565,6 +568,43 @@
     } catch (err) {
       toast(String(err.message || err), 'error');
       if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+    }
+  }
+
+  async function borrarAdminPerfil_(card) {
+    if (!card || !sessionProfile.is_admin) return;
+    var id = card.getAttribute('data-admin-id');
+    if (!id) return;
+    var email = '';
+    var who = card.querySelector('.admin-row-who span');
+    if (who) email = String(who.textContent || '').trim();
+    if (!email) {
+      var cached = adminPerfilesCache_.find(function (p) { return String(p.id) === String(id); });
+      email = cached && cached.email ? String(cached.email) : id;
+    }
+    if (sessionProfile.id && String(sessionProfile.id) === String(id)) {
+      toast('No puedes borrar tu propio perfil.', 'error');
+      return;
+    }
+    var ok = confirm(
+      '¿Borrar definitivamente este perfil?\n\n' + email +
+      '\n\nSe elimina de TURNIO y de Auth. No se puede deshacer.\n(Para solo bloquear el acceso, desactiva y Guarda.)'
+    );
+    if (!ok) return;
+    var btn = card.querySelector('.admin-del');
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+      var d = await call('admin_borrar_perfil', { profile_id: id });
+      var msg = 'Perfil borrado.';
+      if (d && d.borrado && d.borrado.auth_borrado === false) {
+        msg = 'Perfil borrado; Auth no se pudo eliminar del todo.';
+      }
+      toast(msg, 'success');
+      if (adminExpandidoId_ && String(adminExpandidoId_) === String(id)) adminExpandidoId_ = '';
+      await cargarAdminPerfiles_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Borrar'; }
     }
   }
   function syncAdminNuevoCaduca_() {
@@ -1934,9 +1974,12 @@
       admin_invalid_profile_id: 'Perfil no válido.',
       admin_invalid_expires_at: 'Fecha de caducidad no válida.',
       admin_cannot_deactivate_self: 'No puedes desactivar tu propia cuenta.',
+      admin_cannot_delete_self: 'No puedes borrar tu propio perfil.',
       admin_cannot_demote_self: 'No puedes quitarte el rol ADMIN a ti mismo.',
       admin_last_admin_protected: 'Debe quedar al menos un ADMIN activo.',
       admin_profile_not_found: 'Perfil no encontrado.',
+      admin_delete_failed: 'No se pudo borrar el perfil.',
+      admin_auth_delete_failed: 'No se pudo borrar el usuario Auth.',
       admin_unavailable: 'Administración no disponible ahora.',
       admin_invalid_email: 'Email no válido.',
       admin_email_exists: 'Ya existe un perfil con ese email.',
@@ -7573,6 +7616,12 @@
       if (saveBtn) {
         var cardSave = saveBtn.closest('.admin-row');
         if (cardSave) guardarAdminPerfil_(cardSave);
+        return;
+      }
+      var delBtn = t.closest('[data-admin-del]');
+      if (delBtn) {
+        var cardDel = delBtn.closest('.admin-row');
+        if (cardDel) borrarAdminPerfil_(cardDel);
         return;
       }
       var toggle = t.closest('[data-admin-toggle]');
