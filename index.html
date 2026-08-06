@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.97">
+    <link rel="stylesheet" href="./styles.css?v=V.98">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -60,6 +60,12 @@
           <div class="top-brand">
             <h1>TURNIO RAIL</h1>
             <span class="top-env">Entorno de pruebas &middot; <span data-turnio-version>V.13</span></span>
+          </div>
+          <div class="top-center">
+            <button type="button" id="btn-vigilante" class="vigilante-btn" aria-pressed="false" title="Activar o desactivar el Vigilante" data-requiere-escritura>
+              <i id="led-vigilante" aria-hidden="true"></i>
+              <span id="txt-vigilante">VIGILANTE: OFF</span>
+            </button>
           </div>
           <div class="top-user" title="">
             <span id="user-name" class="top-user-name">Usuario</span>
@@ -142,10 +148,6 @@
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
         <div class="radar-top-row">
           <button class="back" type="button" data-go="home">&#11013; Volver</button>
-          <button type="button" id="btn-vigilante" class="vigilante-btn" aria-pressed="false" title="Activar o desactivar el Vigilante" data-requiere-escritura>
-            <i id="led-vigilante" aria-hidden="true"></i>
-            <span id="txt-vigilante">VIGILANTE: OFF</span>
-          </button>
         </div>
         <div class="radar-card">
           <div class="radar-head">
@@ -1444,7 +1446,7 @@
               <div class="cx-hi-icon">&#128308;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Qu&eacute; hace</div>
-                <div class="cx-hi-desc">Bot&oacute;n <span class="help-badge hb-green">VIGILANTE: ON/OFF</span> en el Radar (perfiles con escritura). Escanea peri&oacute;dicamente la regi&oacute;n activa y avisa en pantalla de situaciones cr&iacute;ticas.</div>
+                <div class="cx-hi-desc">Bot&oacute;n <span class="help-badge hb-green">VIGILANTE: ON/OFF</span> siempre visible en la cabecera (entre TURNIO RAIL y tu nombre; perfiles con escritura). Escanea peri&oacute;dicamente la regi&oacute;n activa del Radar y avisa en pantalla de situaciones cr&iacute;ticas, est&eacute;s en la pantalla que est&eacute;s.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1881,13 +1883,13 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.97"></script>
-    <script src="./conexiones.js?v=V.97"></script>
+    <script src="./turnio-config.js?v=V.98"></script>
+    <script src="./conexiones.js?v=V.98"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.97"></script>
+    <script src="./app.js?v=V.98"></script>
   </body>
 </html>
 

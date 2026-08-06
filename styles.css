@@ -1603,3 +1603,20 @@ body.monitor-mode #fab-overlay{display:none!important}
 .admin-panel-card.admin-clave-box{border-color:rgba(15,118,110,.35)}
 .admin-fold-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 .admin-nuevo--nested{margin:0;padding:0;border:0;box-shadow:none;background:transparent}
+
+/* Vigilante fijo en cabecera (entre marca y usuario) */
+.top-bar{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  width:100%;
+}
+.top-brand{justify-self:start;min-width:0}
+.top-center{justify-self:center;display:flex;align-items:center;justify-content:center;min-width:0}
+.top-user{justify-self:end;min-width:0;max-width:100%}
+@media (max-width:420px){
+  .top-user-email{display:none}
+  .vigilante-btn{padding:6px 10px;font-size:10px;gap:6px}
+  .top-brand h1{font-size:15px}
+}
