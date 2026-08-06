@@ -2161,6 +2161,8 @@
   var adifLiveStarting_ = null;
   var adifLiveLastMsgAt_ = 0;
   var adifLivePollTimer_ = null;
+  /** true cuando el PC no puede hablar con info.adif.es (Zscaler/firewall). */
+  var adifDirectoBloqueado_ = false;
   var ADIF_EVENTOS_ = [
     'ReceiveMessage', 'receiveMessage', 'SendMessage', 'sendMessage',
     'Receive', 'Update', 'Info', 'StationInfo', 'LastMessage', 'Broadcast'
@@ -2863,15 +2865,108 @@
       if (code && uniq.indexOf(code) < 0) uniq.push(code);
     });
     if (!uniq.length) return;
-    var conn = await adifAsegurarConexion_(uniq[0]);
-    if (!conn) return;
-    // Limitar joins simultáneos: InfoStation empuja el snapshot tras JoinInfo.
-    var maxJoin = Math.min(uniq.length, 10);
-    for (var i = 0; i < maxJoin; i++) {
-      await adifJoinTopics_(conn, uniq[i]);
-      await adifEsperarDatosEstacion_(uniq[i], i < 3 ? 5000 : 2500);
-      inyectarViaAdifEnRadar_();
+    // Si el directo ya falló en este equipo, ir al proxy Worker.
+    if (adifDirectoBloqueado_) {
+      await adifPedirViasViaWorker_(uniq);
+      return;
     }
+    try {
+      var conn = await adifAsegurarConexion_(uniq[0]);
+      if (!conn) {
+        adifDirectoBloqueado_ = true;
+        await adifPedirViasViaWorker_(uniq);
+        return;
+      }
+      // Limitar joins simultáneos: InfoStation empuja el snapshot tras JoinInfo.
+      var maxJoin = Math.min(uniq.length, 10);
+      for (var i = 0; i < maxJoin; i++) {
+        await adifJoinTopics_(conn, uniq[i]);
+        await adifEsperarDatosEstacion_(uniq[i], i < 3 ? 5000 : 2500);
+        inyectarViaAdifEnRadar_();
+      }
+    } catch (err) {
+      adifDirectoBloqueado_ = true;
+      setAdifLiveStatusUi_(
+        'InfoStation bloqueado en este equipo → proxy Worker…',
+        'is-run'
+      );
+      await adifPedirViasViaWorker_(uniq);
+    }
+  }
+
+  /** Inyecta mapa trenes→vía del proxy Worker en la cache del front. */
+  function adifAplicarMapaWorker_(stationCode, trenesMap) {
+    var st = adifNormalizarCodigoEst_(stationCode);
+    if (!st || !trenesMap || typeof trenesMap !== 'object') return 0;
+    var incoming = Object.create(null);
+    var n = 0;
+    Object.keys(trenesMap).forEach(function (num) {
+      var e = trenesMap[num];
+      if (!e) return;
+      incoming[num] = {
+        via: String(e.via || '').trim(),
+        acceso: String(e.acceso || '').trim(),
+        ts: Number(e.ts) || Date.now()
+      };
+      n++;
+    });
+    if (!n) return 0;
+    adifByStation_[st] = adifMergeStationBucket_(adifByStation_[st], incoming);
+    adifJoinedStations_[st] = true;
+    if (!adifLiveStation_ || st === adifLiveStation_) {
+      adifLiveCache_ = adifMergeStationBucket_(adifLiveCache_, incoming);
+    }
+    adifLiveLastMsgAt_ = Date.now();
+    return n;
+  }
+
+  async function adifPedirViasViaWorker_(codigos) {
+    if (!api) throw new Error('API Worker no configurada');
+    var uniq = [];
+    (codigos || []).forEach(function (c) {
+      var code = adifNormalizarCodigoEst_(c);
+      if (code && uniq.indexOf(code) < 0) uniq.push(code);
+    });
+    if (!uniq.length) return { ok: false, n: 0 };
+    // El Worker atiende pocas estaciones por request (timeout WS).
+    var batch = uniq.slice(0, 4);
+    setAdifLiveStatusUi_('Proxy ADIF Worker · ' + batch.join(',') + '…', 'is-run');
+    var r = await fetch(api + '/api/adif-vias', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ estaciones: batch }),
+      cache: 'no-store'
+    });
+    var data = null;
+    try { data = await r.json(); } catch (_) { data = null; }
+    if (!r.ok || !data || !data.ok) {
+      var detail = (data && (data.detail || data.error)) || ('HTTP ' + r.status);
+      throw new Error('Proxy ADIF: ' + detail);
+    }
+    var total = 0;
+    var conVia = 0;
+    var lastErr = '';
+    Object.keys(data.estaciones || {}).forEach(function (st) {
+      var pack = data.estaciones[st];
+      total += adifAplicarMapaWorker_(st, pack && pack.trenes);
+      conVia += Number(pack && pack.conVia) || 0;
+      if (pack && pack.error) lastErr = String(pack.error);
+    });
+    if (!conVia && /403|Access Denied|adif_ws_reject|adif_negotiate/i.test(lastErr)) {
+      setAdifLiveStatusUi_(
+        'ADIF bloquea la egress de Cloudflare (403). El proxy Worker no puede leer vías.',
+        'is-err'
+      );
+      throw new Error('ADIF Access Denied desde Cloudflare (403)');
+    }
+    setAdifLiveStatusUi_(
+      'Proxy Worker · ' + batch.length + ' est. · ' + total + ' tren(es), ' + conVia + ' con vía' +
+        (adifLiveLastMsgAt_ ? ' · ' + new Date(adifLiveLastMsgAt_).toLocaleTimeString('es-ES') : ''),
+      conVia ? 'is-ok' : 'is-err'
+    );
+    inyectarViaAdifEnMallas_();
+    inyectarViaAdifEnRadar_();
+    return { ok: true, n: total, conVia: conVia };
   }
 
   function paradasClaveViaMarcha_(m) {
@@ -3046,11 +3141,11 @@
     adifRadarEnrichBusy_ = true;
     try {
       await adifPedirViasEstaciones_(codes);
-    } catch (err) {
+      } catch (err) {
       setAdifLiveStatusUi_('InfoStation (vías): ' + String(err && err.message ? err.message : err), 'is-err');
       if (Date.now() - adifViaFailToastAt_ > 120000) {
         adifViaFailToastAt_ = Date.now();
-        toast('No se pudo leer la vía ADIF desde este equipo (red/firewall). En móvil suele funcionar.', 'error');
+        toast('No se pudo leer la vía ADIF (directo ni proxy Worker).', 'error');
       }
     } finally {
       adifRadarEnrichBusy_ = false;
@@ -3107,6 +3202,16 @@
 
   async function escucharInfoStationEstacion_(codigo) {
     var code = adifNormalizarCodigoEst_(codigo) || '51003';
+    if (adifDirectoBloqueado_) {
+      try {
+        await adifPedirViasViaWorker_([code]);
+        toast('Vía ADIF vía proxy Worker · ' + code, 'success');
+      } catch (err) {
+        setAdifLiveStatusUi_('Proxy ADIF: ' + String(err && err.message || err), 'is-err');
+        throw err;
+      }
+      return;
+    }
     if (adifLiveStarting_) return adifLiveStarting_;
     adifLiveStarting_ = (async function () {
       var signalR = await cargarSignalRAdif_();
@@ -3159,6 +3264,10 @@
     })();
     try {
       await adifLiveStarting_;
+    } catch (err) {
+      adifDirectoBloqueado_ = true;
+      setAdifLiveStatusUi_('InfoStation bloqueado → proxy Worker · ' + code + '…', 'is-run');
+      await adifPedirViasViaWorker_([code]);
     } finally {
       adifLiveStarting_ = null;
     }
