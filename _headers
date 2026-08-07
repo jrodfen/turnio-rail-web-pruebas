@@ -1,5 +1,5 @@
 /*
-  X-Turnio-Front-Build: V.105
+  X-Turnio-Front-Build: V.132
 
 /
   Cache-Control: no-cache
@@ -14,4 +14,11 @@
   Cache-Control: no-cache
 
 /app.js
+  Cache-Control: no-cache
+
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json
   Cache-Control: no-cache

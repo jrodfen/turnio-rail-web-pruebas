@@ -4,8 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#2d7ff9">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TURNIO">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     <title>TURNIO RAIL - Pruebas externas</title>
-    <link rel="stylesheet" href="./styles.css?v=V.105">
+    <link rel="stylesheet" href="./styles.css?v=V.132">
     <style>
       .top-user-role{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px;font-weight:800;letter-spacing:.04em}
       .profile-role{display:inline-block;margin:4px 0 8px;padding:5px 9px;border-radius:999px;background:#eaf2ff;color:#1d63cb;font-weight:800;font-size:12px}
@@ -14,7 +21,15 @@
   </head>
   <body>
     <section id="login-shell" class="login-shell">
-      <header class="login-hero"><p>ENTORNO DE PRUEBAS</p><h1>TURNIO RAIL</h1><span>Acceso externo seguro &middot; <strong data-turnio-version>V.13</strong></span></header>
+      <header class="login-hero">
+        <p>ENTORNO DE PRUEBAS</p>
+        <h1>TURNIO RAIL</h1>
+        <span>Acceso externo seguro &middot; <strong data-turnio-version>V.13</strong></span>
+        <p class="turnio-authorship turnio-authorship--login" aria-label="Autoría">
+          <span class="turnio-authorship-name">Jos&eacute; Enrique Rodr&iacute;guez Fenoy</span>
+          <span class="turnio-authorship-role">T&eacute;cnico de Centro de Gesti&oacute;n &middot; S.P. Andaluc&iacute;a</span>
+        </p>
+      </header>
       <div id="status" class="status pending" aria-live="polite">Comprobando conexi&oacute;n segura...</div>
       <div id="login-mantenimiento" class="login-mant" hidden role="status">
         <b>Modo mantenimiento</b>
@@ -143,6 +158,10 @@
         </div>
 
         <p class="foot-note" data-ocultar-comercial>Radar, mapa, mallas, kms, pantallas, enlaces y accesos r&aacute;pidos est&aacute;n en <strong>Circulaci&oacute;n</strong>.</p>
+        <p class="turnio-authorship turnio-authorship--home" aria-label="Autoría">
+          <span class="turnio-authorship-name">Jos&eacute; Enrique Rodr&iacute;guez Fenoy</span>
+          <span class="turnio-authorship-role">T&eacute;cnico de Centro de Gesti&oacute;n &middot; S.P. Andaluc&iacute;a</span>
+        </p>
       </section>
       <section id="screen-radar" class="screen">
         <button type="button" id="btn-exit-monitor" title="Salir del modo monitor">&#10005; Salir</button>
@@ -185,7 +204,7 @@
             <button class="filter" data-mode="LD" type="button">&#128644; MD/LD</button>
             <button class="filter active" data-mode="TODOS" type="button">&#127758; TODOS</button>
           </div>
-          <div class="filters filters--productos" id="radar-product-filters" role="group" aria-label="Filtro por producto">
+          <div class="filters filters--productos" id="radar-product-filters" role="group" aria-label="Filtro por producto (varios)">
             <button class="filter filter--prod active" data-producto="" type="button">Prod. todos</button>
             <button class="filter filter--prod" data-producto="AVE" type="button">AVE</button>
             <button class="filter filter--prod" data-producto="Avlo" type="button">Avlo</button>
@@ -424,6 +443,74 @@
         </div>
       </section>
 
+      <section id="screen-maquinas" class="screen">
+        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
+        <div class="maq-wrap">
+          <header class="maq-head">
+            <div>
+              <h2 class="maq-title">Consulta M&aacute;quinas</h2>
+              <p class="maq-lead">Mantenedores de material rodante. El Radar sigue usando solo matr&iacute;cula &#8594; c&oacute;digo.</p>
+            </div>
+            <div class="maq-head-actions">
+              <span id="maq-total-badge" class="maq-total-badge">—</span>
+              <button type="button" class="maq-icon-btn" id="btn-maq-refrescar" title="Actualizar listado">&#8635;</button>
+              <button type="button" class="maq-admin-toggle" id="btn-maq-admin-toggle" data-requiere-admin hidden aria-expanded="false" aria-controls="maq-admin-panel">
+                Gesti&oacute;n <span class="maq-admin-chevron" aria-hidden="true">▾</span>
+              </button>
+            </div>
+          </header>
+          <div class="maq-admin-fold" data-requiere-admin hidden>
+            <div id="maq-admin-panel" class="maq-admin-panel" hidden>
+              <div class="maq-admin-panel-row">
+                <label class="maq-admin-btn maq-admin-btn--primary" for="maq-excel-upload">Importar Excel</label>
+                <input type="file" id="maq-excel-upload" accept=".xlsx,.xls" hidden>
+                <button type="button" class="maq-admin-btn" id="btn-maq-catalogo-html" title="Recargar catálogo embebido (HTML)">Catálogo HTML</button>
+                <button type="button" class="maq-admin-btn" id="btn-maq-nueva">+ Alta</button>
+              </div>
+              <label class="maq-preserve">
+                <input type="checkbox" id="maq-actualizar-codigos">
+                Al importar, tambi&eacute;n actualizar c&oacute;digos (peligroso para Radar)
+              </label>
+              <p id="maq-upload-status" class="maq-upload-status" hidden></p>
+            </div>
+          </div>
+          <div id="maq-filter-badges" class="maq-filter-badges">
+            <span class="maq-filter-label">MANTENEDOR:</span>
+          </div>
+          <div class="maq-search-row">
+            <input id="maq-search-input" type="search" placeholder="Buscar por matr&iacute;cula, descripci&oacute;n, dep&oacute;sito&hellip;" autocomplete="off">
+            <button type="button" class="btn secondary" id="btn-maq-limpiar">Limpiar</button>
+          </div>
+          <div class="maq-table-card">
+            <div class="maq-table-scroll">
+              <table class="maq-table" id="maq-main-table">
+                <thead>
+                  <tr>
+                    <th data-maq-sort="matricula">Matr&iacute;cula <span id="maq-sort-matricula"></span></th>
+                    <th data-maq-sort="descripcion">Descripci&oacute;n <span id="maq-sort-descripcion"></span></th>
+                    <th data-maq-sort="deposito">Dep&oacute;sito <span id="maq-sort-deposito"></span></th>
+                    <th data-maq-sort="producto">Producto <span id="maq-sort-producto"></span></th>
+                    <th data-maq-sort="mantenedor">Mantenedor <span id="maq-sort-mantenedor"></span></th>
+                    <th data-maq-sort="codigo">C&oacute;digo <span id="maq-sort-codigo"></span></th>
+                    <th data-maq-sort="estacion">Estaci&oacute;n <span id="maq-sort-estacion"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="maq-table-body"></tbody>
+              </table>
+            </div>
+            <div id="maq-no-results" class="maq-no-results" hidden>No se encontraron resultados</div>
+            <div id="maq-pagination" class="maq-pagination"></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="maq-modal" class="maq-modal-overlay" hidden>
+        <div class="maq-modal-box" role="dialog" aria-modal="true" aria-labelledby="maq-modal-title">
+          <button type="button" class="maq-modal-close" id="btn-maq-modal-cerrar" aria-label="Cerrar">&times;</button>
+          <div id="maq-modal-content"></div>
+        </div>
+      </div>
+
       <section id="screen-fiabilidad" class="screen">
         <button class="back" type="button" data-go="trafico" data-ocultar-comercial>&#11013; Volver a Circulaci&oacute;n</button>
         <header class="circ-head" style="margin-bottom:10px">
@@ -493,38 +580,48 @@
       </section>
       <section id="screen-kms" class="screen">
         <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
-        <div class="kms-card">
+        <div id="kms-card" class="kms-card">
           <div class="kms-card-head">
-            <h3>&#128207; Calcular kms</h3>
+            <h3>Calcular kms</h3>
           </div>
-          <p class="kms-lead">Consulta distancias entre estaciones comerciales. Puedes encadenar tramos y sumar el total.</p>
-          <div class="kms-form">
+          <p class="kms-lead">Suma tramos entre estaciones. Orientativo, no sustituye Cop&eacute;rnico.</p>
+          <div class="kms-od-row">
             <div class="kms-field">
-              <label for="kms-origen">Origen</label>
-              <input id="kms-origen" type="search" autocomplete="off" placeholder="Ej. Sevilla Santa Justa" aria-autocomplete="list" aria-controls="kms-sug-origen">
-              <div id="kms-sug-origen" class="kms-sug" hidden></div>
+              <label class="aviso-label" for="kms-origen">Origen</label>
+              <div class="searchable-select-container kms-select">
+                <input id="kms-origen" type="search" autocomplete="off" placeholder="Ej. Sevilla Santa Justa" aria-autocomplete="list" aria-controls="kms-sug-origen">
+                <div id="kms-sug-origen" class="kms-sug searchable-select-list" hidden></div>
+              </div>
             </div>
             <button type="button" class="btn secondary kms-swap" id="btn-kms-swap" title="Intercambiar origen y destino">&#8644;</button>
             <div class="kms-field">
-              <label for="kms-destino">Destino</label>
-              <input id="kms-destino" type="search" autocomplete="off" placeholder="Ej. Madrid Puerta de Atocha" aria-autocomplete="list" aria-controls="kms-sug-destino">
-              <div id="kms-sug-destino" class="kms-sug" hidden></div>
+              <label class="aviso-label" for="kms-destino">Destino</label>
+              <div class="searchable-select-container kms-select">
+                <input id="kms-destino" type="search" autocomplete="off" placeholder="Ej. Madrid Puerta de Atocha" aria-autocomplete="list" aria-controls="kms-sug-destino">
+                <div id="kms-sug-destino" class="kms-sug searchable-select-list" hidden></div>
+              </div>
             </div>
-            <button type="button" class="btn primary" id="btn-kms-buscar">A&ntilde;adir tramo</button>
           </div>
+          <button type="button" class="btn primary kms-add" id="btn-kms-buscar">A&ntilde;adir tramo</button>
           <p id="kms-msg" class="kms-msg" hidden></p>
-          <div class="kms-table-wrap">
-            <table class="kms-table" aria-label="Tramos seleccionados">
-              <thead><tr><th>Origen</th><th>Destino</th><th>Km</th></tr></thead>
-              <tbody id="kms-tbody"></tbody>
-            </table>
+          <div id="kms-list" class="kms-list" aria-label="Tramos seleccionados">
+            <p id="kms-empty" class="kms-empty">A&uacute;n no hay tramos. Elige origen y destino y pulsa A&ntilde;adir.</p>
           </div>
-          <div id="kms-total" class="kms-total" hidden>Total: 0 km</div>
-          <div class="kms-actions">
+          <div id="kms-total" class="kms-total" hidden>
+            <div class="kms-total-value"><span id="kms-total-num">0</span><span class="kms-total-unit">km</span></div>
+            <div id="kms-total-meta" class="kms-total-meta"></div>
+          </div>
+          <div id="kms-actions" class="kms-actions" hidden>
             <button type="button" class="btn secondary" id="btn-kms-borrar">Borrar &uacute;ltimo</button>
             <button type="button" class="btn secondary" id="btn-kms-limpiar">Limpiar</button>
           </div>
           <p class="kms-note">Las distancias usan en la medida de lo posible el ancho UIC. Consulta orientativa: no sustituye Cop&eacute;rnico ni el Planificador.</p>
+        </div>
+      </section>
+      <section id="screen-conduccion" class="screen">
+        <button class="back" type="button" data-go="trafico">&#11013; Volver a Circulaci&oacute;n</button>
+        <div class="conduccion-shell">
+          <iframe id="conduccion-frame" class="conduccion-frame" title="Calculadora de conducci&oacute;n ferroviaria" src="./calculadora-conduccion.html" loading="lazy"></iframe>
         </div>
       </section>
       <section id="screen-trafico" class="screen">
@@ -549,10 +646,6 @@
                 <b>&#128646; Mallas</b>
                 <span>Horarios y d&iacute;as</span>
               </button>
-              <button type="button" class="circ-tile circ-tile--kms" data-go="kms" data-ocultar-comercial>
-                <b>&#128207; Kms</b>
-                <span>Distancia entre estaciones</span>
-              </button>
               <button type="button" class="circ-tile circ-tile--pantallas" data-go="pantallas" data-ocultar-comercial>
                 <b>&#128421; Pantallas</b>
                 <span>Salidas / llegadas ADIF</span>
@@ -561,9 +654,21 @@
                 <b>&#128279; Enlazados</b>
                 <span>Panel de conexiones</span>
               </button>
+              <button type="button" class="circ-tile circ-tile--kms" data-go="kms" data-ocultar-comercial>
+                <b>&#128207; Kms</b>
+                <span>Distancia entre estaciones</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--conduccion" data-go="conduccion" data-ocultar-comercial>
+                <b>&#9201; Conducci&oacute;n</b>
+                <span>Jornada y tiempos RD 929</span>
+              </button>
               <button type="button" class="circ-tile circ-tile--excl" data-go="exclusiones" data-ocultar-comercial>
                 <b>&#128683; Exclusiones</b>
                 <span>Fuera de sin salida</span>
+              </button>
+              <button type="button" class="circ-tile circ-tile--maq" data-go="maquinas">
+                <b>&#128642; M&aacute;quinas</b>
+                <span>Mantenedores / flota</span>
               </button>
               <button type="button" class="circ-tile circ-tile--stats" data-go="fiabilidad" data-ocultar-comercial>
                 <b>&#128200; Fiabilidad</b>
@@ -813,6 +918,10 @@
                   <b>&#128683; Exclusiones</b>
                   <span>Sin salida / tramos</span>
                 </button>
+                <button type="button" class="circ-tile circ-tile--maq" data-admin-panel="corr">
+                  <b>&#128260; Venta / CG</b>
+                  <span>Correspondencias tren</span>
+                </button>
                 <button type="button" class="circ-tile circ-tile--avisos" data-admin-panel="aviso">
                   <b>&#128172; Aviso al entrar</b>
                   <span>Modal de bienvenida</span>
@@ -866,7 +975,7 @@
           <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
           <h2 class="ajustes-title">Accesos</h2>
           <div class="admin-panel-card admin-accesos-box" id="admin-accesos-box">
-            <p class="admin-nuevo-help">Entradas con ciudad/regi&oacute;n aproximada (IP). Aviso si un email usa &ge;2 IPs en 2 h.</p>
+            <p class="admin-nuevo-help">Entradas con ciudad/regi&oacute;n aproximada (IP). Aviso si un email usa &gt;2 IPs (&ge;3) en 2 h. Puedes ocultar avisos y volver a consultarlos.</p>
             <div class="admin-fold-toolbar">
               <button type="button" class="btn secondary" id="btn-admin-accesos-refrescar">Actualizar</button>
             </div>
@@ -894,6 +1003,7 @@
               </label>
             </div>
             <p id="admin-accesos-meta" class="admin-meta">Cargando&hellip;</p>
+            <div id="admin-accesos-alertas-bar" class="admin-accesos-alertas-bar" hidden></div>
             <div id="admin-accesos-alertas" class="admin-accesos-alertas" hidden></div>
             <div id="admin-accesos-resumen" class="admin-accesos-resumen" hidden></div>
             <div id="admin-accesos-lista" class="admin-accesos-lista" aria-live="polite"></div>
@@ -946,6 +1056,28 @@
             </form>
             <h4 class="admin-aviso-hist-title">Activas / caducadas</h4>
             <div id="admin-excl-lista" class="admin-aviso-lista" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="admin-panel-corr" data-admin-panel-view="corr" hidden>
+          <button type="button" class="back admin-panel-back" data-admin-back>&larr; Administraci&oacute;n</button>
+          <h2 class="ajustes-title">Correspondencias venta / CG</h2>
+          <div class="admin-panel-card">
+            <p class="admin-nuevo-help">
+              Diccionario estable: n&ordm; de venta (GTFS/billete) &harr; n&ordm; de circulaci&oacute;n (Centro de Gesti&oacute;n) por tramo.
+              Se ignoran circulaciones <strong>84xxx</strong> (bus/PAT). En Radar se muestran ambos cuando difieren.
+            </p>
+            <div class="admin-fold-toolbar">
+              <button type="button" class="btn secondary" id="btn-admin-corr-refrescar">Actualizar</button>
+              <button type="button" class="btn primary" id="btn-admin-corr-seed" title="Cargar Excel seed desde KV">Cargar catálogo</button>
+              <label class="btn secondary" for="admin-corr-excel">Importar Excel</label>
+              <input type="file" id="admin-corr-excel" accept=".xlsx,.xls" hidden>
+            </div>
+            <p id="admin-corr-meta" class="admin-meta">Cargando&hellip;</p>
+            <label class="admin-acceso-filtro">Buscar
+              <input type="search" id="admin-corr-buscar" placeholder="Venta o circulación…" autocomplete="off">
+            </label>
+            <div id="admin-corr-lista" class="admin-aviso-lista" aria-live="polite"></div>
           </div>
         </div>
 
@@ -1088,6 +1220,14 @@
         <p id="profile-email"></p>
         <p id="profile-role" class="profile-role"></p>
         <p id="profile-permissions" class="welcome-muted"></p>
+        <div id="cuenta-telegram-box" class="cuenta-tg-box" hidden>
+          <h3 class="cuenta-tg-title">Avisos Telegram</h3>
+          <p id="cuenta-telegram-hint" class="welcome-muted">Activa o pausa cada bot por separado. El chat id lo gestiona Administraci&oacute;n.</p>
+          <div class="cuenta-tg-actions">
+            <button type="button" class="btn cuenta-tg-toggle" id="btn-cuenta-telegram-and" data-tg-canal="andalucia" aria-pressed="true">Andaluc&iacute;a: ON</button>
+            <button type="button" class="btn cuenta-tg-toggle" id="btn-cuenta-telegram-esp" data-tg-canal="espana" aria-pressed="false">Espa&ntilde;a: OFF</button>
+          </div>
+        </div>
         <p>Tu sesi&oacute;n externa est&aacute; protegida y es independiente de la aplicaci&oacute;n en GAS.</p>
         <button type="button" class="btn secondary" id="btn-cuenta-admin" data-go="admin" data-requiere-admin hidden style="margin-top:14px">Administraci&oacute;n de usuarios</button>
       </section>
@@ -1397,7 +1537,24 @@
                   <span class="help-badge hb-green">CERC.</span> solo Cercan&iacute;as.<br>
                   <span class="help-badge hb-blue">MD/LD</span> Media y Larga Distancia (AVE, Alvia, Avant, Intercity&hellip;).<br>
                   <span class="help-badge hb-purple">TODOS</span> ambos &aacute;mbitos.<br>
-                  Debajo: filtro fino por <strong>producto</strong> (AVE, Avlo, Alvia, Avant, IC, Euromed, MD, Cerc.). Se combina con el &aacute;mbito.
+                  Debajo: filtro fino por <strong>producto</strong> (AVE, Avlo, Alvia, Avant, IC, Euromed, MD, Cerc.).
+                  Puedes marcar <strong>varios a la vez</strong>: la lista muestra la uni&oacute;n.
+                  <span class="help-badge hb-gray">Prod. todos</span> limpia la selecci&oacute;n.
+                  Se combina con el &aacute;mbito (CERC. / MD-LD / TODOS).
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128260;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Venta y circulaci&oacute;n (CG)</div>
+                <div class="cx-hi-desc">
+                  El n&uacute;mero principal es el de <strong>venta</strong> (billete/GTFS).
+                  Si el Centro de Gesti&oacute;n usa otro n&uacute;mero en el tramo activo, aparece el chip
+                  <span class="help-badge hb-blue">CG …</span>.
+                  P&uacute;lsalo (o toca en m&oacute;vil) para ver los tramos venta↔circulaci&oacute;n.
+                  Las circulaciones <strong>84xxx</strong> (bus/PAT) no entran en el diccionario.
+                  Admin puede editar/importar el cat&aacute;logo en <strong>Administraci&oacute;n → Venta / CG</strong>.
                 </div>
               </div>
             </div>
@@ -1412,14 +1569,21 @@
               <div class="cx-hi-icon">&#128196;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Tarjeta y marcha</div>
-                <div class="cx-hi-desc">Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual, pr&oacute;ximas con demora). En cada parada puedes ver minutos de retraso; en origen se muestra como salida demorada cuando aplica. Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, aparece en esa marcha (pr&oacute;xima y destino). Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).</div>
+                <div class="cx-hi-desc">
+                  Pulsa una tarjeta para ver la <strong>marcha en tiempo real</strong> (paradas pasadas, posici&oacute;n actual y siguientes).
+                  La demora del tren va en la cabecera de la marcha.
+                  En cada parada: minutos solo si hay dato propio; en origen, si hay demora, se indica como <em>sale +X min</em>.
+                  En <strong>paradas futuras</strong>, si el tren ya lleva retraso, <strong>no</strong> se inventa demora ni se pone &laquo;en hora&raquo; (queda en blanco hasta que el feed aporte ese punto).
+                  Si ADIF emite la <strong>v&iacute;a</strong>, aparece en pr&oacute;xima y destino.
+                  Desde ah&iacute; puedes abrir el <strong>mapa</strong> centrado en ese tren o <strong>generar aviso</strong> (si tu perfil puede escribir).
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
               <div class="cx-hi-icon">&#128739;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">V&iacute;a ADIF (InfoStation)</div>
-                <div class="cx-hi-desc">Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, la ver&aacute;s en la <strong>marcha en vivo</strong> del Radar y de Mallas (pr&oacute;xima estaci&oacute;n y destino). En la tarjeta del Radar tambi&eacute;n puede aparecer origen / pr&oacute;xima / destino. En el listado de Mallas, el chip <strong>V&Iacute;A</strong> corresponde a la estaci&oacute;n buscada. Si ADIF no publica v&iacute;a, no se muestra.</div>
+                <div class="cx-hi-desc">Si ADIF emite la <strong>v&iacute;a de estacionamiento</strong>, la ver&aacute;s en la <strong>marcha en vivo</strong> del Radar y de Mallas (pr&oacute;xima estaci&oacute;n y destino). En la tarjeta del Radar tambi&eacute;n puede aparecer origen / pr&oacute;xima / destino. En el listado de Mallas, el chip <strong>V&Iacute;A</strong> corresponde a la estaci&oacute;n buscada. Si ADIF no publica v&iacute;a, no se muestra. En PCs con <strong>Zscaler</strong> la conexi&oacute;n a InfoStation suele estar bloqueada: hace falta excepci&oacute;n a <code>info.adif.es</code> (HTTPS + WebSocket) o una red sin Zscaler.</div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1458,7 +1622,24 @@
               <div class="cx-hi-icon">&#128308;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Qu&eacute; hace</div>
-                <div class="cx-hi-desc">Bot&oacute;n <span class="help-badge hb-green">VIGILANTE: ON/OFF</span> siempre visible en la cabecera (entre TURNIO RAIL y tu nombre; perfiles con escritura). Escanea peri&oacute;dicamente la regi&oacute;n activa del Radar y avisa en pantalla de situaciones cr&iacute;ticas, est&eacute;s en la pantalla que est&eacute;s.</div>
+                <div class="cx-hi-desc">
+                  Bot&oacute;n <span class="help-badge hb-green">VIGILANTE: ON/OFF</span> en la cabecera (perfiles con escritura).
+                  Escanea peri&oacute;dicamente la regi&oacute;n activa del Radar y avisa en pantalla de situaciones cr&iacute;ticas.
+                  <strong>Por defecto va apagado</strong> (de 00:30 a 05:00 siempre; de d&iacute;a para todos excepto ADMIN, que puede auto-encenderse tras un minuto).
+                  Si est&aacute; OFF, el bot&oacute;n <strong>parpadea</strong> para recordarte que puedes activarlo a mano.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128225;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Del modal al Radar</div>
+                <div class="cx-hi-desc">
+                  Cuando sale el modal del Vigilante (retraso grave, sin salida, etc.), cada servicio es pulsable
+                  (                  <span class="help-badge hb-blue">Ver en Radar &#8594;</span>.
+                  Al elegirlo se cierra el aviso <strong>sin</strong> marcarlo como Enterado, se abre el Radar
+                  (filtros en Todos) y se centra la tarjeta de ese tren.
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1510,7 +1691,13 @@
               <div class="cx-hi-icon">&#128506;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Flota en vivo</div>
-                <div class="cx-hi-desc">Marcadores de la flota sobre el mapa, filtrables por regi&oacute;n y modo (Todos / Larga dist. / Cercan&iacute;as) y por demoras. El <strong>icono</strong> (con detalle) indica el producto (Cercan&iacute;as, MD/Regional o LD/AVE) y el <strong>anillo de color</strong> el retraso; debajo, una pastilla con minutos. Cada marcador lleva una <strong>flecha de sentido</strong> del mismo color. Pulsa un tren para ficha y marcha. Se actualiza peri&oacute;dicamente mientras la pantalla est&aacute; abierta.</div>
+                <div class="cx-hi-desc">
+                  Marcadores de la flota sobre el mapa, filtrables por regi&oacute;n y modo (Todos / Larga dist. / Cercan&iacute;as) y por demoras.
+                  El <strong>icono</strong> indica el producto (Cercan&iacute;as, MD/Regional o LD/AVE) y el <strong>anillo de color</strong> el retraso; debajo, una pastilla con minutos.
+                  Cada marcador lleva una <strong>flecha de sentido</strong> del mismo color.
+                  Pulsa un tren para ficha y <strong>marcha</strong> (misma lectura de demoras que en el Radar: futuras sin &laquo;en hora&raquo; inventada si ya hay retraso).
+                  Se actualiza peri&oacute;dicamente mientras la pantalla est&aacute; abierta.
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1552,7 +1739,21 @@
               <div class="cx-hi-icon">&#128642;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Hub de herramientas</div>
-                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas, Enlazados, <strong>Exclusiones</strong> y <strong>Fiabilidad</strong>. Perfiles con escritura pueden cargar el Excel de combinados y publicarlo o borrarlo para el resto. Atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+                <div class="cx-hi-desc">Desde aqu&iacute; entras a Radar, Mapa, Mallas, Kms, Pantallas, Enlazados, <strong>Exclusiones</strong>, <strong>M&aacute;quinas</strong> y <strong>Fiabilidad</strong>. Perfiles con escritura pueden cargar el Excel de combinados y publicarlo o borrarlo para el resto. Atajos de Cop&eacute;rnico (SITRA, Sin justificar, Transbordados, matr&iacute;cula, ficha veh&iacute;culo, hist&oacute;rico kms&hellip;).</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128642;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">M&aacute;quinas / mantenedores</div>
+                <div class="cx-hi-desc">
+                  Tile <strong>M&aacute;quinas</strong> en Circulaci&oacute;n.
+                  Consulta el cat&aacute;logo de flota: matr&iacute;cula, mantenedor, c&oacute;digo, dep&oacute;sito, producto, estaci&oacute;n, etc.
+                  Filtros por mantenedor, b&uacute;squeda y detalle al pulsar una fila.
+                  <strong>Todos los perfiles</strong> pueden consultarlo (incluido COMERCIAL).
+                  En el Radar, la unidad de la tarjeta sigue saliendo solo con
+                  <strong>matr&iacute;cula &#8594; c&oacute;digo</strong> (no cambia al ampliar el cat&aacute;logo).
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1592,7 +1793,13 @@
               <div class="cx-hi-icon">&#128646;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Mallas y horarios</div>
-                <div class="cx-hi-desc">Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n con datos GTFS. Puedes filtrar por <strong>origen</strong> y, opcionalmente, <strong>destino</strong> (solo trenes que van de A hacia B, destino final o paso). La malla se refresca cada <strong>d&iacute;a operativo</strong> (de 05:00 a 04:59, hora Madrid). Si un tren del cuadro est&aacute; en la flota en vivo, aparece el chip verde parpadeante <strong>CIRCULANDO</strong>. Al abrir la tarjeta se carga la <strong>marcha en tiempo real</strong>; si ADIF emite la v&iacute;a de estacionamiento, se muestra en pr&oacute;xima y destino. En el listado, el chip <strong>V&Iacute;A</strong> es el de la estaci&oacute;n buscada.</div>
+                <div class="cx-hi-desc">
+                  Consulta salidas/llegadas y d&iacute;as de circulaci&oacute;n. Puedes filtrar por <strong>origen</strong> y, opcionalmente, <strong>destino</strong> (trenes de A hacia B).
+                  La malla se refresca cada <strong>d&iacute;a operativo</strong> (05:00&ndash;04:59, hora Madrid).
+                  Si un tren del cuadro est&aacute; en flota, aparece el chip verde <strong>CIRCULANDO</strong>.
+                  Al abrir la tarjeta se carga la <strong>marcha en vivo</strong> (mismas reglas de demora que en el Radar).
+                  Si ADIF emite la v&iacute;a, se muestra en pr&oacute;xima y destino; en el listado, el chip <strong>V&Iacute;A</strong> es el de la estaci&oacute;n buscada.
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1606,7 +1813,7 @@
               <div class="cx-hi-icon">&#128207;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Kil&oacute;metros</div>
-                <div class="cx-hi-desc">Calcula distancia entre estaciones (preferencia ancho UIC cuando aplica). Consulta orientativa: no sustituye Cop&eacute;rnico ni el Planificador.</div>
+                <div class="cx-hi-desc">Suma tramos entre estaciones (preferencia ancho UIC cuando aplica). Tras cada tramo el destino pasa a origen para encadenar. Consulta orientativa: no sustituye Cop&eacute;rnico ni el Planificador.</div>
               </div>
             </div>
           </div>
@@ -1658,10 +1865,28 @@
               </div>
             </div>
             <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128187;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Instalar en el escritorio</div>
+                <div class="cx-hi-desc">
+                  TURNIO es instalable como aplicaci&oacute;n (PWA). En <strong>Chrome</strong> o <strong>Edge</strong>,
+                  abre el men&uacute; &#8942; / &#8942; y elige <strong>Instalar TURNIO</strong> / <strong>Aplicaci&oacute;n</strong>
+                  (o el icono &#10010; en la barra de direcciones). Se abre en ventana propia, sin pesta&ntilde;as.
+                  Para actualizar el front instalado, usa Ajustes &rarr; <strong>Actualizar</strong>.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
               <div class="cx-hi-icon">&#128226;</div>
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Avisos al entrar</div>
-                <div class="cx-hi-desc">Si hay un aviso pendiente, al abrir TURNIO ver&aacute;s un modal. <strong>Aceptar</strong> = no vuelve a salir; <strong>X</strong> = te lo muestra otra vez. Tambi&eacute;n puedes leerlos en Ajustes &rarr; Avisos TURNIO. No es una notificaci&oacute;n push del sistema: hace falta abrir la app.</div>
+                <div class="cx-hi-desc">
+                  Si hay un aviso pendiente, al abrir TURNIO ver&aacute;s un modal.
+                  <strong>Aceptar</strong> = no vuelve a salir; <strong>X</strong> = te lo muestra otra vez.
+                  Tambi&eacute;n en Ajustes &rarr; Avisos TURNIO.
+                  Administraci&oacute;n puede publicar avisos inmediatos o <strong>programados</strong> (hora de activaci&oacute;n).
+                  No es una notificaci&oacute;n push del sistema: hace falta abrir la app.
+                </div>
               </div>
             </div>
             <div class="cx-help-item">
@@ -1683,10 +1908,90 @@
               <div class="cx-hi-body">
                 <div class="cx-hi-title">Cuenta y permisos</div>
                 <div class="cx-hi-desc">
+                  Si Admin te asign&oacute; chat de Telegram, en <strong>Cuenta</strong> puedes pausar o reanudar
+                  <span class="help-badge hb-green">Andaluc&iacute;a</span> y
+                  <span class="help-badge hb-blue">Espa&ntilde;a</span> por separado
+                  (sin borrar la suscripci&oacute;n).<br>
                   <span class="help-badge hb-blue">LECTURA</span> consulta.<br>
                   <span class="help-badge hb-green">CGO</span> escritura (avisos, Vigilante, publicar Combinados&hellip;).<br>
-                  <span class="help-badge hb-amber">COMERCIAL</span> mapa, mallas/horarios y servicios enlazados (vista reducida; sin Radar, exclusiones ni Fiabilidad).<br>
-                  <span class="help-badge hb-gray">INVITADO</span> consulta limitada (sin avisos TURNIO ni sugerencias).
+                  <span class="help-badge hb-amber">COMERCIAL</span> mapa, mallas/horarios, servicios enlazados y consulta de <strong>M&aacute;quinas</strong> (vista reducida; sin Radar, exclusiones ni Fiabilidad).<br>
+                  <span class="help-badge hb-gray">INVITADO</span> consulta limitada (sin avisos TURNIO ni sugerencias).<br>
+                  <span class="help-badge hb-purple" data-requiere-admin hidden>ADMIN</span><span data-requiere-admin hidden> panel de Administraci&oacute;n (usuarios, accesos, avisos&hellip;): ver secci&oacute;n siguiente.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section" data-requiere-admin hidden>
+            <h3>Administraci&oacute;n (solo ADMIN)</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128274;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">D&oacute;nde est&aacute;</div>
+                <div class="cx-hi-desc">Desde <strong>Cuenta</strong> o Circulaci&oacute;n &rarr; Administraci&oacute;n: mantenimiento, accesos, exclusiones, <strong>Venta / CG</strong>, avisos, sugerencias, solicitudes, clave OTP, alta de usuarios y perfiles.</div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128260;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Venta / CG (correspondencias)</div>
+                <div class="cx-hi-desc">
+                  Tile <strong>Venta / CG</strong>: consulta, busca, importa Excel o pulsa
+                  <span class="help-badge hb-amber">Cargar cat&aacute;logo</span> tras la migraci&oacute;n SQL 0010.
+                  Se ignoran circulaciones <strong>84xxx</strong>. Radar usa este diccionario para el chip CG.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128642;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">M&aacute;quinas (gesti&oacute;n)</div>
+                <div class="cx-hi-desc">
+                  En Circulaci&oacute;n &rarr; <strong>M&aacute;quinas</strong>, el bot&oacute;n
+                  <span class="help-badge hb-amber">Gesti&oacute;n</span> (plegado por defecto) abre:
+                  <strong>Importar Excel</strong>, <strong>Cat&aacute;logo HTML</strong> y <strong>+ Alta</strong>.
+                  Tambi&eacute;n puedes editar o borrar desde el detalle de una fila.
+                  El import <strong>no pisa c&oacute;digos</strong> ya guardados (protege el texto de unidad en Radar),
+                  salvo que marques la casilla de riesgo. Tras guardar se regenera el diccionario del Radar.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128100;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Usuarios y perfiles</div>
+                <div class="cx-hi-desc">
+                  Lista de perfiles: rol, activo, caducidad (INVITADO).
+                  Campo <strong>Telegram chat id</strong>: si lo rellenas, ese usuario recibe en Telegram los avisos de retrasos graves del bot operativo (vaciar = no avisar a ese chat).
+                  El usuario puede pausar/reanudar desde <strong>Cuenta</strong> sin borrar el id.
+                  Guarda con el bot&oacute;n de cada ficha.
+                </div>
+              </div>
+            </div>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128202;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Registro de accesos</div>
+                <div class="cx-hi-desc">
+                  Logins recientes filtrables por periodo, resultado, email o ciudad.
+                  La lista va <strong>agrupada por email</strong> (plegada: pulsa para desplegar).
+                  Si el mismo email entra desde <strong>3 o m&aacute;s IPs distintas en 2 horas</strong>, aparece un aviso de <em>posible cuenta compartida</em>.
+                  Puedes <strong>Ocultar</strong> un aviso; luego <strong>Avisos ocultos · Consultar</strong> para verlos otra vez (solo en este dispositivo).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cx-help-section">
+            <h3>Acerca de</h3>
+            <div class="cx-help-item">
+              <div class="cx-hi-icon">&#128100;</div>
+              <div class="cx-hi-body">
+                <div class="cx-hi-title">Autor&iacute;a</div>
+                <div class="cx-hi-desc">
+                  <strong>Jos&eacute; Enrique Rodr&iacute;guez Fenoy</strong><br>
+                  T&eacute;cnico de Centro de Gesti&oacute;n<br>
+                  Gerencia de &Aacute;rea de S.P. Andaluc&iacute;a
                 </div>
               </div>
             </div>
@@ -1894,14 +2199,25 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="./supabase-auth-config.js?v=health1"></script>
-    <script src="./turnio-config.js?v=V.105"></script>
+    <script src="./turnio-config.js?v=V.132"></script>
     <script src="./conexiones.js?v=V.101"></script>
     <script src="./cx-estaciones.js?v=est1"></script>
     <script src="./cx-retrasos.js?v=health1"></script>
     <script src="./cx-encaminar.js?v=enc2"></script>
     <script src="./mallas-gtfs.js?v=mallas12"></script>
-    <script src="./app.js?v=V.105"></script>
+    <script src="./app.js?v=V.132"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('./sw.js', {
+            scope: './',
+            updateViaCache: 'none'
+          }).catch(function () {});
+        });
+      }
+    </script>
   </body>
 </html>
 

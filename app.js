@@ -17,8 +17,8 @@
   var clientKey = 'turnio_external_client_id';
   var sessionKey = 'turnio_external_session_token';
   var mode = 'TODOS';
-  /** Filtro fino por producto (AVE, Alvia…). Vacío = todos. */
-  var productFilter = '';
+  /** Filtros finos por producto (AVE, Alvia…). Array vacío = todos. Se pueden marcar varios. */
+  var productFilters = [];
   var RADAR_PRODUCTO_MATCH_ = {
     AVE: ['AVE', 'AVE Int.', 'AVE TGV'],
     Avlo: ['Avlo'],
@@ -374,7 +374,11 @@
       active: p.active !== false,
       expires_at: p.expires_at || p.expiresAt || '',
       display_name: p.display_name || p.displayName || p.nombre || '',
-      estaciones_preferidas: Array.isArray(p.estaciones_preferidas) ? p.estaciones_preferidas : null
+      estaciones_preferidas: Array.isArray(p.estaciones_preferidas) ? p.estaciones_preferidas : null,
+      has_telegram: p.has_telegram === true || !!(p.telegram_chat_id),
+      telegram_avisos_activo: p.telegram_avisos_activo !== false,
+      telegram_avisos_andalucia: p.telegram_avisos_andalucia !== false,
+      telegram_avisos_espana: p.telegram_avisos_espana === true
     };
   }
   function esComercial_() {
@@ -420,6 +424,8 @@
     document.querySelectorAll('[data-solo-comercial]').forEach(function (el) {
       el.hidden = !esComercial_();
     });
+    // Refresca aviso visual OFF del Vigilante según permiso de escritura.
+    try { setVigilanteUI(vigilanteActivo); } catch (_) { /* */ }
     var roleText = 'Rol: ' + sessionProfile.role_code;
     var badge = document.getElementById('user-role');
     if (badge) { badge.textContent = roleText; badge.hidden = false; }
@@ -427,7 +433,63 @@
     if (profileRole) profileRole.textContent = roleText;
     var profilePermissions = document.getElementById('profile-permissions');
     if (profilePermissions) profilePermissions.textContent = textoPermisoPerfil_(sessionProfile);
+    pintarCuentaTelegram_();
   }
+
+  function pintarCuentaTelegram_() {
+    var box = document.getElementById('cuenta-telegram-box');
+    var btnAnd = document.getElementById('btn-cuenta-telegram-and');
+    var btnEsp = document.getElementById('btn-cuenta-telegram-esp');
+    var hint = document.getElementById('cuenta-telegram-hint');
+    if (!box) return;
+    var has = !!sessionProfile.has_telegram;
+    box.hidden = !has;
+    if (!has) return;
+    var andOn = sessionProfile.telegram_avisos_andalucia !== false;
+    var espOn = sessionProfile.telegram_avisos_espana === true;
+    function paintBtn_(btn, on, label) {
+      if (!btn) return;
+      btn.textContent = label + ': ' + (on ? 'ON' : 'OFF');
+      btn.classList.toggle('is-on', on);
+      btn.classList.toggle('is-off', !on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    paintBtn_(btnAnd, andOn, 'Andalucía');
+    paintBtn_(btnEsp, espOn, 'España');
+    if (hint) {
+      hint.textContent = 'Andalucía = @RadarAndaluciaBot · España = @RadarCGO_EspanaBot. Pausar no borra tu chat id.';
+    }
+  }
+
+  async function toggleCuentaTelegramCanal_(canal) {
+    if (!sessionProfile.has_telegram) return;
+    var c = String(canal || '').toLowerCase();
+    if (c !== 'andalucia' && c !== 'espana') return;
+    var btn = document.getElementById(c === 'andalucia' ? 'btn-cuenta-telegram-and' : 'btn-cuenta-telegram-esp');
+    var cur = c === 'andalucia'
+      ? (sessionProfile.telegram_avisos_andalucia !== false)
+      : (sessionProfile.telegram_avisos_espana === true);
+    var next = !cur;
+    var payload = {};
+    if (c === 'andalucia') payload.telegram_avisos_andalucia = next;
+    else payload.telegram_avisos_espana = next;
+    if (btn) btn.disabled = true;
+    try {
+      var d = await call('preferencias_telegram_guardar', payload);
+      sessionProfile.telegram_avisos_andalucia = !(d && d.telegram_avisos_andalucia === false);
+      sessionProfile.telegram_avisos_espana = d && d.telegram_avisos_espana === true;
+      sessionProfile.telegram_avisos_activo = !(d && d.telegram_avisos_activo === false);
+      if (d && typeof d.has_telegram === 'boolean') sessionProfile.has_telegram = d.has_telegram;
+      pintarCuentaTelegram_();
+      var nombre = c === 'andalucia' ? 'Andalucía' : 'España';
+      toast(nombre + (next ? ': avisos ON' : ': avisos OFF'), 'success');
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function exigirEscritura_(accion) {
     if (puedeEscribir) return true;
     toast((accion || 'Esta acción') + ' no está disponible con tu rol de ' + sessionProfile.role_code + '.', 'error');
@@ -505,7 +567,10 @@
             '</span>' +
             '<span class="admin-row-tags">' +
               '<span class="admin-pill admin-pill--role">' + esc(role) + '</span>' +
-              (p.telegram_chat_id ? '<span class="admin-pill admin-pill--tg">TG</span>' : '') +
+              (p.telegram_chat_id
+                ? ('<span class="admin-pill admin-pill--tg">' +
+                  (p.telegram_avisos_activo === false ? 'TG pausado' : 'TG') + '</span>')
+                : '') +
               (p.active ? '' : '<span class="admin-pill">Off</span>') +
               (p.linked ? '' : '<span class="admin-pill">Sin Auth</span>') +
             '</span>' +
@@ -524,6 +589,11 @@
                 esc(p.telegram_chat_id || '') + '">' +
                 '<small class="admin-tg-hint">Retrasos graves → @RadarAndaluciaBot. Vaciar para quitar.</small>' +
               '</label>' +
+              (p.telegram_chat_id
+                ? ('<label class="admin-active-lab"><input type="checkbox" class="admin-tg-activo"' +
+                  (p.telegram_avisos_activo === false ? '' : ' checked') +
+                  '> Avisos Telegram activos</label>')
+                : '') +
             '</div>' +
             '<div class="admin-card-foot">' +
               '<span class="admin-card-meta">Actualizado: ' + esc(fmtFechaCorta_(p.updated_at)) +
@@ -570,6 +640,7 @@
     var activeEl = card.querySelector('.admin-active');
     var expEl = card.querySelector('.admin-expires');
     var tgEl = card.querySelector('.admin-telegram');
+    var tgActivoEl = card.querySelector('.admin-tg-activo');
     var btn = card.querySelector('.admin-save');
     if (!id || !roleSel) return;
     var role = String(roleSel.value || '').toUpperCase();
@@ -582,13 +653,15 @@
     }
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
     try {
-      await call('admin_actualizar_perfil', {
+      var payload = {
         profile_id: id,
         role_code: role,
         active: active,
         expires_at: expiresAt || null,
         telegram_chat_id: telegramChatId
-      });
+      };
+      if (tgActivoEl) payload.telegram_avisos_activo = !!tgActivoEl.checked;
+      await call('admin_actualizar_perfil', payload);
       toast('Perfil actualizado.', 'success');
       await cargarAdminPerfiles_();
     } catch (err) {
@@ -931,27 +1004,102 @@
     }).join('');
   }
 
-  function pintarAlertasCompartidas_(alertas) {
-    var box = document.getElementById('admin-accesos-alertas');
-    if (!box) return;
-    var rows = Array.isArray(alertas) ? alertas : [];
-    if (!rows.length) {
-      box.hidden = true;
-      box.innerHTML = '';
-      return;
+  function claveAlertaCompartida_(a) {
+    return String(a && a.email || '').toLowerCase() + '|' +
+      String(a && a.hasta || '') + '|' +
+      String(a && a.n_ips || 0);
+  }
+  var LS_ALERTAS_COMP_OCULTAS_ = 'turnio_accesos_comp_ocultas_v1';
+  var adminAlertasCompartidasCache_ = [];
+  var adminAlertasCompartidasMostrarOcultas_ = false;
+
+  function leerAlertasCompartidasOcultas_() {
+    try {
+      var raw = localStorage.getItem(LS_ALERTAS_COMP_OCULTAS_);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.map(String) : [];
+    } catch (_) {
+      return [];
     }
-    box.hidden = false;
-    box.innerHTML = rows.map(function (a) {
-      var ips = (a.ips || []).join(', ');
-      var lugares = (a.lugares || []).join(' · ');
-      return '<button type="button" class="admin-acceso-alerta" data-acceso-email="' + esc(a.email || '') + '">' +
+  }
+  function guardarAlertasCompartidasOcultas_(keys) {
+    try {
+      localStorage.setItem(LS_ALERTAS_COMP_OCULTAS_, JSON.stringify(keys || []));
+    } catch (_) { /* */ }
+  }
+  function ocultarAlertaCompartida_(clave) {
+    var k = String(clave || '');
+    if (!k) return;
+    var keys = leerAlertasCompartidasOcultas_();
+    if (keys.indexOf(k) < 0) keys.push(k);
+    // Evitar crecimiento infinito
+    if (keys.length > 80) keys = keys.slice(-80);
+    guardarAlertasCompartidasOcultas_(keys);
+  }
+  function htmlAlertaCompartidaRow_(a, ocultable) {
+    var ips = (a.ips || []).join(', ');
+    var lugares = (a.lugares || []).join(' · ');
+    var clave = claveAlertaCompartida_(a);
+    return '<div class="admin-acceso-alerta-wrap">' +
+      '<button type="button" class="admin-acceso-alerta" data-acceso-email="' + esc(a.email || '') + '">' +
         '<b>Posible cuenta compartida · ' + esc(a.email || '—') + '</b>' +
         '<span>' + esc(String(a.n_ips || 0)) + ' IPs en ' + esc(String(a.ventana_min || 120)) + ' min' +
         (a.role ? (' · ' + esc(a.role)) : '') +
         '<br>' + esc(ips) +
         (lugares ? ('<br>' + esc(lugares)) : '') +
         '<br>' + esc(fmtAccesoHora_(a.desde)) + ' → ' + esc(fmtAccesoHora_(a.hasta)) +
-        '</span></button>';
+        '</span>' +
+      '</button>' +
+      (ocultable
+        ? '<button type="button" class="admin-acceso-alerta-hide" data-alerta-hide="' + esc(clave) +
+          '" title="Ocultar aviso">Ocultar</button>'
+        : '') +
+      '</div>';
+  }
+  function pintarAlertasCompartidas_(alertas) {
+    var box = document.getElementById('admin-accesos-alertas');
+    var bar = document.getElementById('admin-accesos-alertas-bar');
+    if (!box) return;
+    var rows = Array.isArray(alertas) ? alertas : [];
+    adminAlertasCompartidasCache_ = rows;
+    var ocultas = leerAlertasCompartidasOcultas_();
+    var visibles = [];
+    var escondidas = [];
+    rows.forEach(function (a) {
+      var k = claveAlertaCompartida_(a);
+      if (ocultas.indexOf(k) >= 0) escondidas.push(a);
+      else visibles.push(a);
+    });
+
+    if (bar) {
+      if (escondidas.length && !adminAlertasCompartidasMostrarOcultas_) {
+        bar.hidden = false;
+        bar.innerHTML = '<button type="button" class="btn secondary admin-acceso-alertas-toggle" id="btn-admin-accesos-ver-ocultas">' +
+          'Avisos ocultos (' + escondidas.length + ') · Consultar</button>';
+      } else if (escondidas.length && adminAlertasCompartidasMostrarOcultas_) {
+        bar.hidden = false;
+        bar.innerHTML = '<button type="button" class="btn secondary admin-acceso-alertas-toggle" id="btn-admin-accesos-ver-ocultas">' +
+          'Ocultar de nuevo (' + escondidas.length + ')</button>';
+      } else {
+        bar.hidden = true;
+        bar.innerHTML = '';
+      }
+    }
+
+    var mostrar = visibles.slice();
+    if (adminAlertasCompartidasMostrarOcultas_) {
+      escondidas.forEach(function (a) { mostrar.push(a); });
+    }
+    if (!mostrar.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = mostrar.map(function (a) {
+      var k = claveAlertaCompartida_(a);
+      var yaOculta = ocultas.indexOf(k) >= 0;
+      return htmlAlertaCompartidaRow_(a, !yaOculta);
     }).join('');
   }
 
@@ -960,31 +1108,69 @@
     var meta = document.getElementById('admin-accesos-meta');
     if (!box) return;
     var rows = Array.isArray(lista) ? lista : [];
-    if (meta) {
-      meta.textContent = rows.length
-        ? (rows.length + ' registro' + (rows.length === 1 ? '' : 's'))
-        : 'Sin accesos con estos filtros.';
-    }
     pintarAlertasCompartidas_(alertas);
     pintarResumenCiudadesAccesos_(resumen);
     if (!rows.length) {
+      if (meta) meta.textContent = 'Sin accesos con estos filtros.';
       box.innerHTML = '<div class="empty" style="padding:8px;">Sin datos.</div>';
       return;
     }
-    box.innerHTML = rows.map(function (a) {
-      var ok = !!a.ok;
-      return '<article class="admin-acceso-item' + (ok ? '' : ' is-denied') + '">' +
-        '<div class="admin-acceso-top">' +
-          '<b>' + esc(a.email || '—') + '</b>' +
-          '<span class="admin-acceso-badge ' + (ok ? 'ok' : 'no') + '">' + (ok ? 'OK' : 'DENEGADO') + '</span>' +
-        '</div>' +
-        '<p class="admin-acceso-meta">' +
-          esc(fmtAccesoHora_(a.created_at)) +
-          ' · ' + esc(a.role || '—') +
-          ' · ' + esc(a.via || '—') +
-          (ok ? '' : (' · ' + esc(etiquetaMotivoAcceso_(a.motivo)))) +
-          '<br>📍 ' + esc(lugarAccesoTxt_(a)) +
-        '</p></article>';
+
+    var grupos = Object.create(null);
+    var orden = [];
+    rows.forEach(function (a) {
+      var email = String(a && a.email || '').trim().toLowerCase() || '—';
+      if (!grupos[email]) {
+        grupos[email] = { email: a.email || '—', role: a.role || '', items: [], ok: 0, no: 0, ips: Object.create(null) };
+        orden.push(email);
+      }
+      var g = grupos[email];
+      g.items.push(a);
+      if (a.ok) g.ok++;
+      else g.no++;
+      if (a.role) g.role = a.role;
+      var ip = String(a.ip || '').trim();
+      if (ip) g.ips[ip] = true;
+    });
+
+    if (meta) {
+      meta.textContent = orden.length + ' usuario' + (orden.length === 1 ? '' : 's') +
+        ' · ' + rows.length + ' registro' + (rows.length === 1 ? '' : 's');
+    }
+
+    box.innerHTML = orden.map(function (emailKey, gi) {
+      var g = grupos[emailKey];
+      var nIps = Object.keys(g.ips).length;
+      var abierto = false;
+      var filas = g.items.map(function (a) {
+        var ok = !!a.ok;
+        return '<article class="admin-acceso-item' + (ok ? '' : ' is-denied') + '">' +
+          '<div class="admin-acceso-top">' +
+            '<span class="admin-acceso-badge ' + (ok ? 'ok' : 'no') + '">' + (ok ? 'OK' : 'DENEGADO') + '</span>' +
+          '</div>' +
+          '<p class="admin-acceso-meta">' +
+            esc(fmtAccesoHora_(a.created_at)) +
+            ' · ' + esc(a.via || '—') +
+            (ok ? '' : (' · ' + esc(etiquetaMotivoAcceso_(a.motivo)))) +
+            '<br>📍 ' + esc(lugarAccesoTxt_(a)) +
+            (a.ip ? (' · <code>' + esc(a.ip) + '</code>') : '') +
+          '</p></article>';
+      }).join('');
+      return '<section class="admin-acceso-grupo' + (abierto ? ' open' : '') + '" data-acceso-grupo="' + esc(emailKey) + '">' +
+        '<button type="button" class="admin-acceso-grupo-head" data-acceso-grupo-toggle aria-expanded="' + (abierto ? 'true' : 'false') + '">' +
+          '<span class="admin-acceso-grupo-who">' +
+            '<b>' + esc(g.email) + '</b>' +
+            '<span>' + esc(g.role || '—') +
+              ' · ' + g.items.length + ' acceso' + (g.items.length === 1 ? '' : 's') +
+              (g.ok ? (' · ' + g.ok + ' OK') : '') +
+              (g.no ? (' · ' + g.no + ' deneg.') : '') +
+              (nIps ? (' · ' + nIps + ' IP' + (nIps === 1 ? '' : 's')) : '') +
+            '</span>' +
+          '</span>' +
+          '<span class="admin-acceso-grupo-chev" aria-hidden="true">' + (abierto ? '▾' : '▸') + '</span>' +
+        '</button>' +
+        '<div class="admin-acceso-grupo-body"' + (abierto ? '' : ' hidden') + '>' + filas + '</div>' +
+      '</section>';
     }).join('');
   }
 
@@ -1694,6 +1880,493 @@
     }
   }
 
+  var adminCorrItems_ = [];
+  async function cargarAdminCorrespondencias_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-corr-meta');
+    var lista = document.getElementById('admin-corr-lista');
+    if (meta) meta.textContent = 'Cargando…';
+    try {
+      var d = await call('correspondencias_listar');
+      adminCorrItems_ = Array.isArray(d && d.items) ? d.items : [];
+      if (meta) {
+        meta.textContent = adminCorrItems_.length + ' tramos' +
+          (d && d.fuente ? (' · ' + d.fuente) : '') +
+          (d && d.schema_pending ? ' · falta SQL 0010 en Supabase' : '');
+      }
+      pintarAdminCorrespondencias_();
+    } catch (err) {
+      adminCorrItems_ = [];
+      if (meta) meta.textContent = String(err.message || err);
+      if (lista) lista.innerHTML = '';
+    }
+  }
+
+  function pintarAdminCorrespondencias_() {
+    var lista = document.getElementById('admin-corr-lista');
+    if (!lista) return;
+    var q = String((document.getElementById('admin-corr-buscar') || {}).value || '').trim().toLowerCase();
+    var items = adminCorrItems_.filter(function (it) {
+      if (!q) return true;
+      return [it.venta, it.circulacion, it.origen_nombre, it.destino_nombre, it.producto]
+        .join(' ').toLowerCase().indexOf(q) >= 0;
+    }).slice(0, 200);
+    if (!items.length) {
+      lista.innerHTML = '<div class="empty" style="padding:8px;">Sin resultados.</div>';
+      return;
+    }
+    lista.innerHTML = items.map(function (it) {
+      return '<div class="admin-excl-item">' +
+        '<div class="admin-excl-item-main">' +
+        '<div class="admin-excl-item-title">Venta ' + esc(it.venta) +
+        (String(it.venta) === String(it.circulacion) ? '' : (' → CG ' + esc(it.circulacion))) +
+        '</div>' +
+        '<div class="admin-excl-item-meta">' +
+        esc((it.origen_nombre || '?') + ' → ' + (it.destino_nombre || '?')) +
+        (it.hora_salida ? (' · ' + esc(it.hora_salida)) : '') +
+        (it.producto ? (' · ' + esc(it.producto)) : '') +
+        '</div></div>' +
+        (it.id
+          ? '<button type="button" class="btn secondary" data-corr-borrar="' + esc(it.id) + '">Quitar</button>'
+          : '') +
+        '</div>';
+    }).join('');
+  }
+
+  async function adminCorrSeed_() {
+    if (!sessionProfile.is_admin) return;
+    var meta = document.getElementById('admin-corr-meta');
+    try {
+      if (meta) meta.textContent = 'Importando catálogo…';
+      var d = await call('admin_correspondencias_seed', { reemplazar: true });
+      toast('Correspondencias cargadas: ' + (d && d.escritas) +
+        (d && d.ignoradas_84 ? (' (84xxx ignoradas: ' + d.ignoradas_84 + ')') : ''), 'success');
+      await cargarAdminCorrespondencias_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+      if (meta) meta.textContent = String(err.message || err);
+    }
+  }
+
+  async function adminCorrImportExcel_(file) {
+    if (!sessionProfile.is_admin || !file) return;
+    if (!window.XLSX) {
+      toast('No está cargado el lector Excel (SheetJS).', 'error');
+      return;
+    }
+    var meta = document.getElementById('admin-corr-meta');
+    try {
+      if (meta) meta.textContent = 'Leyendo Excel…';
+      var buf = await file.arrayBuffer();
+      var wb = window.XLSX.read(buf, { type: 'array' });
+      var rows = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      var chunk = 400;
+      var total = 0;
+      var ign = 0;
+      for (var i = 0; i < rows.length; i += chunk) {
+        if (meta) meta.textContent = 'Importando ' + Math.min(i + chunk, rows.length) + '/' + rows.length;
+        var d = await call('admin_correspondencias_importar', {
+          filas: rows.slice(i, i + chunk),
+          reemplazar: i === 0
+        });
+        total += Number(d && d.escritas) || 0;
+        ign += Number(d && d.ignoradas_84) || 0;
+      }
+      toast('Importadas ' + total + ' filas' + (ign ? (' · 84xxx ignoradas: ' + ign) : ''), 'success');
+      await cargarAdminCorrespondencias_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  // ── Máquinas (catálogo; Radar solo usa matricula→codigo) ─────────────────
+  var maqState_ = {
+    all: [],
+    filtered: [],
+    filterCode: '',
+    search: '',
+    sortCol: 'matricula',
+    sortDir: 1,
+    page: 1,
+    pageSize: 50,
+    codes: {},
+    loaded: false
+  };
+  var MAQ_COLORS_ = {
+    RM: { bg: '#dbeafe', text: '#1d4ed8' },
+    AC: { bg: '#dcfce7', text: '#15803d' },
+    IR: { bg: '#fef9c3', text: '#854d0e' },
+    BT: { bg: '#fce7f3', text: '#9d174d' },
+    AT: { bg: '#ede9fe', text: '#6b21a8' },
+    ER: { bg: '#ffedd5', text: '#c2410c' },
+    NE: { bg: '#cffafe', text: '#0e7490' },
+    TA: { bg: '#f0fdf4', text: '#166534' },
+    'TAL&BTR': { bg: '#fdf4ff', text: '#7e22ce' },
+    'AC+NE': { bg: '#ecfeff', text: '#0e7490' },
+    DEFAULT: { bg: '#f1f5f9', text: '#475569' }
+  };
+  var MAQ_FIELD_LABELS_ = [
+    ['matricula', 'Matrícula'],
+    ['codigo', 'Código'],
+    ['mantenedor', 'Mantenedor'],
+    ['serie', 'Serie'],
+    ['descripcion', 'Descripción'],
+    ['deposito', 'Depósito'],
+    ['estacion', 'Estación'],
+    ['producto', 'Producto'],
+    ['base_mantenimiento', 'Base de mantenimiento'],
+    ['ancho', 'Ancho'],
+    ['traccion', 'Tracción'],
+    ['tension', 'Tensión'],
+    ['vmax', 'V. máx.'],
+    ['con_rampa', 'Con rampa'],
+    ['gerencia', 'Gerencia'],
+    ['area_gestion', 'Área gestión'],
+    ['comunicaciones', 'Comunicaciones'],
+    ['senalizaciones', 'Señalizaciones']
+  ];
+
+  function maqColor_(code) {
+    return MAQ_COLORS_[code] || MAQ_COLORS_.DEFAULT;
+  }
+
+  function maqNombreCode_(code) {
+    var c = String(code || '');
+    var map = maqState_.codes || {};
+    var keys = Object.keys(map);
+    for (var i = 0; i < keys.length; i++) {
+      if (map[keys[i]] === c) return keys[i];
+    }
+    return c || '—';
+  }
+
+  async function cargarMaquinas_() {
+    var badge = document.getElementById('maq-total-badge');
+    if (badge) badge.textContent = 'Cargando…';
+    try {
+      var d = await call('maquinas_listar');
+      maqState_.all = Array.isArray(d && d.items) ? d.items.slice() : [];
+      maqState_.codes = (d && d.codes) || maqState_.codes || {};
+      maqState_.loaded = true;
+      maqState_.page = 1;
+      maqBuildBadges_();
+      maqApplyFilters_();
+    } catch (err) {
+      maqState_.all = [];
+      maqState_.filtered = [];
+      if (badge) badge.textContent = 'Error';
+      var body = document.getElementById('maq-table-body');
+      if (body) {
+        body.innerHTML = '<tr><td colspan="7" class="maq-error-cell">' +
+          esc(String(err.message || err)) + '</td></tr>';
+      }
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  function maqBuildBadges_() {
+    var container = document.getElementById('maq-filter-badges');
+    if (!container) return;
+    var counts = {};
+    maqState_.all.forEach(function (r) {
+      var c = String(r.codigo || '?');
+      counts[c] = (counts[c] || 0) + 1;
+    });
+    var html = '<span class="maq-filter-label">MANTENEDOR:</span>';
+    html += '<button type="button" class="maq-badge' + (maqState_.filterCode === '' ? ' active' : '') +
+      '" data-maq-filter="" style="background:#1e293b;color:#fff">Todos ' +
+      '<span class="maq-badge-n">' + maqState_.all.length + '</span></button>';
+    Object.keys(counts).sort().forEach(function (code) {
+      var col = maqColor_(code);
+      var name = maqNombreCode_(code);
+      html += '<button type="button" class="maq-badge' + (maqState_.filterCode === code ? ' active' : '') +
+        '" data-maq-filter="' + esc(code) + '" style="background:' + col.bg + ';color:' + col.text + '">' +
+        '<strong>' + esc(code) + '</strong> <span class="maq-badge-name">' + esc(name) + '</span>' +
+        '<span class="maq-badge-n">' + counts[code] + '</span></button>';
+    });
+    container.innerHTML = html;
+  }
+
+  function maqApplyFilters_() {
+    var q = String(maqState_.search || '').toLowerCase();
+    maqState_.filtered = maqState_.all.filter(function (r) {
+      if (maqState_.filterCode && String(r.codigo || '') !== maqState_.filterCode) return false;
+      if (!q) return true;
+      var hay = [r.matricula, r.descripcion, r.deposito, r.mantenedor, r.producto, r.estacion, r.codigo]
+        .join(' ').toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+    var col = maqState_.sortCol;
+    var dir = maqState_.sortDir;
+    maqState_.filtered.sort(function (a, b) {
+      var va = a[col] == null ? '' : a[col];
+      var vb = b[col] == null ? '' : b[col];
+      if (!isNaN(va) && !isNaN(vb) && va !== '' && vb !== '') {
+        va = Number(va); vb = Number(vb);
+      } else {
+        va = String(va).toLowerCase();
+        vb = String(vb).toLowerCase();
+      }
+      if (va < vb) return -dir;
+      if (va > vb) return dir;
+      return 0;
+    });
+    maqState_.page = 1;
+    maqRenderTable_();
+    maqRenderPagination_();
+    var badge = document.getElementById('maq-total-badge');
+    if (badge) {
+      badge.textContent = maqState_.filtered.length + ' / ' + maqState_.all.length + ' máquinas';
+    }
+  }
+
+  function maqRenderTable_() {
+    var tbody = document.getElementById('maq-table-body');
+    var empty = document.getElementById('maq-no-results');
+    if (!tbody) return;
+    var start = (maqState_.page - 1) * maqState_.pageSize;
+    var page = maqState_.filtered.slice(start, start + maqState_.pageSize);
+    if (!maqState_.filtered.length) {
+      tbody.innerHTML = '';
+      if (empty) empty.hidden = false;
+      return;
+    }
+    if (empty) empty.hidden = true;
+    tbody.innerHTML = page.map(function (r, i) {
+      var code = String(r.codigo || '—');
+      var col = maqColor_(code);
+      var idx = start + i;
+      return '<tr class="maq-row" data-maq-idx="' + idx + '">' +
+        '<td><strong>' + esc(r.matricula || '—') + '</strong></td>' +
+        '<td>' + esc(r.descripcion || '—') + '</td>' +
+        '<td>' + esc(r.deposito || '—') + '</td>' +
+        '<td>' + esc(r.producto || '—') + '</td>' +
+        '<td>' + esc(r.mantenedor || '—') + '</td>' +
+        '<td><span class="maq-code-badge" style="background:' + col.bg + ';color:' + col.text + '">' +
+        esc(code) + '</span></td>' +
+        '<td>' + esc(r.estacion || '—') + '</td></tr>';
+    }).join('');
+  }
+
+  function maqRenderPagination_() {
+    var pg = document.getElementById('maq-pagination');
+    if (!pg) return;
+    var total = Math.ceil(maqState_.filtered.length / maqState_.pageSize) || 1;
+    if (maqState_.filtered.length <= maqState_.pageSize) {
+      pg.innerHTML = '<span>Mostrando ' + maqState_.filtered.length + ' registros</span>';
+      return;
+    }
+    var start = (maqState_.page - 1) * maqState_.pageSize + 1;
+    var end = Math.min(maqState_.page * maqState_.pageSize, maqState_.filtered.length);
+    pg.innerHTML =
+      '<span>Mostrando ' + start + '–' + end + ' de ' + maqState_.filtered.length + '</span>' +
+      '<div class="maq-pager">' +
+      '<button type="button" class="btn secondary" data-maq-page="' + (maqState_.page - 1) + '"' +
+      (maqState_.page <= 1 ? ' disabled' : '') + '>◀</button>' +
+      '<span>Pág. ' + maqState_.page + ' / ' + total + '</span>' +
+      '<button type="button" class="btn secondary" data-maq-page="' + (maqState_.page + 1) + '"' +
+      (maqState_.page >= total ? ' disabled' : '') + '>▶</button></div>';
+  }
+
+  function maqAbrirDetalle_(idx, modoEdicion) {
+    var r = maqState_.filtered[idx];
+    if (!r) return;
+    var box = document.getElementById('maq-modal-content');
+    var modal = document.getElementById('maq-modal');
+    if (!box || !modal) return;
+    var code = String(r.codigo || '—');
+    var col = maqColor_(code);
+    var admin = !!sessionProfile.is_admin;
+    var edit = !!(modoEdicion && admin);
+    var html = '<div class="maq-modal-hero">' +
+      '<span class="maq-modal-code" style="background:' + col.bg + ';color:' + col.text + '">' + esc(code) + '</span>' +
+      '<div><div class="maq-modal-mat" id="maq-modal-title">' + esc(r.matricula || '—') + '</div>' +
+      '<div class="maq-modal-sub">' + esc(r.mantenedor || maqNombreCode_(code)) + '</div></div></div>';
+    if (edit) {
+      html += '<form id="maq-edit-form" class="maq-edit-form">';
+      MAQ_FIELD_LABELS_.forEach(function (pair) {
+        var k = pair[0];
+        var lab = pair[1];
+        var val = r[k] == null ? '' : String(r[k]);
+        var ro = (k === 'matricula' && r.matricula) ? ' readonly' : '';
+        html += '<label class="maq-edit-label">' + esc(lab) +
+          '<input name="' + esc(k) + '" value="' + esc(val) + '"' + ro + '></label>';
+      });
+      html += '<div class="maq-modal-actions">' +
+        '<button type="submit" class="btn primary">Guardar</button>' +
+        '<button type="button" class="btn secondary" id="btn-maq-cancelar-edit">Cancelar</button>';
+      if (r.matricula) {
+        html += '<button type="button" class="btn secondary maq-btn-danger" id="btn-maq-borrar" data-mat="' +
+          esc(r.matricula) + '">Borrar</button>';
+      }
+      html += '</div></form>';
+    } else {
+      html += '<div class="maq-detail-grid">';
+      MAQ_FIELD_LABELS_.forEach(function (pair) {
+        var k = pair[0];
+        if (k === 'matricula' || k === 'codigo' || k === 'mantenedor') return;
+        var v = r[k];
+        if (k === 'vmax' && v) v = v + ' km/h';
+        html += '<div class="maq-detail-item"><div class="maq-detail-label">' + esc(pair[1]) +
+          '</div><div class="maq-detail-value">' + esc(v || '—') + '</div></div>';
+      });
+      html += '</div>';
+      if (admin) {
+        html += '<div class="maq-modal-actions">' +
+          '<button type="button" class="btn primary" id="btn-maq-editar" data-maq-idx="' + idx +
+          '">Editar</button></div>';
+      }
+    }
+    box.innerHTML = html;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function maqCerrarModal_() {
+    var modal = document.getElementById('maq-modal');
+    if (modal) modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  async function maqGuardarForm_(ev) {
+    if (ev) ev.preventDefault();
+    if (!sessionProfile.is_admin) return;
+    var form = document.getElementById('maq-edit-form');
+    if (!form) return;
+    var fd = new FormData(form);
+    var fila = {};
+    MAQ_FIELD_LABELS_.forEach(function (pair) {
+      fila[pair[0]] = String(fd.get(pair[0]) || '').trim();
+    });
+    try {
+      await call('admin_maquinas_guardar', { fila: fila });
+      toast('Máquina guardada. Diccionario Radar actualizado.', 'success');
+      maqCerrarModal_();
+      await cargarMaquinas_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  async function maqBorrar_(mat) {
+    if (!sessionProfile.is_admin || !mat) return;
+    if (!window.confirm('¿Borrar la máquina ' + mat + '? Dejará de aportar código en Radar.')) return;
+    try {
+      await call('admin_maquinas_borrar', { matricula: mat });
+      toast('Máquina borrada.', 'success');
+      maqCerrarModal_();
+      await cargarMaquinas_();
+    } catch (err) {
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  async function maqImportExcel_(file) {
+    if (!sessionProfile.is_admin || !file) return;
+    var status = document.getElementById('maq-upload-status');
+    if (!window.XLSX) {
+      toast('No está cargado el lector Excel (SheetJS).', 'error');
+      return;
+    }
+    if (status) {
+      status.hidden = false;
+      status.textContent = 'Procesando Excel…';
+      status.className = 'maq-upload-status is-busy';
+    }
+    try {
+      var buf = await file.arrayBuffer();
+      var wb = window.XLSX.read(buf, { type: 'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = window.XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!rows.length) throw new Error('El Excel no tiene filas.');
+      await maqImportFilas_(rows, status);
+    } catch (err) {
+      if (status) {
+        status.textContent = String(err.message || err);
+        status.className = 'maq-upload-status is-err';
+      }
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  async function maqImportFilas_(rows, status) {
+    var panel = document.getElementById('maq-admin-panel');
+    var toggle = document.getElementById('btn-maq-admin-toggle');
+    if (panel) {
+      panel.hidden = false;
+      if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    }
+    var actualizar = !!(document.getElementById('maq-actualizar-codigos') || {}).checked;
+    var chunk = 400;
+    var totalEscritas = 0;
+    var preservados = 0;
+    for (var i = 0; i < rows.length; i += chunk) {
+      if (status) {
+      status.hidden = false;
+      status.textContent = 'Importando ' + Math.min(i + chunk, rows.length) + ' / ' + rows.length + '…';
+      status.className = 'maq-upload-status is-busy';
+    }
+      var d = await call('admin_maquinas_importar', {
+        filas: rows.slice(i, i + chunk),
+        actualizar_codigos: actualizar
+      });
+      totalEscritas += Number(d && d.escritas) || 0;
+      preservados += Number(d && d.codigos_preservados) || 0;
+    }
+    if (status) {
+      status.textContent = 'OK: ' + totalEscritas + ' filas' +
+        (preservados ? (' · ' + preservados + ' códigos preservados') : '');
+      status.className = 'maq-upload-status is-ok';
+    }
+    toast('Catálogo importado (' + totalEscritas + ').', 'success');
+    await cargarMaquinas_();
+  }
+
+  async function maqImportCatalogoHtml_() {
+    if (!sessionProfile.is_admin) return;
+    var status = document.getElementById('maq-upload-status');
+    try {
+      if (status) {
+        status.hidden = false;
+        status.textContent = 'Cargando catálogo HTML…';
+        status.className = 'maq-upload-status is-busy';
+      }
+      var r = await fetch('./maquinas-catalogo.json?v=1', { cache: 'no-store' });
+      if (!r.ok) throw new Error('No se pudo leer maquinas-catalogo.json');
+      var rows = await r.json();
+      if (!Array.isArray(rows) || !rows.length) throw new Error('Catálogo vacío.');
+      await maqImportFilas_(rows, status);
+    } catch (err) {
+      if (status) {
+        status.textContent = String(err.message || err);
+        status.className = 'maq-upload-status is-err';
+      }
+      toast(String(err.message || err), 'error');
+    }
+  }
+
+  function maqNueva_() {
+    if (!sessionProfile.is_admin) return;
+    var box = document.getElementById('maq-modal-content');
+    var modal = document.getElementById('maq-modal');
+    if (!box || !modal) return;
+    var html = '<div class="maq-modal-hero"><div><div class="maq-modal-mat" id="maq-modal-title">Nueva máquina</div>' +
+      '<div class="maq-modal-sub">Alta manual (ADMIN)</div></div></div>' +
+      '<form id="maq-edit-form" class="maq-edit-form">';
+    MAQ_FIELD_LABELS_.forEach(function (pair) {
+      html += '<label class="maq-edit-label">' + esc(pair[1]) +
+        '<input name="' + esc(pair[0]) + '" value=""' +
+        (pair[0] === 'matricula' || pair[0] === 'codigo' ? ' required' : '') + '></label>';
+    });
+    html += '<div class="maq-modal-actions">' +
+      '<button type="submit" class="btn primary">Crear</button>' +
+      '<button type="button" class="btn secondary" id="btn-maq-cancelar-edit">Cancelar</button>' +
+      '</div></form>';
+    box.innerHTML = html;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
   async function cargarAdminSolicitudes_() {
     if (!sessionProfile.is_admin) return;
     var meta = document.getElementById('admin-solicitud-meta');
@@ -2005,6 +2678,9 @@
       admin_invalid_profile_id: 'Perfil no válido.',
       admin_invalid_expires_at: 'Fecha de caducidad no válida.',
       admin_invalid_telegram_chat_id: 'Telegram chat id inválido (solo números).',
+      telegram_schema_pending: 'Falta la migración 20260807_0012_telegram_canales.sql en Supabase.',
+      telegram_pref_unavailable: 'No se pudo guardar la preferencia de Telegram.',
+      telegram_pref_invalid: 'Indica el canal a pausar (Andalucía o España).',
       admin_cannot_deactivate_self: 'No puedes desactivar tu propia cuenta.',
       admin_cannot_delete_self: 'No puedes borrar tu propio perfil.',
       admin_cannot_demote_self: 'No puedes quitarte el rol ADMIN a ti mismo.',
@@ -2031,6 +2707,19 @@
       excl_relacion_misma_estacion: 'Origen y destino no pueden ser la misma estación.',
       excl_tipo_invalido: 'Tipo de exclusión no válido.',
       excl_id_invalido: 'Exclusión no válida.',
+      correspondencias_schema_pending: 'Falta la migración 20260807_0010_correspondencias_tren.sql en Supabase.',
+      correspondencias_84_ignorada: 'Las circulaciones 84xxx (bus/PAT) no se guardan.',
+      correspondencias_fila_invalida: 'Indica venta y circulación.',
+      correspondencias_import_vacio: 'No hay filas para importar.',
+      correspondencias_seed_empty: 'No hay catálogo seed en KV. Sube el Excel o el JSON.',
+      correspondencias_unavailable: 'No se pudieron cargar las correspondencias.',
+      maquinas_schema_pending: 'Falta la migración de catálogo en Supabase (20260807_0009_maquinas_catalogo.sql).',
+      maquinas_matricula_invalida: 'Matrícula no válida.',
+      maquinas_codigo_requerido: 'Indica código o un mantenedor conocido.',
+      maquinas_import_vacio: 'No hay filas para importar.',
+      maquinas_import_demasiado: 'Demasiadas filas en una tanda.',
+      maquinas_import_sin_filas_validas: 'Ninguna fila tenía matrícula y código válidos.',
+      maquinas_unavailable: 'No se pudo cargar el catálogo de máquinas.',
       solicitud_email_invalido: 'Correo no válido.',
       solicitud_nombre_requerido: 'Indica un nombre para el perfil.',
       solicitud_centro_requerido: 'Indica tu centro o unidad.',
@@ -2190,6 +2879,30 @@
   var adifLivePollTimer_ = null;
   /** true cuando el PC no puede hablar con info.adif.es (Zscaler/firewall). */
   var adifDirectoBloqueado_ = false;
+  /** Aviso suave de red corporativa: como máximo una vez por sesión. */
+  var adifRedBloqueadaAvisada_ = false;
+  var ADIF_MSG_RED_ = 'Vía ADIF no disponible en esta red (Zscaler/proxy). Sin Zscaler o con excepción a info.adif.es suele funcionar.';
+
+  function adifEsErrorRedBloqueada_(err) {
+    var s = String(err && err.message != null ? err.message : err || '');
+    return /403|Access Denied|adif_ws_reject|adif_negotiate|WebSocket failed|proxy blocking|Failed to fetch|Failed to complete negotiation|CORS|directo ni proxy|InfoStation no/i.test(s);
+  }
+
+  function adifAvisarRedBloqueada_(opts) {
+    opts = opts || {};
+    adifDirectoBloqueado_ = true;
+    setAdifLiveStatusUi_(ADIF_MSG_RED_, 'is-err');
+    if (opts.toast === false) return;
+    if (adifRedBloqueadaAvisada_) return;
+    adifRedBloqueadaAvisada_ = true;
+    toast(ADIF_MSG_RED_);
+  }
+
+  /** Reintento manual (Diagnóstico / Escuchar): vuelve a probar WS directo. */
+  function adifResetBloqueoRed_() {
+    adifDirectoBloqueado_ = false;
+    adifRedBloqueadaAvisada_ = false;
+  }
   var ADIF_EVENTOS_ = [
     'ReceiveMessage', 'receiveMessage', 'SendMessage', 'sendMessage',
     'Receive', 'Update', 'Info', 'StationInfo', 'LastMessage', 'Broadcast'
@@ -2432,6 +3145,7 @@
   }
 
   async function probarInfoStationAdif_() {
+    adifResetBloqueoRed_();
     var btn = document.getElementById('btn-probar-infostation');
     var codigo = codigoEstacionProbeAdif_();
     var lines = [];
@@ -2498,14 +3212,17 @@
         toast('InfoStation: conecta sin datos', 'error');
       } else {
         lines.push('Conclusión: no hay conexión usable a InfoStation desde este entorno.');
+        lines.push('Típico con Zscaler: bloquea WebSocket a info.adif.es; el fallback HTTP choca con CORS; el proxy Worker recibe 403 de ADIF.');
+        lines.push('Solución: excepción Zscaler a info.adif.es (HTTPS + wss) o usar red sin Zscaler.');
         setAdifProbeStatus_(lines.join('\n'), 'is-err');
-        toast('InfoStation no disponible', 'error');
+        adifAvisarRedBloqueada_({ toast: true });
       }
     } catch (err) {
       var msg = String((err && err.message) || err || 'Error desconocido');
       lines.push('ERROR: ' + msg);
       setAdifProbeStatus_(lines.join('\n'), 'is-err');
-      toast('InfoStation no disponible aquí', 'error');
+      if (adifEsErrorRedBloqueada_(msg)) adifAvisarRedBloqueada_({ toast: true });
+      else toast('InfoStation no disponible aquí', 'error');
       if (adifInfoStationProbe_) {
         try { await adifInfoStationProbe_.stop(); } catch (_) {}
         adifInfoStationProbe_ = null;
@@ -2980,10 +3697,7 @@
       if (pack && pack.error) lastErr = String(pack.error);
     });
     if (!conVia && /403|Access Denied|adif_ws_reject|adif_negotiate/i.test(lastErr)) {
-      setAdifLiveStatusUi_(
-        'ADIF bloquea la egress de Cloudflare (403). El proxy Worker no puede leer vías.',
-        'is-err'
-      );
+      adifAvisarRedBloqueada_({ toast: false });
       throw new Error('ADIF Access Denied desde Cloudflare (403)');
     }
     setAdifLiveStatusUi_(
@@ -3111,8 +3825,6 @@
 
   var adifRadarEnrichTimer_ = null;
   var adifRadarEnrichBusy_ = false;
-  var adifViaFailToastAt_ = 0;
-
   function codigosViaRadarVisibles_() {
     var uniq = [];
     var seen = Object.create(null);
@@ -3168,11 +3880,11 @@
     adifRadarEnrichBusy_ = true;
     try {
       await adifPedirViasEstaciones_(codes);
-      } catch (err) {
-      setAdifLiveStatusUi_('InfoStation (vías): ' + String(err && err.message ? err.message : err), 'is-err');
-      if (Date.now() - adifViaFailToastAt_ > 120000) {
-        adifViaFailToastAt_ = Date.now();
-        toast('No se pudo leer la vía ADIF (directo ni proxy Worker).', 'error');
+    } catch (err) {
+      if (adifEsErrorRedBloqueada_(err)) {
+        adifAvisarRedBloqueada_({ toast: true });
+      } else {
+        setAdifLiveStatusUi_('InfoStation (vías): ' + String(err && err.message ? err.message : err), 'is-err');
       }
     } finally {
       adifRadarEnrichBusy_ = false;
@@ -3234,7 +3946,8 @@
         await adifPedirViasViaWorker_([code]);
         toast('Vía ADIF vía proxy Worker · ' + code, 'success');
       } catch (err) {
-        setAdifLiveStatusUi_('Proxy ADIF: ' + String(err && err.message || err), 'is-err');
+        if (adifEsErrorRedBloqueada_(err)) adifAvisarRedBloqueada_({ toast: true });
+        else setAdifLiveStatusUi_('Proxy ADIF: ' + String(err && err.message || err), 'is-err');
         throw err;
       }
       return;
@@ -3293,8 +4006,15 @@
       await adifLiveStarting_;
     } catch (err) {
       adifDirectoBloqueado_ = true;
-      setAdifLiveStatusUi_('InfoStation bloqueado → proxy Worker · ' + code + '…', 'is-run');
-      await adifPedirViasViaWorker_([code]);
+      setAdifLiveStatusUi_('InfoStation bloqueado en este equipo → probando proxy…', 'is-run');
+      try {
+        await adifPedirViasViaWorker_([code]);
+      } catch (err2) {
+        if (adifEsErrorRedBloqueada_(err2) || adifEsErrorRedBloqueada_(err)) {
+          adifAvisarRedBloqueada_({ toast: true });
+        }
+        throw err2;
+      }
     } finally {
       adifLiveStarting_ = null;
     }
@@ -3307,7 +4027,8 @@
     try {
       await escucharInfoStationEstacion_(codigoEstacionMallasActual_());
     } catch (err) {
-      setAdifLiveStatusUi_('InfoStation: ' + String(err.message || err), 'is-err');
+      if (adifEsErrorRedBloqueada_(err)) adifAvisarRedBloqueada_({ toast: false });
+      else setAdifLiveStatusUi_('InfoStation: ' + String(err.message || err), 'is-err');
     }
   }
 
@@ -3443,12 +4164,14 @@
       btnLive.addEventListener('click', function () {
         var codigo = codigoEstacionProbeAdif_();
         btnLive.disabled = true;
+        adifResetBloqueoRed_();
         escucharInfoStationEstacion_(codigo)
           .then(function () {
             toast('Escuchando vía ADIF · ' + codigo, 'success');
           })
           .catch(function (err) {
-            toast(String(err.message || err), 'error');
+            if (adifEsErrorRedBloqueada_(err)) adifAvisarRedBloqueada_({ toast: true });
+            else toast(String(err.message || err), 'error');
           })
           .then(function () { btnLive.disabled = false; });
       });
@@ -3523,27 +4246,67 @@
     return v == null ? null : v;
   }
 
+  function kmsFmtKm_(n) {
+    var v = Math.round(Number(n) || 0);
+    return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
   function pintarTotalKms_() {
     var totalEl = document.getElementById('kms-total');
-    var tbody = document.getElementById('kms-tbody');
-    if (!totalEl || !tbody) return;
+    var numEl = document.getElementById('kms-total-num');
+    var metaEl = document.getElementById('kms-total-meta');
+    var actionsEl = document.getElementById('kms-actions');
+    if (!totalEl) return;
     if (!kmsTramos.length) {
       totalEl.hidden = true;
-      totalEl.textContent = '';
+      if (numEl) numEl.textContent = '0';
+      if (metaEl) metaEl.textContent = '';
+      if (actionsEl) actionsEl.hidden = true;
       return;
     }
     var sum = 0;
     for (var i = 0; i < kmsTramos.length; i++) sum += kmsTramos[i].km;
     totalEl.hidden = false;
-    totalEl.textContent = 'Total: ' + sum + ' km';
+    if (numEl) numEl.textContent = kmsFmtKm_(sum);
+    if (metaEl) {
+      metaEl.textContent = kmsTramos.length === 1
+        ? '1 tramo'
+        : (kmsTramos.length + ' tramos');
+    }
+    if (actionsEl) actionsEl.hidden = false;
   }
 
   function pintarTablaKms_() {
-    var tbody = document.getElementById('kms-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = kmsTramos.map(function (t) {
-      return '<tr><td>' + kmsLabel_(t.a) + '</td><td>' + kmsLabel_(t.b) + '</td><td>' + t.km + '</td></tr>';
+    var list = document.getElementById('kms-list');
+    var empty = document.getElementById('kms-empty');
+    if (!list) return;
+    list.querySelectorAll('.kms-tramo').forEach(function (el) { el.remove(); });
+    if (!kmsTramos.length) {
+      if (empty) empty.hidden = false;
+      pintarTotalKms_();
+      return;
+    }
+    if (empty) empty.hidden = true;
+    var html = kmsTramos.map(function (t, i) {
+      return '<article class="kms-tramo">' +
+        '<div class="kms-tramo-main">' +
+          '<p class="kms-tramo-route">' +
+            '<span>' + kmsLabel_(t.a) + '</span>' +
+            '<span class="kms-tramo-arrow" aria-hidden="true">→</span>' +
+            '<span>' + kmsLabel_(t.b) + '</span>' +
+          '</p>' +
+        '</div>' +
+        '<div class="kms-tramo-side">' +
+          '<span class="kms-tramo-km">' + kmsFmtKm_(t.km) + ' km</span>' +
+          '<button type="button" class="kms-tramo-rm" data-kms-rm="' + i + '" title="Quitar tramo" aria-label="Quitar tramo">×</button>' +
+        '</div>' +
+      '</article>';
     }).join('');
+    if (empty) {
+      empty.insertAdjacentHTML('afterend', html);
+    } else {
+      list.insertAdjacentHTML('beforeend', html);
+    }
     pintarTotalKms_();
   }
 
@@ -3615,6 +4378,12 @@
     kmsTramos.push({ a: a, b: b, km: km });
     pintarTablaKms_();
     ocultarSugKms_();
+    // Encadenar: el destino pasa a ser el nuevo origen.
+    if (aInp && bInp) {
+      aInp.value = b;
+      bInp.value = '';
+      bInp.focus();
+    }
   }
 
   function abrirKms() {
@@ -3680,6 +4449,7 @@
     var btnSwap = document.getElementById('btn-kms-swap');
     var btnBorrar = document.getElementById('btn-kms-borrar');
     var btnLimpiar = document.getElementById('btn-kms-limpiar');
+    var list = document.getElementById('kms-list');
     if (btnBuscar) btnBuscar.addEventListener('click', anadirTramoKms_);
     if (btnSwap) {
       btnSwap.addEventListener('click', function () {
@@ -3703,6 +4473,16 @@
         kmsTramos = [];
         pintarTablaKms_();
         kmsSetMsg_('');
+      });
+    }
+    if (list) {
+      list.addEventListener('click', function (ev) {
+        var rm = ev.target.closest('[data-kms-rm]');
+        if (!rm) return;
+        var idx = Number(rm.getAttribute('data-kms-rm'));
+        if (!isFinite(idx) || idx < 0 || idx >= kmsTramos.length) return;
+        kmsTramos.splice(idx, 1);
+        pintarTablaKms_();
       });
     }
     document.addEventListener('click', function (ev) {
@@ -3751,9 +4531,11 @@
     mallas: 'Mallas',
     'mallas-localizador': 'Localizador mallas',
     kms: 'Kilómetros',
+    conduccion: 'Conducción',
     pantallas: 'Pantallas estación',
     conexiones: 'Servicios enlazados',
     exclusiones: 'Exclusiones de línea',
+    maquinas: 'Máquinas',
     avisos: 'Avisos de red',
     'avisos-app': 'TURNIO RAIL'
   };
@@ -3808,8 +4590,9 @@
     if (screen === 'radar') {
       refrescarAvisosRed();
       programarEnrichRadarViasAdif_();
-      // CGO/ADMIN: Vigilante ON con retardo al entrar (evita avisos al instante).
-      if (puedeEscribir && !vigilanteActivo) programarVigilanteAutoOn_();
+      // ADMIN de día: Vigilante ON con retardo al entrar en Radar.
+      // CGO / noche: permanece OFF (parpadeo) hasta activarlo a mano.
+      if (vigilantePuedeAutoEncender_() && !vigilanteActivo) programarVigilanteAutoOn_();
     }
     if (screen === 'avisos') cargarPantallaAvisos(true);
     if (screen === 'avisos-app') {
@@ -3835,6 +4618,9 @@
         return;
       }
       cargarExclusionesLectura_();
+    }
+    if (screen === 'maquinas') {
+      cargarMaquinas_();
     }
     if (screen === 'fiabilidad') {
       if (esComercial_()) {
@@ -3915,6 +4701,7 @@
     if (id === 'mant') cargarAdminMantenimiento_();
     else if (id === 'accesos') cargarAdminAccesos_();
     else if (id === 'excl') cargarAdminExclusiones_();
+    else if (id === 'corr') cargarAdminCorrespondencias_();
     else if (id === 'aviso') cargarAdminAviso_();
     else if (id === 'sugerencias') cargarAdminSugerencias_();
     else if (id === 'solicitudes') cargarAdminSolicitudes_();
@@ -4434,6 +5221,46 @@
   var trenesYaAlertados = {};
   var SIN_SALIDA_ACK_LS_ = 'turnio_sin_salida_ack_v1';
 
+  /** Minutos desde 00:00 en Europe/Madrid. */
+  function minutosAhoraMadridVigilante_() {
+    try {
+      var parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Madrid',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(new Date());
+      var hh = 0;
+      var mm = 0;
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === 'hour') hh = Number(parts[i].value);
+        if (parts[i].type === 'minute') mm = Number(parts[i].value);
+      }
+      // en-GB a veces da "24" a medianoche
+      if (hh === 24) hh = 0;
+      return hh * 60 + mm;
+    } catch (_) {
+      var d = new Date();
+      return d.getHours() * 60 + d.getMinutes();
+    }
+  }
+
+  /** Franja 00:30–05:00 (Madrid): Vigilante apagado por defecto. */
+  function esFranjaNocturnaVigilante_() {
+    var m = minutosAhoraMadridVigilante_();
+    return m >= 30 && m < 5 * 60;
+  }
+
+  /**
+   * Auto-ON solo ADMIN fuera de la franja nocturna.
+   * CGO y resto: arrancan OFF (con aviso visual) y lo activan a mano si hace falta.
+   */
+  function vigilantePuedeAutoEncender_() {
+    if (!puedeEscribir) return false;
+    if (esFranjaNocturnaVigilante_()) return false;
+    return !!(sessionProfile && sessionProfile.is_admin);
+  }
+
   function diaSinSalidaAck_() {
     try {
       return new Intl.DateTimeFormat('en-CA', {
@@ -4523,11 +5350,11 @@
 
   function programarVigilanteAutoOn_() {
     cancelarVigilanteAutoOn_();
-    if (!puedeEscribir || vigilanteActivo) return;
+    if (!vigilantePuedeAutoEncender_() || vigilanteActivo) return;
     timerVigilanteAutoOn_ = setTimeout(function () {
       timerVigilanteAutoOn_ = null;
       // Solo si el usuario no lo ha tocado a mano.
-      if (!puedeEscribir || vigilanteActivo) return;
+      if (!vigilantePuedeAutoEncender_() || vigilanteActivo) return;
       setVigilanteState(true, true);
     }, VIGILANTE_AUTO_ON_DELAY_MS_);
   }
@@ -4539,8 +5366,14 @@
     var led = document.getElementById('led-vigilante');
     if (!btn || !txt) return;
     btn.classList.toggle('on', vigilanteActivo);
+    btn.classList.toggle('is-off-alert', !vigilanteActivo && !!puedeEscribir);
     btn.setAttribute('aria-pressed', vigilanteActivo ? 'true' : 'false');
     txt.textContent = vigilanteActivo ? 'VIGILANTE: ON' : 'VIGILANTE: OFF';
+    btn.title = vigilanteActivo
+      ? 'Vigilante activo — pulsa para desactivar'
+      : (puedeEscribir
+        ? 'Vigilante apagado — pulsa para activar si lo necesitas'
+        : 'Activar o desactivar el Vigilante');
     if (led) {
       led.style.background = vigilanteActivo ? '#00ffcc' : '#ff3b30';
       led.style.boxShadow = vigilanteActivo ? '0 0 10px #00ffcc' : '0 0 10px #ff3b30';
@@ -4612,11 +5445,15 @@
         ? plainText(c.etiquetaModal)
         : ('+' + Number(c.retrasoNum || 0) + ' min');
       var lineaTxt = plainText(c.linea || c.codTren || 'Tren');
-      return '<div class="vig-item vig-item--red">' +
+      var tren = String(c.codTren || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+      return '<button type="button" class="vig-item vig-item--red vig-item--goto"' +
+        (tren ? (' data-radar-tren="' + esc(tren) + '"') : '') +
+        ' title="Ver este tren en el Radar">' +
         '<div class="vig-item-linea">' + esc(lineaTxt) + '</div>' +
         '<div class="vig-item-tag">' + esc(etiqueta) + '</div>' +
         '<div class="vig-item-msg">' + esc(plainText(c.mensaje)) + '</div>' +
-        '</div>';
+        (tren ? '<div class="vig-item-hint">Ver en Radar &#8594;</div>' : '') +
+        '</button>';
     }).join('');
     montarModalVigilante_(modal);
     modal.hidden = false;
@@ -4643,17 +5480,21 @@
         ? plainText(c.etiquetaModal)
         : 'Aviso';
       var lineaTxt = plainText(c.linea || c.codTren || 'Tren');
+      var tren = String(c.codTren || '').replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
       var lugar = c.lugar
         ? ('<div class="vig-item-lugar">📍 ' + esc(plainText(c.lugar)) +
           (c.horaDesde ? (' · salida teórica <b>' + esc(plainText(c.horaDesde)) + '</b>h') : '') +
           '</div>')
         : '';
-      return '<div class="vig-item vig-item--amber">' +
+      return '<button type="button" class="vig-item vig-item--amber vig-item--goto"' +
+        (tren ? (' data-radar-tren="' + esc(tren) + '"') : '') +
+        ' title="Ver este tren en el Radar">' +
         '<div class="vig-item-linea">' + esc(lineaTxt) + '</div>' +
         '<div class="vig-item-tag">' + esc(etiqueta) + '</div>' +
         lugar +
         '<div class="vig-item-msg">' + esc(plainText(c.mensaje)) + '</div>' +
-        '</div>';
+        (tren ? '<div class="vig-item-hint">Ver en Radar &#8594;</div>' : '') +
+        '</button>';
     }).join('');
     montarModalVigilante_(modal);
     modal.hidden = false;
@@ -4803,6 +5644,9 @@
   }
 
   async function arrancarVigilanteDesdeCuadrante() {
+    // Por defecto OFF. Solo ADMIN fuera de 00:30–05:00 puede auto-encenderse.
+    setVigilanteState(false, true);
+    if (!vigilantePuedeAutoEncender_()) return;
     try {
       var res = await call('vigilante_cuadrante');
       if (res && res.activar) {
@@ -5272,18 +6116,44 @@
     return x.indexOf('ALERTA') >= 0 ? 'grave' : x.indexOf('AVISO') >= 0 || x.indexOf('DETENIDO') >= 0 ? 'warning' : '';
   }
   function alertaPasaFiltroProducto_(a) {
-    if (!productFilter) return true;
+    if (!productFilters.length) return true;
     var p = productoDesdeAlertaRadar_(a);
-    var match = RADAR_PRODUCTO_MATCH_[productFilter];
-    if (match && match.length) return match.indexOf(p) >= 0;
-    return p === productFilter;
+    for (var i = 0; i < productFilters.length; i++) {
+      var key = productFilters[i];
+      var match = RADAR_PRODUCTO_MATCH_[key];
+      if (match && match.length) {
+        if (match.indexOf(p) >= 0) return true;
+      } else if (p === key) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function syncRadarProductoUi_() {
+    var todos = !productFilters.length;
     document.querySelectorAll('#radar-product-filters .filter--prod').forEach(function (x) {
       var val = x.getAttribute('data-producto') || '';
-      x.classList.toggle('active', val === productFilter);
+      if (!val) {
+        x.classList.toggle('active', todos);
+      } else {
+        x.classList.toggle('active', !todos && productFilters.indexOf(val) >= 0);
+      }
     });
+  }
+
+  /** Ajusta modo CERC/LD/TODOS si la selección de productos no cabe en el modo actual. */
+  function ajustarModoPorProductos_() {
+    var hasCerc = productFilters.indexOf('Cercanías') >= 0;
+    var hasOtros = productFilters.some(function (k) { return k && k !== 'Cercanías'; });
+    var needMode = '';
+    if (hasCerc && hasOtros && mode !== 'TODOS') needMode = 'TODOS';
+    else if (hasCerc && !hasOtros && mode === 'LD') needMode = 'CERCANIAS';
+    else if (!hasCerc && hasOtros && mode === 'CERCANIAS') needMode = 'LD';
+    if (!needMode) return false;
+    mode = needMode;
+    syncRadarModeUi_();
+    return true;
   }
 
   function syncRadarModeUi_() {
@@ -5405,7 +6275,7 @@
     }
     pendingRadarFocusCod_ = tren;
     mode = 'TODOS';
-    productFilter = '';
+    productFilters = [];
     syncRadarModeUi_();
     syncRadarProductoUi_();
     var search = document.getElementById('search');
@@ -5413,6 +6283,22 @@
     go('radar');
     render();
     window.setTimeout(enfocarTarjetaRadarPendiente_, 80);
+    // Si la lista aún no tiene el tren, reintenta tras un refresh corto.
+    window.setTimeout(function () {
+      if (!pendingRadarFocusCod_) return;
+      loadRadar({ silent: true, keepOnBusy: true }).then(function () {
+        window.setTimeout(enfocarTarjetaRadarPendiente_, 60);
+      }).catch(function () {});
+    }, 400);
+  }
+
+  /** Desde modal del Vigilante: cierra sin «Enterado» y salta a la tarjeta en Radar. */
+  function irATarjetaRadarDesdeVigilante_(cod) {
+    trenesPendientesConfirmacion = [];
+    trenesPendientesDetencion = [];
+    try { cerrarModalVigilante_('modal-retraso-grave'); } catch (_) { /* */ }
+    try { cerrarModalVigilante_('modal-detencion-grave'); } catch (_) { /* */ }
+    irATarjetaRadarDesdeHome_(cod);
   }
 
   /** En Radar: botón Enlace solo si queda algún enlace no realizado (hora + 10 min). */
@@ -5489,7 +6375,28 @@
         (codD ? ' data-cod-destino="' + esc(codD) + '"' : '') +
         (esSs ? ' data-sin-salida="1"' : '') + '>' +
         '<div class="alert-head"><span>&#128308; ' + esc(x.tipo || 'AVISO') + '</span><span>&#128338; ' + esc(x.hora || '') + '</span></div>' +
-        '<div class="train">&#9642; ' + esc(linea) + '</div>' +
+        '<div class="train">&#9642; ' + esc(linea) +
+        (x.circulacion && x.venta && String(x.circulacion) !== String(x.venta)
+          ? ' <button type="button" class="alert-cg" data-corr-toggle="1" title="Ver correspondencia venta / circulación">CG ' +
+            esc(String(x.circulacion)) + '</button>'
+          : (x.correspondencias && x.correspondencias.length > 1
+            ? ' <button type="button" class="alert-cg alert-cg--same" data-corr-toggle="1" title="Ver tramos de circulación">CG</button>'
+            : '')) +
+        '</div>' +
+        (x.correspondencias && x.correspondencias.length
+          ? '<div class="alert-corr-detail" hidden>' +
+            x.correspondencias.map(function (t) {
+              return '<div class="alert-corr-line">' +
+                '<b>' + esc(t.circulacion || '—') + '</b> ' +
+                esc((t.origen || '?') + ' → ' + (t.destino || '?')) +
+                (t.hora_salida ? (' · ' + esc(t.hora_salida)) : '') +
+                (String(t.circulacion) === String(x.circulacion) ? ' <em>activo</em>' : '') +
+                '</div>';
+            }).join('') +
+            '<div class="alert-corr-meta">Venta ' + esc(String(x.venta || tren)) +
+            (x.mismoNumero ? '' : (' · circulación activa ' + esc(String(x.circulacion || '')))) +
+            '</div></div>'
+          : '') +
         '<div class="alert-vias-adif" hidden></div>' +
         matHtml +
         '<p class="message">' + esc(x.mensaje || ('Demora ' + (delay >= 0 ? '+' : '') + delay + ' min.')) + '</p>' +
@@ -5563,6 +6470,11 @@
         delayHtml = ' <em class="marcha-delay">' + etiqueta + '</em>';
       } else if (p.esPasada || p.retrasoLlegada) {
         delayHtml = ' <em class="marcha-ontime">puntual</em>';
+      } else if (p.esActual) {
+        delayHtml = ' <em class="marcha-ontime">en hora</em>';
+      } else if (retraso > 0) {
+        // Próximas: no afirmar "en hora" si el tren ya acumula demora.
+        delayHtml = '';
       } else {
         delayHtml = ' <em class="marcha-ontime">en hora</em>';
       }
@@ -5593,8 +6505,7 @@
       '</span><span>' + esc(m.stopActualNombre || 'Posición disponible') + '</span></div>' +
       (rows
         ? '<div class="marcha-list" data-marcha-tren="' + esc(String(m.numTren || '')) + '">' + rows + '</div>'
-        : '<div class="marcha-empty">Sin paradas disponibles en el feed.</div>') +
-      '<div class="marcha-source">Fuente: Renfe GTFS-RT · llegadas registradas en TURNIO · vía ADIF InfoStation</div>';
+        : '<div class="marcha-empty">Sin paradas disponibles en el feed.</div>');
     pintarViasEnMarchaPanel_(panel, m.numTren);
     enriquecerMarchaViasAdif_(panel, m).catch(function () {});
   }
@@ -7048,10 +7959,6 @@
       if (typeof m.retrasoMin === 'number') ft.retrasoNum = m.retrasoMin;
       pintarCabeceraFichaMapa_(ft, tren);
       renderMarcha(body, m);
-      if (body.querySelector('.marcha-source')) {
-        body.querySelector('.marcha-source').textContent =
-          'Fuente: Renfe GTFS-RT (rápida · mapa)';
-      }
       var marker = mapIndex[String(tren || '').replace(/^0+/, '')];
       if (marker && marker.options && marker.options._flotaTren) {
         var fto = marker.options._flotaTren;
@@ -7492,6 +8399,20 @@
       activar(item);
     });
   })();
+  (function wireVigilanteGotoRadar_() {
+    function onGoto(e) {
+      var item = e.target.closest('.vig-item--goto[data-radar-tren]');
+      if (!item) return;
+      e.preventDefault();
+      e.stopPropagation();
+      irATarjetaRadarDesdeVigilante_(item.getAttribute('data-radar-tren'));
+    }
+    ['lista-retrasos-graves', 'lista-detenciones'].forEach(function (id) {
+      var lista = document.getElementById(id);
+      if (!lista) return;
+      lista.addEventListener('click', onGoto);
+    });
+  })();
   var btnRed = document.getElementById('btn-estado-red');
   if (btnRed) btnRed.addEventListener('click', toggleTeletipoRed);
   var btnRefAvisos = document.getElementById('btn-refrescar-avisos');
@@ -7506,7 +8427,7 @@
   document.querySelectorAll('#radar-filters .filter[data-mode]').forEach(function (b) {
     b.addEventListener('click', function () {
       mode = b.dataset.mode;
-      productFilter = '';
+      productFilters = [];
       syncRadarModeUi_();
       syncRadarProductoUi_();
       loadRadar();
@@ -7514,15 +8435,17 @@
   });
   document.querySelectorAll('#radar-product-filters .filter--prod').forEach(function (b) {
     b.addEventListener('click', function () {
-      productFilter = b.getAttribute('data-producto') || '';
+      var val = b.getAttribute('data-producto') || '';
+      if (!val) {
+        // «Prod. todos»: limpia la selección múltiple.
+        productFilters = [];
+      } else {
+        var idx = productFilters.indexOf(val);
+        if (idx >= 0) productFilters.splice(idx, 1);
+        else productFilters.push(val);
+      }
       syncRadarProductoUi_();
-      // Ampliar ámbito si el producto no cabe en el modo actual.
-      var needMode = '';
-      if (productFilter === 'Cercanías' && mode === 'LD') needMode = 'CERCANIAS';
-      else if (productFilter && productFilter !== 'Cercanías' && mode === 'CERCANIAS') needMode = 'LD';
-      if (needMode) {
-        mode = needMode;
-        syncRadarModeUi_();
+      if (ajustarModoPorProductos_()) {
         loadRadar();
         return;
       }
@@ -7718,10 +8641,164 @@
       borrarAdminExclusiones_(btn.getAttribute('data-excl-borrar'));
     });
   }
+  var btnCorrRef = document.getElementById('btn-admin-corr-refrescar');
+  if (btnCorrRef) btnCorrRef.addEventListener('click', cargarAdminCorrespondencias_);
+  var btnCorrSeed = document.getElementById('btn-admin-corr-seed');
+  if (btnCorrSeed) btnCorrSeed.addEventListener('click', adminCorrSeed_);
+  var corrBuscar = document.getElementById('admin-corr-buscar');
+  if (corrBuscar) corrBuscar.addEventListener('input', pintarAdminCorrespondencias_);
+  var corrLista = document.getElementById('admin-corr-lista');
+  if (corrLista) {
+    corrLista.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-corr-borrar]');
+      if (!btn || !sessionProfile.is_admin) return;
+      call('admin_correspondencias_borrar', { id: btn.getAttribute('data-corr-borrar') })
+        .then(function () {
+          toast('Tramo eliminado.', 'success');
+          return cargarAdminCorrespondencias_();
+        })
+        .catch(function (err) { toast(String(err.message || err), 'error'); });
+    });
+  }
+  var corrExcel = document.getElementById('admin-corr-excel');
+  if (corrExcel) {
+    corrExcel.addEventListener('change', function () {
+      var f = corrExcel.files && corrExcel.files[0];
+      corrExcel.value = '';
+      if (f) adminCorrImportExcel_(f);
+    });
+  }
+  var btnMaqRef = document.getElementById('btn-maq-refrescar');
+  if (btnMaqRef) btnMaqRef.addEventListener('click', cargarMaquinas_);
+  var btnMaqLimpiar = document.getElementById('btn-maq-limpiar');
+  if (btnMaqLimpiar) {
+    btnMaqLimpiar.addEventListener('click', function () {
+      maqState_.filterCode = '';
+      maqState_.search = '';
+      var inp = document.getElementById('maq-search-input');
+      if (inp) inp.value = '';
+      maqBuildBadges_();
+      maqApplyFilters_();
+    });
+  }
+  var maqSearch = document.getElementById('maq-search-input');
+  if (maqSearch) {
+    var maqSearchTimer_ = null;
+    maqSearch.addEventListener('input', function () {
+      var v = maqSearch.value;
+      clearTimeout(maqSearchTimer_);
+      maqSearchTimer_ = setTimeout(function () {
+        maqState_.search = v;
+        maqApplyFilters_();
+      }, 180);
+    });
+  }
+  var maqBadges = document.getElementById('maq-filter-badges');
+  if (maqBadges) {
+    maqBadges.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-maq-filter]');
+      if (!btn) return;
+      maqState_.filterCode = btn.getAttribute('data-maq-filter') || '';
+      maqBuildBadges_();
+      maqApplyFilters_();
+    });
+  }
+  var maqTable = document.getElementById('maq-main-table');
+  if (maqTable) {
+    maqTable.addEventListener('click', function (e) {
+      var th = e.target.closest('[data-maq-sort]');
+      if (th) {
+        var col = th.getAttribute('data-maq-sort');
+        if (maqState_.sortCol === col) maqState_.sortDir *= -1;
+        else { maqState_.sortCol = col; maqState_.sortDir = 1; }
+        document.querySelectorAll('[id^=maq-sort-]').forEach(function (el) { el.textContent = ''; });
+        var icon = document.getElementById('maq-sort-' + col);
+        if (icon) icon.textContent = maqState_.sortDir === 1 ? ' ↑' : ' ↓';
+        maqApplyFilters_();
+        return;
+      }
+      var row = e.target.closest('[data-maq-idx]');
+      if (row) maqAbrirDetalle_(Number(row.getAttribute('data-maq-idx')), false);
+    });
+  }
+  var maqPager = document.getElementById('maq-pagination');
+  if (maqPager) {
+    maqPager.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-maq-page]');
+      if (!btn || btn.disabled) return;
+      var p = Number(btn.getAttribute('data-maq-page'));
+      var total = Math.ceil(maqState_.filtered.length / maqState_.pageSize) || 1;
+      if (p < 1 || p > total) return;
+      maqState_.page = p;
+      maqRenderTable_();
+      maqRenderPagination_();
+    });
+  }
+  var maqModal = document.getElementById('maq-modal');
+  if (maqModal) {
+    maqModal.addEventListener('click', function (e) {
+      if (e.target === maqModal) maqCerrarModal_();
+      if (e.target && e.target.id === 'btn-maq-modal-cerrar') maqCerrarModal_();
+      if (e.target && e.target.id === 'btn-maq-cancelar-edit') maqCerrarModal_();
+      if (e.target && e.target.id === 'btn-maq-editar') {
+        maqAbrirDetalle_(Number(e.target.getAttribute('data-maq-idx')), true);
+      }
+      if (e.target && e.target.id === 'btn-maq-borrar') {
+        maqBorrar_(e.target.getAttribute('data-mat'));
+      }
+    });
+    maqModal.addEventListener('submit', function (e) {
+      if (e.target && e.target.id === 'maq-edit-form') maqGuardarForm_(e);
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      var m = document.getElementById('maq-modal');
+      if (m && !m.hidden) maqCerrarModal_();
+    }
+  });
+  var btnMaqNueva = document.getElementById('btn-maq-nueva');
+  if (btnMaqNueva) btnMaqNueva.addEventListener('click', maqNueva_);
+  var btnMaqHtml = document.getElementById('btn-maq-catalogo-html');
+  if (btnMaqHtml) btnMaqHtml.addEventListener('click', maqImportCatalogoHtml_);
+  var btnMaqAdminToggle = document.getElementById('btn-maq-admin-toggle');
+  if (btnMaqAdminToggle) {
+    btnMaqAdminToggle.addEventListener('click', function () {
+      var panel = document.getElementById('maq-admin-panel');
+      if (!panel) return;
+      var open = panel.hidden;
+      panel.hidden = !open;
+      btnMaqAdminToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+  var maqExcel = document.getElementById('maq-excel-upload');
+  if (maqExcel) {
+    maqExcel.addEventListener('change', function () {
+      var f = maqExcel.files && maqExcel.files[0];
+      maqExcel.value = '';
+      if (f) maqImportExcel_(f);
+    });
+  }
   var btnAdminMant = document.getElementById('btn-admin-mant-toggle');
   if (btnAdminMant) btnAdminMant.addEventListener('click', toggleAdminMantenimiento_);
   var btnAccesosRef = document.getElementById('btn-admin-accesos-refrescar');
   if (btnAccesosRef) btnAccesosRef.addEventListener('click', cargarAdminAccesos_);
+  var accesosLista = document.getElementById('admin-accesos-lista');
+  if (accesosLista) {
+    accesosLista.addEventListener('click', function (e) {
+      var head = e.target.closest('[data-acceso-grupo-toggle]');
+      if (!head) return;
+      var grupo = head.closest('.admin-acceso-grupo');
+      if (!grupo) return;
+      var body = grupo.querySelector('.admin-acceso-grupo-body');
+      var chev = grupo.querySelector('.admin-acceso-grupo-chev');
+      var open = !grupo.classList.contains('open');
+      grupo.classList.toggle('open', open);
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (body) body.hidden = !open;
+      if (chev) chev.textContent = open ? '▾' : '▸';
+    });
+  }
   var btnStatsRef = document.getElementById('btn-admin-stats-refrescar');
   if (btnStatsRef) btnStatsRef.addEventListener('click', cargarAdminStats_);
   var btnStatsArch = document.getElementById('btn-admin-stats-archivar');
@@ -7753,6 +8830,14 @@
   var accesosAlertas = document.getElementById('admin-accesos-alertas');
   if (accesosAlertas) {
     accesosAlertas.addEventListener('click', function (e) {
+      var hideBtn = e.target.closest('[data-alerta-hide]');
+      if (hideBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        ocultarAlertaCompartida_(hideBtn.getAttribute('data-alerta-hide') || '');
+        pintarAlertasCompartidas_(adminAlertasCompartidasCache_);
+        return;
+      }
       var btn = e.target.closest('[data-acceso-email]');
       if (!btn) return;
       var inp = document.getElementById('admin-accesos-email');
@@ -7762,6 +8847,15 @@
       if (periodo) periodo.value = '7d';
       if (resultado) resultado.value = 'ok';
       cargarAdminAccesos_();
+    });
+  }
+  var accesosAlertasBar = document.getElementById('admin-accesos-alertas-bar');
+  if (accesosAlertasBar) {
+    accesosAlertasBar.addEventListener('click', function (e) {
+      var t = e.target.closest('#btn-admin-accesos-ver-ocultas');
+      if (!t) return;
+      adminAlertasCompartidasMostrarOcultas_ = !adminAlertasCompartidasMostrarOcultas_;
+      pintarAlertasCompartidas_(adminAlertasCompartidasCache_);
     });
   }
   var adminBuscar = document.getElementById('admin-buscar');
@@ -7949,6 +9043,11 @@
       pintarAdminLista_();
     });
   }
+  var btnCuentaTgAnd = document.getElementById('btn-cuenta-telegram-and');
+  if (btnCuentaTgAnd) btnCuentaTgAnd.addEventListener('click', function () { toggleCuentaTelegramCanal_('andalucia'); });
+  var btnCuentaTgEsp = document.getElementById('btn-cuenta-telegram-esp');
+  if (btnCuentaTgEsp) btnCuentaTgEsp.addEventListener('click', function () { toggleCuentaTelegramCanal_('espana'); });
+
   document.getElementById('btn-obtener-actualizacion').addEventListener('click', function () {
     if (!confirm('¿Descargar la última versión y reiniciar la app?\n\nTu sesión se mantiene; no hace falta volver a entrar.')) return;
     toast('Obteniendo nueva versión…', 'success');
@@ -8441,6 +9540,14 @@
     });
   }
   list.addEventListener('click', function (e) {
+    var corrBtn = e.target.closest('[data-corr-toggle]');
+    if (corrBtn) {
+      e.stopPropagation();
+      var card = corrBtn.closest('.alert');
+      var det = card && card.querySelector('.alert-corr-detail');
+      if (det) det.hidden = !det.hidden;
+      return;
+    }
     var ssBtn = e.target.closest('[data-ss-enterado]');
     if (ssBtn) {
       e.stopPropagation();

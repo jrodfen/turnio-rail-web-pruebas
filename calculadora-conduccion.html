@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Conducción Ferroviaria – RD 929/2020</title>
+<style>
+:root{
+  --primary:#1a3a5c; --primary-l:#2d5a8e;
+  --success:#15803d; --success-bg:#dcfce7; --success-b:#86efac;
+  --warning:#92400e; --warning-bg:#fef3c7; --warning-b:#fcd34d;
+  --danger:#991b1b;  --danger-bg:#fee2e2;  --danger-b:#fca5a5;
+  --info:#1e40af;    --info-bg:#dbeafe;    --info-b:#93c5fd;
+  --ultimo-bg:#fffbeb; --ultimo-b:#f59e0b;
+  --neutral-bg:#f8fafc; --bg:#eef2f7; --card:#ffffff;
+  --border:#e2e8f0; --text:#1e293b; --muted:#64748b;
+  --rd:#0f766e; --rd-bg:#ccfbf1; --renfe:#1d4ed8; --renfe-bg:#dbeafe;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body.turnio-embed{padding-bottom:24px;}body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;padding-bottom:72px;}
+
+.hdr{background:linear-gradient(135deg,#1a3a5c 0%,#2d5a8e 100%);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr-left{display:flex;align-items:center;gap:12px;}
+.hdr-mark{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;}
+.hdr h1{font-size:17px;font-weight:700;line-height:1.2;}
+.hdr p{font-size:11px;opacity:.7;margin-top:2px;}
+.hdr-right{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;border:none;transition:.2s;display:inline-flex;align-items:center;gap:5px;}
+.btn-outline{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;}
+.btn-outline:hover{background:rgba(255,255,255,.22);}
+
+.wrap{max-width:1280px;margin:0 auto;padding:18px;display:grid;grid-template-columns:340px 1fr;gap:16px;}
+.col-left,.col-right{display:flex;flex-direction:column;gap:14px;}
+@media(max-width:920px){.wrap{grid-template-columns:1fr;}}
+
+.card{background:var(--card);border-radius:10px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.card-hdr{padding:10px 16px;background:var(--neutral-bg);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:7px;}
+.card-hdr .badge{margin-left:auto;background:var(--primary);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;letter-spacing:.3px;}
+.card-body{padding:14px 16px;}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-label{font-size:13px;line-height:1.3;}
+.toggle-label small{display:block;font-size:10px;color:var(--muted);margin-top:1px;}
+.switch{position:relative;width:40px;height:20px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:20px;cursor:pointer;transition:.2s;}
+.slider:before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.switch input:checked+.slider{background:var(--primary-l);}
+.switch input:checked+.slider:before{transform:translateX(20px);}
+
+.fg{flex:1;min-width:90px;}
+.fg label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.inp{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:#fff;transition:border-color .2s;}
+.inp:focus{outline:none;border-color:var(--primary-l);box-shadow:0 0 0 3px rgba(45,90,142,.1);}
+.inp.warn{border-color:var(--warning-b);background:var(--warning-bg);}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.row:last-child{margin-bottom:0;}
+
+.hint{background:var(--info-bg);border:1px solid var(--info-b);border-radius:7px;padding:9px 13px;font-size:11px;color:var(--info);margin-bottom:12px;line-height:1.6;}
+.layer-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;}
+.chip-rd{background:var(--rd-bg);color:var(--rd);}
+.chip-renfe{background:var(--renfe-bg);color:var(--renfe);}
+
+.seg-wrap{overflow-x:auto;}
+table.seg{width:100%;border-collapse:collapse;min-width:900px;}
+table.seg th{background:#1a3a5c;color:#fff;padding:7px 6px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+table.seg td{padding:5px 4px;border-bottom:1px solid #f1f5f9;vertical-align:middle;text-align:center;}
+table.seg tbody tr:hover{background:#fafbfc;}
+table.seg tbody tr.tr-ultimo{background:var(--ultimo-bg);}
+.si{width:100%;padding:5px 6px;border:1.5px solid var(--border);border-radius:5px;font-size:12px;color:var(--text);background:#fff;text-align:center;}
+.si:focus{outline:none;border-color:var(--primary-l);}
+.si-label{text-align:left;min-width:90px;}
+.si-sm{width:64px;}
+.cv{font-weight:700;font-size:12px;color:var(--primary);display:block;}
+.cv.delay{color:#b45309;}
+.cv.ok{color:var(--success);}
+.cv.bad{color:var(--danger);}
+.cv-sub{font-size:10px;color:var(--muted);display:block;margin-top:1px;}
+.btn-del{background:none;border:none;color:#f43f5e;cursor:pointer;font-size:18px;line-height:1;padding:2px 5px;border-radius:4px;}
+.btn-del:hover{background:#ffe4e6;}
+.add-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.btn-add-seg,.btn-add-ultimo{display:inline-flex;align-items:center;gap:6px;border:none;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-add-seg{background:var(--primary);color:#fff;}
+.btn-add-seg:hover{background:var(--primary-l);}
+.btn-add-ultimo{background:#d97706;color:#fff;}
+.btn-add-ultimo:hover{background:#b45309;}
+
+/* Mobile cards for segments */
+.seg-cards{display:none;flex-direction:column;gap:10px;}
+.seg-card{border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff;}
+.seg-card.ultimo{background:var(--ultimo-bg);border-color:var(--ultimo-b);}
+.seg-card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;}
+.seg-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.seg-card-meta{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:12px;flex-wrap:wrap;}
+@media(max-width:920px){
+  .seg-wrap{display:none;}
+  .seg-cards{display:flex;}
+}
+
+.pb{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.pb-ok{background:var(--success-bg);color:var(--success);}
+.pb-warn{background:var(--danger-bg);color:var(--danger);}
+.pb-none{background:#f1f5f9;color:var(--muted);}
+.tb-comp{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:var(--success-bg);color:var(--success);}
+.tb-ult{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:var(--ultimo-bg);color:#92400e;border:1px solid var(--ultimo-b);}
+
+.ri{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9;}
+.ri:last-child{border-bottom:none;}
+.ri-label{font-size:12px;color:var(--muted);}
+.ri-value{font-size:15px;font-weight:800;color:var(--primary);}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.pill-ok{background:var(--success-bg);color:var(--success);}
+.pill-warn{background:var(--warning-bg);color:#92400e;}
+.pill-err{background:var(--danger-bg);color:var(--danger);}
+.pill-neu{background:#f1f5f9;color:var(--muted);}
+.pill-info{background:var(--info-bg);color:var(--info);}
+
+.pbar{height:8px;background:#e2e8f0;border-radius:5px;overflow:hidden;margin:5px 0;}
+.pfill{height:100%;border-radius:5px;transition:width .4s,background .3s;}
+
+.sum-hero{border-radius:10px;padding:14px 14px 12px;border:1.5px solid var(--border);margin-bottom:12px;text-align:center;}
+.sum-hero.ok{background:var(--success-bg);border-color:var(--success-b);}
+.sum-hero.warn{background:var(--warning-bg);border-color:var(--warning-b);}
+.sum-hero.err{background:var(--danger-bg);border-color:var(--danger-b);}
+.sum-hero .sh-kicker{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:4px;}
+.sum-hero.ok .sh-kicker{color:var(--success);}
+.sum-hero.warn .sh-kicker{color:#92400e;}
+.sum-hero.err .sh-kicker{color:var(--danger);}
+.sum-hero .sh-val{font-size:28px;font-weight:900;line-height:1.1;color:var(--primary);}
+.sum-hero.ok .sh-val{color:var(--success);}
+.sum-hero.warn .sh-val{color:#b45309;}
+.sum-hero.err .sh-val{color:var(--danger);}
+.sum-hero .sh-sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.35;}
+.sum-meters{display:flex;flex-direction:column;gap:10px;}
+.sum-meter{padding:0;}
+.sum-meter-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px;}
+.sum-meter-name{font-size:12px;font-weight:700;color:var(--text);}
+.sum-meter-nums{font-size:11px;color:var(--muted);white-space:nowrap;}
+.sum-meter-nums b{color:var(--text);font-weight:700;}
+.sum-meter .pbar{margin:3px 0 2px;}
+.sum-meter-rest{font-size:11px;font-weight:700;}
+.sum-meter-rest.ok{color:var(--success);}
+.sum-meter-rest.warn{color:#b45309;}
+.sum-meter-rest.err{color:var(--danger);}
+.sum-foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+
+.alert{border-radius:8px;padding:9px 13px;font-size:12px;font-weight:500;margin-bottom:7px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;border:1px solid;}
+.a-err{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-b);}
+.a-warn{background:var(--warning-bg);color:var(--warning);border-color:var(--warning-b);}
+.a-ok{background:var(--success-bg);color:var(--success);border-color:var(--success-b);}
+.a-info{background:var(--info-bg);color:var(--info);border-color:var(--info-b);}
+
+.blk{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:8px;}
+.blk.blk-err{background:var(--danger-bg);border-color:var(--danger-b);}
+.blk.blk-warn{background:var(--warning-bg);border-color:var(--warning-b);}
+.blk.blk-est{background:var(--ultimo-bg);border-color:var(--ultimo-b);}
+.blk-title{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.blk-detail{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;}
+
+.veredicto{border-radius:10px;padding:16px 18px;border:2px solid;}
+.v-ok{background:var(--success-bg);border-color:var(--success-b);}
+.v-warn{background:var(--warning-bg);border-color:var(--warning-b);}
+.v-err{background:var(--danger-bg);border-color:var(--danger-b);}
+.v-title{font-size:16px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.v-list{padding-left:18px;line-height:2;font-size:13px;}
+.v-sep{height:1px;background:currentColor;opacity:.2;margin:10px 0;}
+.margen-box{border-radius:8px;padding:12px 14px;border:1px solid;margin-top:12px;}
+.margen-box .mb-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;opacity:.8;}
+.margen-box table{width:100%;border-collapse:collapse;}
+.margen-box td{padding:4px 6px;font-size:12px;}
+.margen-box td:last-child{text-align:right;font-weight:700;}
+.margen-box tr.limiting td{font-weight:800;font-size:13px;}
+
+.norm-section{margin-bottom:14px;}
+.norm-section:last-child{margin-bottom:0;}
+.norm-h{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.norm-h.rd{color:var(--rd);}
+.norm-h.renfe{color:var(--renfe);}
+
+.empty{text-align:center;padding:24px 16px;color:var(--muted);font-size:13px;}
+.footer{text-align:center;padding:14px 18px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);background:#fff;margin-top:4px;line-height:1.6;}
+.footer strong{color:var(--text);}
+
+/* Sticky verdict bar */
+.sticky-verdict{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:#0f172a;color:#fff;padding:10px 16px;
+  display:none;align-items:center;justify-content:space-between;gap:12px;
+  box-shadow:0 -4px 20px rgba(0,0,0,.25);font-size:13px;
+}
+.sticky-verdict.show{display:flex;}
+.sticky-verdict .sv-main{font-weight:800;}
+.sticky-verdict .sv-sub{font-size:11px;opacity:.8;}
+.sticky-verdict.ok{background:#14532d;}
+.sticky-verdict.err{background:#7f1d1d;}
+.sticky-verdict.warn{background:#92400e;}
+.sticky-verdict button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+
+.save-toast{position:fixed;top:16px;right:16px;background:#0f172a;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;}
+.save-toast.show{opacity:1;}
+
+.btn-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:4px;border-radius:50%;border:1px solid var(--info-b);background:var(--info-bg);color:var(--info);font-size:10px;font-weight:800;cursor:pointer;vertical-align:middle;line-height:1;padding:0;flex-shrink:0;}
+.btn-info:hover{background:var(--info);color:#fff;}
+.ri-label{display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+
+.norm-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:80;display:none;align-items:flex-end;justify-content:center;padding:12px;}
+.norm-modal-backdrop.show{display:flex;}
+.norm-modal{background:#fff;width:min(720px,100%);max-height:min(88vh,820px);border-radius:14px 14px 10px 10px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border);}
+.norm-modal-hdr{padding:12px 16px;background:var(--neutral-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.norm-modal-hdr h2{font-size:14px;font-weight:800;color:var(--primary);}
+.norm-modal-close{border:none;background:#e2e8f0;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;}
+.norm-tabs{display:flex;gap:6px;padding:10px 12px 0;flex-wrap:wrap;}
+.norm-tab{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);}
+.norm-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.norm-search{padding:10px 12px;}
+.norm-search input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;}
+.norm-list{overflow:auto;padding:0 12px 14px;flex:1;}
+.norm-ficha{border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:8px;background:#fff;scroll-margin-top:8px;}
+.norm-ficha.highlight{border-color:var(--info-b);background:var(--info-bg);}
+.norm-ficha-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.norm-ficha-title{font-size:13px;font-weight:800;color:var(--text);}
+.norm-ficha-src{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.norm-ficha-body{font-size:12px;line-height:1.55;color:var(--text);border-left:3px solid var(--border);padding-left:10px;margin-top:8px;white-space:pre-wrap;}
+.norm-ficha-body.rd{border-color:var(--rd);}
+.norm-ficha-body.renfe{border-color:var(--renfe);}
+.norm-ficha-body.aesf{border-color:#7c3aed;}
+.norm-modal-foot{padding:8px 14px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);background:var(--neutral-bg);line-height:1.45;}
+@media(min-width:700px){.norm-modal-backdrop{align-items:center;}.norm-modal{border-radius:14px;}}
+
+@media print{
+  .hdr-right,.btn-del,.add-row,.sticky-verdict,.save-toast,.norm-modal-backdrop,.btn-info{display:none!important;}
+  body{background:#fff;padding-bottom:0;}
+  .wrap{grid-template-columns:1fr;}
+  .seg-cards{display:none!important;}
+  .seg-wrap{display:block!important;}
+}
+</style>
+</head>
+<body class="turnio-embed">
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-mark">CF</div>
+    <div>
+      <h1>Calculadora de Conducción Ferroviaria</h1>
+      <p>RD 929/2020 Art.36 &nbsp;·&nbsp; Marco Regulador Renfe &nbsp;·&nbsp; Verificación en tiempo real</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="btn btn-outline" type="button" onclick="openNorma()">Normativa</button>
+    <button class="btn btn-outline" type="button" onclick="window.print()">Imprimir</button>
+    <button class="btn btn-outline" type="button" onclick="exportJSON()">Exportar</button>
+    <button class="btn btn-outline" type="button" onclick="resetAll()">Limpiar</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="col-left">
+    <div class="card">
+      <div class="card-hdr">Configuración del servicio</div>
+      <div class="card-body">
+        <div class="toggle-row">
+          <div class="toggle-label">Inicio en residencia
+            <small>Necesario para ampliar a 9h 30min (Marco Renfe)</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="startRes" checked onchange="calc(true)"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Fin en residencia
+            <small>Necesario para ampliar a 9h 30min (Marco Renfe)</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="endRes" checked onchange="calc(true)"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Servicio nocturno
+            <small>Marco Renfe: límite continuo 5h (en vez de 5h30)</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="isNoc" onchange="calc(true)"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Velocidad &gt;160 km/h
+            <small>Marco Renfe: mismo límite continuo 5h</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="isAV" onchange="calc(true)"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Incluir toma/deje (2×15 min)
+            <small>Suma a la jornada; no cuenta como conducción (Art.36.2)</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="tomaDeje" checked onchange="calc(true)"><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">Jornada de trabajo</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="fg">
+            <label>Hora de presentación</label>
+            <input class="inp" type="time" id="jStart" oninput="calc(true)">
+          </div>
+        </div>
+        <div id="jornadaInfo"></div>
+        <div id="inputAlerts"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">Márgenes disponibles</div>
+      <div class="card-body" id="summaryPanel">
+        <div class="empty">Añade tramos de conducción</div>
+      </div>
+    </div>
+
+    <div class="card" id="ampCard" style="display:none">
+      <div class="card-hdr">Ampliación jornada a 9h 30min</div>
+      <div class="card-body" id="ampPanel"></div>
+    </div>
+  </div>
+
+  <div class="col-right">
+    <div class="card" id="veredictoCard" style="display:none">
+      <div class="card-hdr">Veredicto — último tren en curso</div>
+      <div class="card-body" id="veredictoPanel"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        Tramos de conducción
+        <span class="badge" id="tramosCount">0 tramos</span>
+      </div>
+      <div class="card-body">
+        <div class="hint">
+          <strong>Retraso salida</strong>: desplaza la hora real de salida.<br>
+          <strong>Retraso llegada / actual</strong>: en trenes completados, retraso acumulado de llegada; en el <strong>último tren</strong>, el retraso que lleva ahora (la calculadora estima si puedes llegar dentro de normativa).<br>
+          <span style="opacity:.85">Continuo: 5h30 Marco Renfe (5h nocturno/AV) · techo BOE 6h · suma diaria ≤ 9h (Art.36).</span>
+        </div>
+
+        <div class="seg-wrap">
+          <table class="seg">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th style="text-align:left;min-width:90px">Tren</th>
+                <th>Sal. teórica</th>
+                <th>Lleg. teórica</th>
+                <th>Retraso salida<br><small style="font-weight:400;text-transform:none">(min)</small></th>
+                <th>Retraso llegada<br><small style="font-weight:400;text-transform:none">(min)</small></th>
+                <th>Sal. real</th>
+                <th>Lleg. real</th>
+                <th>Duración</th>
+                <th>Pausa ant.</th>
+                <th>Tipo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="segBody"></tbody>
+          </table>
+        </div>
+
+        <div class="seg-cards" id="segCards"></div>
+
+        <div class="add-row">
+          <button class="btn-add-seg" type="button" onclick="addSeg(false)">+ Tren completado</button>
+          <button class="btn-add-ultimo" type="button" onclick="addSeg(true)">Último tren (en curso)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="bloquesCard" style="display:none">
+      <div class="card-hdr">Bloques de conducción continua</div>
+      <div class="card-body" id="bloquesPanel"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">Verificación normativa</div>
+      <div class="card-body" id="normsPanel">
+        <div class="empty">Introduce los datos para ver la verificación</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <strong>Herramienta de apoyo a la decisión.</strong>
+  La responsabilidad del cumplimiento de los tiempos máximos corresponde a la empresa ferroviaria y al maquinista (RD 929/2020 Art.36.1).
+  No sustituye el control oficial ni el Marco Regulador vigente.<br>
+  © José Enrique Rodríguez Fenoy · Técnico Centro Gestión SP Andalucía ·
+  RD 929/2020 (Art.36: continua ≤6h, diaria ≤9h) · Marco Regulador Renfe (continua ≤5h30 / 5h)
+</div>
+
+<div class="sticky-verdict" id="stickyVerdict" aria-live="polite">
+  <div>
+    <div class="sv-main" id="svMain">—</div>
+    <div class="sv-sub" id="svSub">—</div>
+  </div>
+  <button type="button" onclick="document.getElementById('veredictoCard').scrollIntoView({behavior:'smooth'})">Ver detalle</button>
+</div>
+<div class="save-toast" id="saveToast">Guardado</div>
+
+<div class="norm-modal-backdrop" id="normModal" role="dialog" aria-modal="true" aria-labelledby="normModalTitle" onclick="if(event.target===this)closeNorma()">
+  <div class="norm-modal">
+    <div class="norm-modal-hdr">
+      <h2 id="normModalTitle">Consulta normativa</h2>
+      <button type="button" class="norm-modal-close" onclick="closeNorma()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="norm-tabs" id="normTabs">
+      <button type="button" class="norm-tab active" data-capa="all" onclick="filterNormas('all', this)">Todas</button>
+      <button type="button" class="norm-tab" data-capa="rd" onclick="filterNormas('rd', this)">RD 929/2020</button>
+      <button type="button" class="norm-tab" data-capa="renfe" onclick="filterNormas('renfe', this)">Marco Renfe</button>
+      <button type="button" class="norm-tab" data-capa="aesf" onclick="filterNormas('aesf', this)">AESF 4/2021</button>
+    </div>
+    <div class="norm-search">
+      <input type="search" id="normSearch" placeholder="Buscar: refrigerio, 5h30, residencia…" oninput="filterNormas(currentNormCapa)">
+    </div>
+    <div class="norm-list" id="normList"></div>
+    <div class="norm-modal-foot">
+      Extractos literales de apoyo. Fuentes: RD 929/2020 (BOE consolidado), Marco Regulador de Conducción Renfe rev.12 (08/02/2025), Recomendación Técnica AESF 4/2021 v2 (enero 2025). No sustituyen el texto íntegro vigente.
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTES ──
+const TOMA_DEJE_MIN   = 15;
+const JORNADA_ORD     = 7*60+13;
+const JORNADA_MAX     = 9*60+30;
+const COND_CONT_GEN   = 5*60+30; // Marco Renfe diurno
+const COND_CONT_BOE   = 6*60;    // Art.36 RD
+const COND_CONT_ESP   = 5*60;    // Nocturno o >160 km/h (Marco Renfe)
+const COND_REDUCE     = 4*60;
+const PAUSA_MIN       = 45;
+const COND_DIARIA_ABS = 9*60;
+const STORAGE_KEY     = 'calcCondFerro_v1';
+
+// ── FICHAS NORMATIVAS (extractos literales) ──
+const NORMATIVA = [
+  {
+    id: 'rd-36-1',
+    capa: 'rd',
+    titulo: 'Responsabilidad del cumplimiento',
+    fuente: 'RD 929/2020 · Art.36.1',
+    texto: 'Las empresas ferroviarias y los administradores de infraestructuras serán responsables del cumplimiento de los tiempos máximos de conducción de los maquinistas que trabajen para ellas, en virtud de sus obligaciones de planificación de las actividades y vigilancia de las mismas.\n\nPor su parte, los maquinistas también serán responsables del cumplimiento de los tiempos máximos de conducción, respetando los tiempos planificados en los servicios que se les hayan asignado.'
+  },
+  {
+    id: 'rd-36-2',
+    capa: 'rd',
+    titulo: 'Qué computa como tiempo de conducción',
+    fuente: 'RD 929/2020 · Art.36.2',
+    texto: 'Se considerará tiempo de conducción la duración de la actividad durante la cual el maquinista es responsable de la conducción de un vehículo ferroviario, con la exclusión del tiempo previsto para la puesta en servicio y la puesta fuera de servicio del vehículo. Incluye la realización de maniobras que lleven asociado el manejo del vehículo ferroviario en movimiento. También se computarán como tiempo de conducción las interrupciones en las que el maquinista permanece como responsable del vehículo a efectos de conducción, es decir, con atención a la circulación ferroviaria.'
+  },
+  {
+    id: 'rd-36-3',
+    capa: 'rd',
+    titulo: 'Límites legales: 6 h continuo / 9 h diario',
+    fuente: 'RD 929/2020 · Art.36.3',
+    texto: 'Se establecen los siguientes límites de tiempos de conducción:\n\na) El tiempo máximo de conducción continuada será de 6 horas.\nb) El tiempo máximo de conducción diaria será de 9 horas.'
+  },
+  {
+    id: 'rd-36-4',
+    capa: 'rd',
+    titulo: 'Cómputo por periodos de 24 horas',
+    fuente: 'RD 929/2020 · Art.36.4',
+    texto: 'El cómputo del tiempo máximo de conducción se realizará por periodos de 24 horas. Este período se iniciará con el comienzo de la actividad de conducción y finalizará cuando se disfrute de forma continuada y completa del descanso mínimo establecido por la correspondiente normativa laboral.'
+  },
+  {
+    id: 'rd-36-5',
+    capa: 'rd',
+    titulo: 'Pausa de 45 minutos que interrumpe el continuo',
+    fuente: 'RD 929/2020 · Art.36.5',
+    texto: 'La conducción continuada se considerará interrumpida cuando se disfrute de una pausa de al menos 45 minutos, en la que el maquinista no será responsable del tren a efectos de circulación, ni podrá ser requerido para la realización de ningún tipo de servicio, actividad o control aleatorio de alcohol o drogas.\n\nEsta pausa no se computará como período de conducción.'
+  },
+  {
+    id: 'mrc-n4',
+    capa: 'renfe',
+    titulo: 'Jornada 7h13 y ampliación a 9h30',
+    fuente: 'Marco Regulador Conducción Renfe · Norma 4ª · rev.12 (08/02/2025)',
+    texto: 'La jornada máxima diaria se establece en siete horas y trece minutos, pudiendo alcanzar hasta las nueve horas treinta minutos de jornada total cuando incluyan servicios con inicio y finalización en la residencia del trabajador, respetándose, en todo caso, los límites de jornada establecidos en la regulación de Agente Único de Conducción, y teniendo la consideración de horas de mayor dedicación el tiempo que exceda de las siete horas y trece minutos.'
+  },
+  {
+    id: 'mrc-n11',
+    capa: 'renfe',
+    titulo: 'Toma y deje del servicio (15 min)',
+    fuente: 'Marco Regulador Conducción Renfe · Norma 11ª · rev.12 (08/02/2025)',
+    texto: 'El tiempo de toma del servicio al inicio de la jornada y el tiempo de deje del servicio a la finalización de la misma, será, al menos, de quince minutos.\n\nEn el caso de que el tiempo de toma de servicio de un trabajador coincida total o parcialmente con el tiempo de deje de servicio de otro trabajador en un tren al paso por una estación, dichos periodos no sobrepasarán de manera conjunta los previstos para las paradas técnicas y/o comerciales.'
+  },
+  {
+    id: 'mrc-n12-1',
+    capa: 'renfe',
+    titulo: 'Conducción continua máxima 5h30',
+    fuente: 'Marco Regulador Conducción Renfe · Norma 12ª.1 · Agente único',
+    texto: 'El tiempo máximo de conducción continuada será de 5 horas y 30 minutos, por lo tanto no se podrán grafiar, ni realizar conducciones continuadas que sobrepasen este máximo.'
+  },
+  {
+    id: 'mrc-n12-2',
+    capa: 'renfe',
+    titulo: 'Interrupción del continuo y lugar del refrigerio',
+    fuente: 'Marco Regulador Conducción Renfe · Norma 12ª.2',
+    texto: 'La conducción continuada se considerará interrumpida cuando se disfrute un periodo de descanso de 45 minutos, durante el cual el trabajador no podrá ser requerido para realizar ningún tipo de servicio ni actividad, incluyéndose en este tiempo las operaciones necesarias para asegurar la composición y para la nueva puesta a disposición del tren.\n\nAdemás, la interrupción a que se refiere el apartado anterior, se deberá producir en una estación abierta que presente las instalaciones necesarias para su refrigerio y aseo y el maquinista conozca que lo va a realizar.\n\nExclusivamente para servicios de mercancías, si bien la empresa procurará que la interrupción se realice en una estación abierta que presente las instalaciones necesarias para el refrigerio y aseo del maquinista, se podrá producir en la propia locomotora y el maquinista conozca que lo va a realizar.'
+  },
+  {
+    id: 'mrc-n12-3',
+    capa: 'renfe',
+    titulo: 'Nocturno o >160 km/h: continuo 5 horas',
+    fuente: 'Marco Regulador Conducción Renfe · Norma 12ª.3',
+    texto: 'Para trenes nocturnos y de tipo superior a 160 km/h, el tiempo máximo de conducción continuada será de cinco horas. Se considerarán vehículos a velocidades superiores a 160 km/h, aquellos que circulen a esta velocidad más del cincuenta por ciento del recorrido.'
+  },
+  {
+    id: 'mrc-n12-7',
+    capa: 'renfe',
+    titulo: 'Continuo >4 h → jornada máxima 7h13',
+    fuente: 'Marco Regulador Conducción Renfe · Norma 12ª.7',
+    texto: 'Si la jornada de conducción continuada realizada supera las 4 horas, la jornada máxima diaria no superará las siete horas y trece minutos.'
+  },
+  {
+    id: 'aesf-q9',
+    capa: 'aesf',
+    titulo: 'Refrigerios: deben declararse expresamente',
+    fuente: 'AESF Rec. Téc. 4/2021 v2 · Anexo I, pregunta 9',
+    texto: 'Según lo dispuesto en el artículo 36 del RDSOIF la conducción continuada se considerará interrumpida cuando se disfrute de una pausa de al menos 45 minutos, en la que el maquinista no será responsable del tren a efectos de circulación, ni podrá ser requerido para la realización de ningún tipo de servicio, actividad o control aleatorio de alcohol o drogas.\n\nLas pausas computadas como refrigerios deberían ser expresamente declaradas en los sistemas de control de tiempos, de modo que paradas comerciales o por causas de circulación no deberían considerarse refrigerios únicamente por haber superado esa duración de 45 minutos.'
+  },
+  {
+    id: 'aesf-q10',
+    capa: 'aesf',
+    titulo: 'Pausas <45 min: no cortan el continuo',
+    fuente: 'AESF Rec. Téc. 4/2021 v2 · Anexo I, pregunta 10',
+    texto: 'A efectos de control de la conducción continuada, se considerarán todos los periodos de conducción que se produzcan hasta una pausa de refrigerio de 45 minutos, sin computar los periodos intermedios que pueda haber en los que el maquinista no sea responsable de la conducción o descansos que no alcancen un total de 45 minutos.\n\n[…] los periodos de descanso de 30 minutos no servirían para romper la conducción continuada, pero no computarían como tiempo de conducción, siempre y cuando esté justificado que en ese tiempo el maquinista no estaba a cargo del tren a efectos de conducción.'
+  },
+  {
+    id: 'aesf-q14',
+    capa: 'aesf',
+    titulo: 'Si la jornada laboral es menor, prevalece lo laboral',
+    fuente: 'AESF Rec. Téc. 4/2021 v2 · Anexo I, pregunta 14',
+    texto: 'La normativa laboral.\n\nEl tiempo máximo de conducción en una jornada establecido en el RDSOIF de nueve horas es aplicable solo si ese tiempo es posible dentro de la jornada laboral correspondiente. Así, si, por ejemplo, la jornada laboral, en función de otras prescripciones de la normativa laboral o del convenio fuera de 8 horas, el tiempo de conducción máximo sería el resultante de descontar tiempos de presencia, refrigerios… por lo que nunca podría llegar a ser superior a 8 horas.'
+  },
+];
+
+let currentNormCapa = 'all';
+
+function infoBtn(id) {
+  return `<button type="button" class="btn-info" title="Ver extracto normativo" aria-label="Ver normativa" onclick="event.stopPropagation();openNorma('${id}')">i</button>`;
+}
+
+function openNorma(id) {
+  const modal = document.getElementById('normModal');
+  modal.classList.add('show');
+  const f = id ? NORMATIVA.find(n => n.id === id) : null;
+  const capa = f ? f.capa : (currentNormCapa || 'all');
+  currentNormCapa = capa;
+  document.querySelectorAll('.norm-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.capa === capa);
+  });
+  filterNormas(capa);
+  if (id) {
+    requestAnimationFrame(() => {
+      const el = document.getElementById('ficha-' + id);
+      if (!el) return;
+      document.querySelectorAll('.norm-ficha').forEach(x => x.classList.remove('highlight'));
+      el.classList.add('highlight');
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+}
+
+function closeNorma() {
+  document.getElementById('normModal').classList.remove('show');
+}
+
+function filterNormas(capa, tabEl) {
+  if (capa) currentNormCapa = capa;
+  if (tabEl) {
+    document.querySelectorAll('.norm-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+  }
+  const q = (document.getElementById('normSearch').value || '').trim().toLowerCase();
+  const list = document.getElementById('normList');
+  const items = NORMATIVA.filter(n => {
+    if (currentNormCapa !== 'all' && n.capa !== currentNormCapa) return false;
+    if (!q) return true;
+    return (n.titulo + ' ' + n.fuente + ' ' + n.texto).toLowerCase().includes(q);
+  });
+  const capaLabel = { rd: 'RD', renfe: 'Renfe', aesf: 'AESF' };
+  list.innerHTML = items.map(n => `
+    <article class="norm-ficha" id="ficha-${n.id}">
+      <div class="norm-ficha-top">
+        <div>
+          <div class="norm-ficha-title">${n.titulo}</div>
+          <div class="norm-ficha-src">${n.fuente}</div>
+        </div>
+        <span class="chip chip-${n.capa === 'aesf' ? 'renfe' : n.capa}" style="${n.capa==='aesf'?'background:#ede9fe;color:#5b21b6':''}">${capaLabel[n.capa]}</span>
+      </div>
+      <div class="norm-ficha-body ${n.capa}">${esc(n.texto)}</div>
+    </article>`).join('') || '<div class="empty">Sin resultados</div>';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeNorma();
+});
+
+let segs = [];
+let sid  = 0;
+let saveTimer = null;
+
+const parseT = s => {
+  if (!s || s.length < 5) return null;
+  const [h, m] = s.split(':').map(Number);
+  return (isNaN(h) || isNaN(m)) ? null : h*60+m;
+};
+const toHHMM = m => {
+  if (m === null || m === undefined || isNaN(m)) return '--:--';
+  const t = ((m % 1440) + 1440) % 1440;
+  return String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0');
+};
+const toHM = m => {
+  if (m === null || m === undefined || isNaN(m)) return '--';
+  const sign = m < 0 ? '-' : '';
+  const abs  = Math.abs(Math.round(m));
+  const h = Math.floor(abs/60), min = abs % 60;
+  if (h === 0) return sign + min + ' min';
+  return sign + h + 'h ' + (min > 0 ? min + 'min' : '');
+};
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const esc = s => (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const durMin = (ini, fin) => {
+  if (ini === null || fin === null) return null;
+  let d = fin - ini;
+  if (d < 0) d += 1440;
+  return d;
+};
+
+function toastSaved() {
+  const el = document.getElementById('saveToast');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 900);
+}
+
+function persist() {
+  const data = {
+    startRes: document.getElementById('startRes').checked,
+    endRes: document.getElementById('endRes').checked,
+    isNoc: document.getElementById('isNoc').checked,
+    isAV: document.getElementById('isAV').checked,
+    tomaDeje: document.getElementById('tomaDeje').checked,
+    jStart: document.getElementById('jStart').value,
+    segs, sid
+  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    toastSaved();
+  } catch (_) {}
+}
+
+function schedulePersist() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 350);
+}
+
+function loadPersisted() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    document.getElementById('startRes').checked = !!data.startRes;
+    document.getElementById('endRes').checked = !!data.endRes;
+    document.getElementById('isNoc').checked = !!data.isNoc;
+    document.getElementById('isAV').checked = !!data.isAV;
+    document.getElementById('tomaDeje').checked = data.tomaDeje !== false;
+    document.getElementById('jStart').value = data.jStart || '';
+    segs = Array.isArray(data.segs) ? data.segs : [];
+    sid = data.sid || segs.reduce((m, s) => Math.max(m, s.id || 0), 0);
+    return true;
+  } catch (_) { return false; }
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    startRes: document.getElementById('startRes').checked,
+    endRes: document.getElementById('endRes').checked,
+    isNoc: document.getElementById('isNoc').checked,
+    isAV: document.getElementById('isAV').checked,
+    tomaDeje: document.getElementById('tomaDeje').checked,
+    jStart: document.getElementById('jStart').value,
+    segs
+  }, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'servicio-conduccion.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function addSeg(esUltimo) {
+  if (esUltimo) segs.forEach(s => { s.esUltimo = false; });
+  segs.push({ id: ++sid, esUltimo, label: '', salTeor: '', llegTeor: '', retrasoSal: 0, retrasoAct: 0 });
+  renderTable();
+  calc(true);
+}
+
+function delSeg(id) {
+  segs = segs.filter(s => s.id !== id);
+  renderTable();
+  calc(true);
+}
+
+function getSeg(id) { return segs.find(s => s.id === id); }
+
+function rowInputs(s, i, mobile) {
+  const tipoBadge = s.esUltimo
+    ? '<span class="tb-ult">En curso</span>'
+    : '<span class="tb-comp">Completado</span>';
+  if (mobile) {
+    return `
+      <div class="seg-card ${s.esUltimo ? 'ultimo' : ''}" id="card${s.id}">
+        <div class="seg-card-top">
+          <strong>#${i+1}</strong>
+          ${tipoBadge}
+          <button class="btn-del" type="button" onclick="delSeg(${s.id})" title="Eliminar">×</button>
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label>Tren</label>
+          <input class="inp" type="text" placeholder="Ej: AVE 2089" value="${esc(s.label)}"
+            oninput="getSeg(${s.id}).label=this.value;calc(true)">
+        </div>
+        <div class="seg-card-grid">
+          <div class="fg"><label>Sal. teórica</label>
+            <input class="inp" type="time" value="${s.salTeor}"
+              oninput="getSeg(${s.id}).salTeor=this.value;updateCalcRow(${s.id});calc(true)"></div>
+          <div class="fg"><label>Lleg. teórica</label>
+            <input class="inp" type="time" value="${s.llegTeor}"
+              oninput="getSeg(${s.id}).llegTeor=this.value;updateCalcRow(${s.id});calc(true)"></div>
+          <div class="fg"><label>Retraso salida (min)</label>
+            <input class="inp" type="number" min="0" max="999" value="${s.retrasoSal}"
+              oninput="getSeg(${s.id}).retrasoSal=Math.max(0,parseInt(this.value)||0);updateCalcRow(${s.id});calc(true)"></div>
+          <div class="fg"><label>Retraso llegada (min)</label>
+            <input class="inp" type="number" min="0" max="999" value="${s.retrasoAct}"
+              oninput="getSeg(${s.id}).retrasoAct=Math.max(0,parseInt(this.value)||0);updateCalcRow(${s.id});calc(true)"></div>
+        </div>
+        <div class="seg-card-meta">
+          <span>Sal. real: <strong class="cv" id="salRealM${s.id}">--:--</strong></span>
+          <span>Lleg. real: <strong class="cv" id="llegRealM${s.id}">--:--</strong> <span class="cv-sub" id="llegTagM${s.id}"></span></span>
+          <span>Duración: <strong class="cv" id="durM${s.id}">--</strong></span>
+          <span id="pausaM${s.id}"><span class="pb pb-none">Pausa —</span></span>
+        </div>
+      </div>`;
+  }
+  return `
+    <tr class="${s.esUltimo ? 'tr-ultimo' : ''}" id="tr${s.id}">
+      <td style="font-weight:700;color:var(--muted);font-size:12px;">${i+1}</td>
+      <td><input class="si si-label" type="text" placeholder="Ej: AVE 2089" value="${esc(s.label)}"
+            oninput="getSeg(${s.id}).label=this.value;calc(true)"></td>
+      <td><input class="si" type="time" value="${s.salTeor}"
+            oninput="getSeg(${s.id}).salTeor=this.value;updateCalcRow(${s.id});calc(true)"></td>
+      <td><input class="si" type="time" value="${s.llegTeor}"
+            oninput="getSeg(${s.id}).llegTeor=this.value;updateCalcRow(${s.id});calc(true)"></td>
+      <td><input class="si si-sm" type="number" min="0" max="999" value="${s.retrasoSal}"
+            oninput="getSeg(${s.id}).retrasoSal=Math.max(0,parseInt(this.value)||0);updateCalcRow(${s.id});calc(true)"></td>
+      <td><input class="si si-sm" type="number" min="0" max="999" value="${s.retrasoAct}"
+            oninput="getSeg(${s.id}).retrasoAct=Math.max(0,parseInt(this.value)||0);updateCalcRow(${s.id});calc(true)"></td>
+      <td><span class="cv" id="salReal${s.id}">--:--</span></td>
+      <td><span class="cv" id="llegReal${s.id}">--:--</span><span class="cv-sub" id="llegTag${s.id}"></span></td>
+      <td><span class="cv" id="dur${s.id}">--</span></td>
+      <td id="pausa${s.id}"><span class="pb pb-none">--</span></td>
+      <td>${tipoBadge}</td>
+      <td><button class="btn-del" type="button" onclick="delSeg(${s.id})" title="Eliminar">×</button></td>
+    </tr>`;
+}
+
+function renderTable() {
+  document.getElementById('tramosCount').textContent = segs.length + ' tramo' + (segs.length !== 1 ? 's' : '');
+  document.getElementById('segBody').innerHTML = segs.map((s, i) => rowInputs(s, i, false)).join('');
+  document.getElementById('segCards').innerHTML = segs.map((s, i) => rowInputs(s, i, true)).join('');
+  segs.forEach(s => updateCalcRow(s.id));
+  updatePausas();
+}
+
+function setText(id, txt, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = txt;
+  if (cls !== undefined) el.className = cls;
+}
+
+function updateCalcRow(id) {
+  const s = getSeg(id);
+  if (!s) return;
+  const isEsp = document.getElementById('isNoc').checked || document.getElementById('isAV').checked;
+  const condMax = isEsp ? COND_CONT_ESP : COND_CONT_GEN;
+  const salTeorMin  = parseT(s.salTeor);
+  const llegTeorMin = parseT(s.llegTeor);
+  const salRealMin  = salTeorMin  !== null ? salTeorMin  + (s.retrasoSal || 0) : null;
+  const llegRealMin = llegTeorMin !== null ? llegTeorMin + (s.retrasoAct || 0) : null;
+  const delayCls = llegRealMin !== null && (s.retrasoSal > 0 || s.retrasoAct > 0) ? 'cv delay' : 'cv';
+
+  ['', 'M'].forEach(suf => {
+    setText('salReal' + suf + id, toHHMM(salRealMin));
+    setText('llegReal' + suf + id, toHHMM(llegRealMin), delayCls);
+    const tag = document.getElementById('llegTag' + suf + id);
+    if (tag) tag.textContent = s.esUltimo && s.retrasoAct > 0 ? '(est.)' : '';
+    const elDur = document.getElementById('dur' + suf + id);
+    if (elDur) {
+      if (salRealMin !== null && llegRealMin !== null) {
+        const d = durMin(salRealMin, llegRealMin);
+        elDur.textContent = d !== null && d > 0 ? toHM(d) : '--';
+        elDur.className = 'cv' + (d > condMax ? ' bad' : d > COND_REDUCE ? ' delay' : '');
+      } else {
+        elDur.textContent = '--';
+        elDur.className = 'cv';
+      }
+    }
+  });
+}
+
+function updatePausas() {
+  for (let i = 0; i < segs.length; i++) {
+    const el  = document.getElementById('pausa' + segs[i].id);
+    const elM = document.getElementById('pausaM' + segs[i].id);
+    const htmlNone = '<span class="pb pb-none">' + (i === 0 ? '—' : '--') + '</span>';
+    if (i === 0) {
+      if (el) el.innerHTML = htmlNone;
+      if (elM) elM.innerHTML = '<span class="pb pb-none">Pausa —</span>';
+      continue;
+    }
+    const prev = segs[i-1], curr = segs[i];
+    const prevLlegTeor = parseT(prev.llegTeor);
+    const currSalTeor  = parseT(curr.salTeor);
+    if (prevLlegTeor === null || currSalTeor === null) {
+      if (el) el.innerHTML = '<span class="pb pb-none">--</span>';
+      if (elM) elM.innerHTML = '<span class="pb pb-none">Pausa --</span>';
+      continue;
+    }
+    const prevLlegReal = prevLlegTeor + (prev.retrasoAct || 0);
+    const currSalReal  = currSalTeor  + (curr.retrasoSal || 0);
+    // Fix medianoche: usar durMin
+    const pausa = durMin(prevLlegReal, currSalReal);
+    // Si la "pausa" es casi un día entero y la salida real es anterior en reloj
+    // pero el solape real es solape (misma ventana), detectar solape:
+    // si currSalReal está "antes" que prevLlegReal en el mismo día sin cruzar medianoche útil,
+    // durMin devolvería ~23h — tratamos como solape si pausa > 12h y sal < lleg en reloj crudo
+    let pausaEff = pausa;
+    const raw = currSalReal - prevLlegReal;
+    if (raw < 0 && pausa > 12*60) pausaEff = 0; // solape / sin pausa real
+    const cls = pausaEff >= PAUSA_MIN ? 'pb-ok' : 'pb-warn';
+    const label = pausaEff <= 0 ? '0 min' : toHM(pausaEff);
+    if (el) el.innerHTML = `<span class="pb ${cls}">${label}</span>`;
+    if (elM) elM.innerHTML = `<span class="pb ${cls}">Pausa ${label}</span>`;
+  }
+}
+
+function pauseBetween(prev, curr) {
+  const raw = curr.salRealMin - prev.llegRealMin;
+  const d = durMin(prev.llegRealMin, curr.salRealMin);
+  if (raw < 0 && d > 12*60) return 0; // solape
+  return d;
+}
+
+function calc(doPersist) {
+  updatePausas();
+
+  const jStart   = parseT(document.getElementById('jStart').value);
+  const startRes = document.getElementById('startRes').checked;
+  const endRes   = document.getElementById('endRes').checked;
+  const isNoc    = document.getElementById('isNoc').checked;
+  const isAV     = document.getElementById('isAV').checked;
+  const inclTD   = document.getElementById('tomaDeje').checked;
+  const isEsp    = isNoc || isAV;
+  const condMax  = isEsp ? COND_CONT_ESP : COND_CONT_GEN;
+
+  const alerts = [];
+  if (segs.length > 0 && jStart === null) {
+    alerts.push({cls:'a-warn', txt:'Falta la hora de presentación: sin ella no se puede verificar la jornada completa.'});
+    document.getElementById('jStart').classList.add('warn');
+  } else {
+    document.getElementById('jStart').classList.remove('warn');
+  }
+
+  const tramosC = segs.map(s => {
+    const salTeorMin  = parseT(s.salTeor);
+    const llegTeorMin = parseT(s.llegTeor);
+    if (salTeorMin === null || llegTeorMin === null) return { ...s, valido: false };
+    const salRealMin  = salTeorMin + (s.retrasoSal || 0);
+    const llegRealMin = llegTeorMin + (s.retrasoAct || 0);
+    const dur = durMin(salRealMin, llegRealMin);
+    if (s.retrasoAct > 0 && s.retrasoSal > 0 && s.retrasoAct < s.retrasoSal && !s.esUltimo) {
+      alerts.push({cls:'a-info', txt:`${s.label || 'Tramo'}: el retraso de llegada es menor que el de salida (recuperación en ruta).`});
+    }
+    return { ...s, salTeorMin, llegTeorMin, salRealMin, llegRealMin, dur, valido: dur !== null && dur >= 0 };
+  }).filter(t => t.valido);
+
+  document.getElementById('inputAlerts').innerHTML = alerts.map(a =>
+    `<div class="alert ${a.cls}" style="margin-top:8px">${a.txt}</div>`).join('');
+
+  if (tramosC.length === 0) {
+    document.getElementById('summaryPanel').innerHTML = '<div class="empty">Añade tramos de conducción</div>';
+    document.getElementById('normsPanel').innerHTML   = '<div class="empty">Introduce los datos para ver la verificación</div>';
+    document.getElementById('bloquesCard').style.display   = 'none';
+    document.getElementById('veredictoCard').style.display = 'none';
+    document.getElementById('ampCard').style.display       = 'none';
+    document.getElementById('jornadaInfo').innerHTML       = '';
+    document.getElementById('stickyVerdict').classList.remove('show');
+    if (doPersist) schedulePersist();
+    return;
+  }
+
+  const bloques = [];
+  let blqActual = [tramosC[0]];
+  for (let i = 1; i < tramosC.length; i++) {
+    const pausa = pauseBetween(tramosC[i-1], tramosC[i]);
+    if (pausa < PAUSA_MIN) blqActual.push(tramosC[i]);
+    else { bloques.push(blqActual); blqActual = [tramosC[i]]; }
+  }
+  bloques.push(blqActual);
+
+  const bloquesCalc = bloques.map(b => ({
+    tramos: b,
+    ini: b[0].salRealMin,
+    fin: b[b.length-1].llegRealMin,
+    dur: b.reduce((s, t) => s + t.dur, 0),
+    tieneUlt: b.some(t => t.esUltimo),
+  }));
+
+  const condTotal = tramosC.reduce((s, t) => s + t.dur, 0);
+  const condCompletad = tramosC.filter(t => !t.esUltimo).reduce((s, t) => s + t.dur, 0);
+  const blqUltimoIdx = bloquesCalc.findIndex(b => b.tieneUlt);
+  const blqActivo = blqUltimoIdx >= 0 ? bloquesCalc[blqUltimoIdx] : bloquesCalc[bloquesCalc.length - 1];
+  const blqMax = Math.max(...bloquesCalc.map(b => b.dur));
+
+  // Reducción: confirmada (bloques cerrados) vs total/previsible (incluye en curso)
+  const bloquesCompletados = bloquesCalc.filter(b => !b.tieneUlt);
+  const reduccionConfirmada = bloquesCompletados.some(b => b.dur > COND_REDUCE);
+  const reduccionTotal = blqMax > COND_REDUCE;
+
+  let refrigerioOk = false, condAntesPausa = 0, pausaEncontrada = 0;
+  for (let i = 0; i < bloquesCalc.length - 1; i++) {
+    condAntesPausa += bloquesCalc[i].dur;
+    const pausaDur = pauseBetween(
+      { llegRealMin: bloquesCalc[i].fin },
+      { salRealMin: bloquesCalc[i+1].ini }
+    );
+    if (pausaDur >= PAUSA_MIN) {
+      pausaEncontrada = pausaDur;
+      if (condAntesPausa <= COND_REDUCE) refrigerioOk = true;
+      break;
+    }
+  }
+
+  // Para límite de jornada aplicable: usamos reducción confirmada si hay último tren;
+  // si no hay último, usamos total.
+  const hayUltimo = tramosC.some(t => t.esUltimo);
+  const reduccionParaLimite = hayUltimo ? reduccionConfirmada : reduccionTotal;
+
+  let jornadaLimite, jornadaLabel, jornadaAmpliada;
+  if (reduccionParaLimite) {
+    jornadaLimite = JORNADA_ORD;
+    jornadaLabel = 'Reducida a 7h 13min (bloque >4h)';
+    jornadaAmpliada = false;
+  } else if (startRes && endRes && refrigerioOk) {
+    jornadaLimite = JORNADA_MAX;
+    jornadaLabel = 'Ampliada a 9h 30min';
+    jornadaAmpliada = true;
+  } else {
+    jornadaLimite = JORNADA_ORD;
+    jornadaLabel = 'Ordinaria 7h 13min';
+    jornadaAmpliada = false;
+  }
+
+  const tdTotal = inclTD ? 2 * TOMA_DEJE_MIN : 0;
+  const condDiariaMax = Math.min(jornadaLimite - tdTotal, COND_DIARIA_ABS);
+
+  const finReal = tramosC[tramosC.length - 1].llegRealMin;
+  let jornadaReal = null;
+  if (jStart !== null) {
+    jornadaReal = (finReal - jStart) + (inclTD ? TOMA_DEJE_MIN : 0);
+    if (jornadaReal < 0) jornadaReal += 1440;
+  }
+  const horaFinCalc = inclTD ? finReal + TOMA_DEJE_MIN : finReal;
+  const ultimoTren = tramosC.find(t => t.esUltimo);
+
+  renderJornadaInfo(jStart, jornadaReal, jornadaLimite, jornadaLabel, horaFinCalc, inclTD);
+  renderSummary(blqActivo, condMax, condTotal, condCompletad, condDiariaMax,
+                jornadaReal, jornadaLimite, refrigerioOk, condAntesPausa, pausaEncontrada, inclTD);
+  renderBloques(bloquesCalc, condMax, condDiariaMax, condTotal);
+  renderNormativa(bloquesCalc, condMax, condTotal, condDiariaMax,
+                  jornadaReal, jornadaLimite, reduccionConfirmada, reduccionTotal,
+                  refrigerioOk, condAntesPausa, pausaEncontrada,
+                  startRes, endRes, isNoc, isAV, inclTD, hayUltimo);
+  renderAmpliacion(startRes, endRes, refrigerioOk, reduccionParaLimite, jornadaLimite, jornadaAmpliada, hayUltimo, reduccionTotal);
+
+  if (ultimoTren) {
+    renderVeredicto(ultimoTren, blqActivo, condMax, condTotal, condDiariaMax,
+                    jornadaReal, jornadaLimite, inclTD);
+  } else {
+    document.getElementById('veredictoCard').style.display = 'none';
+    document.getElementById('stickyVerdict').classList.remove('show');
+  }
+
+  if (doPersist) schedulePersist();
+}
+
+function renderJornadaInfo(jStart, jornadaReal, jornadaLimite, jornadaLabel, horaFinCalc, inclTD) {
+  const el = document.getElementById('jornadaInfo');
+  if (jStart === null || jornadaReal === null) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-top:6px;">Introduce la hora de presentación para calcular la jornada.</div>';
+    return;
+  }
+  const pct = clamp(Math.round(jornadaReal / jornadaLimite * 100), 0, 100);
+  const color = jornadaReal > jornadaLimite ? '#dc2626' : jornadaReal > jornadaLimite * 0.9 ? '#d97706' : '#15803d';
+  el.innerHTML = `
+    <div style="margin-top:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
+        <span style="font-size:12px;color:var(--muted);">Jornada acumulada${inclTD?' (incl. toma/deje)':''}</span>
+        <span style="font-weight:800;font-size:14px;color:${color};">${toHM(jornadaReal)}</span>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:${color};"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;">
+        <span>${jornadaLabel}</span>
+        <span>Fin estimado: <strong>${toHHMM(horaFinCalc)}</strong></span>
+      </div>
+    </div>`;
+}
+
+function meterTone(used, lim) {
+  if (used > lim) return 'err';
+  if (used > lim * 0.9 || lim - used < 30) return 'warn';
+  return 'ok';
+}
+function meterBar(used, lim, tone) {
+  const pct = clamp(Math.round(used / Math.max(lim, 1) * 100), 0, 100);
+  const color = tone === 'err' ? '#dc2626' : tone === 'warn' ? '#d97706' : '#15803d';
+  return `<div class="pbar"><div class="pfill" style="width:${pct}%;background:${color};"></div></div>`;
+}
+function meterRow(name, used, lim, note) {
+  const rest = lim - used;
+  const tone = meterTone(used, lim);
+  const restTxt = rest >= 0 ? `Quedan ${toHM(rest)}` : `Excede ${toHM(-rest)}`;
+  return `
+    <div class="sum-meter">
+      <div class="sum-meter-top">
+        <span class="sum-meter-name">${name}</span>
+        <span class="sum-meter-nums"><b>${toHM(used)}</b> / ${toHM(lim)}</span>
+      </div>
+      ${meterBar(used, lim, tone)}
+      <div class="sum-meter-rest ${tone}">${restTxt}${note ? ` · ${note}` : ''}</div>
+    </div>`;
+}
+
+function renderSummary(blqActivo, condMax, condTotal, condComp, condDiariaMax,
+                       jornadaReal, jornadaLimite, refrigOk, condAntesPausa, pausaEnc, inclTD) {
+  const margenBloqueCont = condMax - blqActivo.dur;
+  const margenDiario = condDiariaMax - condTotal;
+  const margenBloque = Math.min(margenBloqueCont, margenDiario);
+  const jorDisp = jornadaReal !== null ? jornadaLimite - jornadaReal : null;
+
+  // Factor limitante = el menor margen operativo
+  const factores = [
+    { label: 'Bloque continuo', val: margenBloque },
+    { label: 'Conducción del día', val: margenDiario },
+  ];
+  if (jorDisp !== null) factores.push({ label: 'Jornada', val: jorDisp });
+  const limitante = factores.reduce((a, b) => (b.val < a.val ? b : a));
+  const heroTone = limitante.val < 0 ? 'err' : limitante.val < 30 ? 'warn' : 'ok';
+  const heroVal = limitante.val >= 0 ? toHM(limitante.val) : `−${toHM(-limitante.val)}`;
+  const heroKicker = limitante.val >= 0 ? 'Puedes seguir conduciendo' : 'Ya has superado el límite';
+  const limitadoPorDiario = margenDiario < margenBloqueCont;
+
+  const refrigPill = refrigOk
+    ? `<span class="pill pill-ok">Refrigerio OK</span>${infoBtn('aesf-q9')}`
+    : pausaEnc > 0
+      ? `<span class="pill pill-warn">Refrigerio tardío</span>${infoBtn('aesf-q9')}`
+      : `<span class="pill pill-neu">Refrigerio pendiente</span>${infoBtn('aesf-q9')}`;
+
+  document.getElementById('summaryPanel').innerHTML = `
+    <div class="sum-hero ${heroTone}">
+      <div class="sh-kicker">${heroKicker}</div>
+      <div class="sh-val">${heroVal}</div>
+      <div class="sh-sub">Limitante: <strong>${limitante.label}</strong>${
+        limitadoPorDiario && limitante.label === 'Bloque continuo'
+          ? ' (el diario corta antes que el continuo)'
+          : ''
+      }</div>
+    </div>
+    <div class="sum-meters">
+      ${meterRow('Bloque continuo', blqActivo.dur, condMax, limitadoPorDiario ? 'tope diario más bajo' : '')}
+      ${meterRow('Conducción del día', condTotal, condDiariaMax, inclTD ? 'jornada − toma/deje' : '')}
+      ${jornadaReal !== null
+        ? meterRow('Jornada', jornadaReal, jornadaLimite, '')
+        : `<div class="sum-meter"><div class="sum-meter-top"><span class="sum-meter-name">Jornada</span><span class="sum-meter-nums">Sin hora de presentación</span></div></div>`}
+    </div>
+    <div class="sum-foot">
+      ${refrigPill}
+      <span class="pill pill-neu">Completados ${toHM(condComp)}</span>
+    </div>`;
+}
+
+function renderBloques(bloques, condMax, condDiariaMax, condTotal) {
+  const card = document.getElementById('bloquesCard');
+  const panel = document.getElementById('bloquesPanel');
+  card.style.display = 'block';
+  panel.innerHTML = bloques.map((b, i) => {
+    const excede = b.dur > condMax;
+    const excede4 = b.dur > COND_REDUCE;
+    const pct = clamp(Math.round(b.dur / condMax * 100), 0, 100);
+    const color = excede ? '#dc2626' : excede4 ? '#d97706' : '#15803d';
+    const blkCls = excede ? 'blk blk-err' : b.tieneUlt ? 'blk blk-est' : excede4 ? 'blk blk-warn' : 'blk';
+    const trens = b.tramos.map(t => t.label || `Tramo ${t.id}`).join(' → ');
+    const margenContinu = condMax - b.dur;
+    const margenDiarioRestante = condDiariaMax - condTotal;
+    const margen = b.tieneUlt ? Math.min(margenContinu, margenDiarioRestante) : margenContinu;
+    const limitadoPorDiario = b.tieneUlt && margenDiarioRestante < margenContinu;
+    return `
+      <div class="${blkCls}">
+        <div class="blk-title">
+          <span>Bloque ${i+1} — <strong style="color:${color};">${toHM(b.dur)}</strong>
+            ${excede ? '<span class="pill pill-err" style="font-size:10px;">Excede límite</span>' :
+              excede4 ? '<span class="pill pill-warn" style="font-size:10px;">>4h → reduce jornada</span>' :
+              '<span class="pill pill-ok" style="font-size:10px;">OK</span>'}
+            ${b.tieneUlt ? '<span class="pill" style="background:#fef3c7;color:#92400e;font-size:10px;">Estimado</span>' : ''}
+          </span>
+          <span style="font-size:11px;color:var(--muted);">${toHHMM(b.ini)} → ${toHHMM(b.fin)}</span>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%;background:${color};"></div></div>
+        <div class="blk-detail">
+          <span>${pct}% del límite continuo (${toHM(condMax)})</span>
+          <span>Margen: <b>${margen >= 0 ? toHM(margen) : toHM(-margen) + ' excedido'}</b>${limitadoPorDiario ? ' <span style="font-size:10px;color:#b45309;">(limitado por máx. diario)</span>' : ''}</span>
+          <span>Trenes: ${trens}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderNormativa(bloques, condMax, condTotal, condDiariaMax,
+                         jornadaReal, jornadaLimite, reduccionConf, reduccionTot,
+                         refrigOk, condAntesPausa, pausaEnc,
+                         startRes, endRes, isNoc, isAV, inclTD, hayUltimo) {
+  const el = document.getElementById('normsPanel');
+  const row = (icon, label, value, cls, note, normId) =>
+    `<div class="ri">
+      <div><div class="ri-label">${icon} ${label}${normId ? infoBtn(normId) : ''}</div>${note ? `<div style="font-size:10px;color:var(--muted);">${note}</div>` : ''}</div>
+      <span class="pill ${cls}">${value}</span>
+    </div>`;
+
+  // Capa RD
+  let rd = '';
+  bloques.forEach((b, i) => {
+    const excedeBOE = b.dur > COND_CONT_BOE;
+    rd += row(
+      excedeBOE ? '!' : 'OK',
+      `Bloque ${i+1} — continuo (techo legal)`,
+      `${toHM(b.dur)} / ${toHM(COND_CONT_BOE)}`,
+      excedeBOE ? 'pill-err' : b.dur > COND_CONT_BOE*0.9 ? 'pill-warn' : 'pill-ok',
+      `Art.36.3.a RD 929/2020: máximo 6h continuas${b.tieneUlt ? ' · incluye tren en curso' : ''}`,
+      'rd-36-3'
+    );
+  });
+  const excede9 = condTotal > COND_DIARIA_ABS;
+  rd += row(
+    excede9 ? '!' : 'OK',
+    'Conducción diaria (techo legal)',
+    `${toHM(condTotal)} / ${toHM(COND_DIARIA_ABS)}`,
+    excede9 ? 'pill-err' : condTotal > COND_DIARIA_ABS*0.9 ? 'pill-warn' : 'pill-ok',
+    'Art.36.3.b: suma de bloques ≤ 9h',
+    'rd-36-3'
+  );
+  rd += row(
+    'i',
+    'Periodo de cómputo 24 horas',
+    'Consulta',
+    'pill-info',
+    'Art.36.4',
+    'rd-36-4'
+  );
+  rd += row(
+    'i',
+    'Definición de tiempo de conducción / toma-deje',
+    'Consulta',
+    'pill-info',
+    'Art.36.2: qué computa y qué no',
+    'rd-36-2'
+  );
+  rd += row(
+    'i',
+    'Pausa ≥45 min que corta el continuo',
+    'Consulta',
+    'pill-info',
+    'Art.36.5 · ver también AESF Q9',
+    'rd-36-5'
+  );
+
+  // Capa Renfe
+  let rf = '';
+  bloques.forEach((b, i) => {
+    const excede = b.dur > condMax;
+    rf += row(
+      excede ? '!' : 'OK',
+      `Bloque ${i+1} — continuo (Marco Renfe)`,
+      `${toHM(b.dur)} / ${toHM(condMax)}`,
+      excede ? 'pill-err' : b.dur > condMax*0.9 ? 'pill-warn' : 'pill-ok',
+      `${isNoc || isAV ? 'Nocturno/AV: 5h/bloque' : 'Diurno: 5h30/bloque'} · se aplica el más restrictivo frente al BOE`,
+      isNoc || isAV ? 'mrc-n12-3' : 'mrc-n12-1'
+    );
+  });
+  const condExcede = condTotal > condDiariaMax;
+  rf += row(
+    condExcede ? '!' : 'OK',
+    'Conducción efectiva vs jornada',
+    `${toHM(condTotal)} / ${toHM(condDiariaMax)}`,
+    condExcede ? 'pill-err' : condTotal > condDiariaMax*0.9 ? 'pill-warn' : 'pill-ok',
+    `min(9h BOE, jornada ${toHM(jornadaLimite)}${inclTD ? ' − 30min toma/deje' : ''}) · AESF Q14`,
+    'aesf-q14'
+  );
+  rf += row(
+    reduccionConf ? '!' : (hayUltimo && reduccionTot ? '~' : 'OK'),
+    'Reducción jornada por bloque >4h',
+    reduccionConf ? 'Confirmada → 7h13' : (hayUltimo && reduccionTot ? 'Previsible (tren en curso)' : 'No aplica'),
+    reduccionConf ? 'pill-warn' : (hayUltimo && reduccionTot ? 'pill-info' : 'pill-ok'),
+    'Norma 12.7 Marco Renfe',
+    'mrc-n12-7'
+  );
+  if (jornadaReal !== null) {
+    const excede = jornadaReal > jornadaLimite;
+    rf += row(
+      excede ? '!' : 'OK',
+      'Jornada diaria total',
+      `${toHM(jornadaReal)} / ${toHM(jornadaLimite)}`,
+      excede ? 'pill-err' : jornadaReal > jornadaLimite*0.9 ? 'pill-warn' : 'pill-ok',
+      'Norma 4ª · 7h13 / 9h30',
+      'mrc-n4'
+    );
+  }
+  rf += row(
+    refrigOk ? 'OK' : pausaEnc > 0 ? '!' : '...',
+    'Refrigerio (≥45 min antes de 4h)',
+    refrigOk ? 'Cumple' : pausaEnc > 0 ? `Pausa tardía (${toHM(condAntesPausa)})` : 'Pendiente',
+    refrigOk ? 'pill-ok' : pausaEnc > 0 ? 'pill-warn' : 'pill-neu',
+    'Condición operativa para ampliación · calidad de pausa AESF Q9',
+    'aesf-q9'
+  );
+  rf += row(
+    (startRes && endRes) ? 'OK' : '!',
+    'Inicio y fin en residencia',
+    startRes && endRes ? 'Sí' : !startRes && !endRes ? 'Ninguno' : startRes ? 'Solo inicio' : 'Solo fin',
+    startRes && endRes ? 'pill-ok' : 'pill-warn',
+    'Necesario para ampliación a 9h30 (Norma 4ª)',
+    'mrc-n4'
+  );
+  const ampliable = startRes && endRes && refrigOk && !(hayUltimo ? reduccionConf : reduccionTot);
+  rf += row(
+    ampliable ? 'OK' : '—',
+    'Ampliación a 9h30 posible',
+    ampliable ? 'Sí' : 'No',
+    ampliable ? 'pill-ok' : 'pill-neu',
+    'Residencia + refrigerio a tiempo + sin bloque >4h',
+    'mrc-n4'
+  );
+  rf += row(
+    'i',
+    'Toma / deje (15 min)',
+    'Consulta',
+    'pill-info',
+    'Norma 11ª · no es conducción (Art.36.2)',
+    'mrc-n11'
+  );
+  rf += row(
+    'i',
+    'Lugar e interrupción del refrigerio',
+    'Consulta',
+    'pill-info',
+    'Norma 12.2 · estación abierta / mercancías en loco',
+    'mrc-n12-2'
+  );
+
+  el.innerHTML = `
+    <div class="layer-legend">
+      <span class="chip chip-rd">Legal · RD 929/2020</span>
+      <span class="chip chip-renfe">Laboral · Marco Renfe</span>
+    </div>
+    <div class="norm-section">
+      <div class="norm-h rd">Capa legal (mínimo BOE)</div>
+      ${rd}
+    </div>
+    <div class="norm-section">
+      <div class="norm-h renfe">Capa laboral Renfe (más restrictiva)</div>
+      ${rf}
+    </div>`;
+}
+
+function renderAmpliacion(startRes, endRes, refrigOk, reduccion, jornadaLimite, jornadaAmpliada, hayUltimo, reduccionTot) {
+  const card = document.getElementById('ampCard');
+  const panel = document.getElementById('ampPanel');
+  card.style.display = 'block';
+  const conds = [
+    { ok: startRes, txt: 'Inicio en residencia', norm: 'mrc-n4' },
+    { ok: endRes, txt: 'Fin en residencia', norm: 'mrc-n4' },
+    { ok: refrigOk, txt: 'Refrigerio ≥45 min antes de 4h', norm: 'aesf-q9' },
+    { ok: !reduccion, txt: hayUltimo && reduccionTot && !reduccion
+        ? 'Ningún bloque cerrado >4h (el en curso aún puede reducirlo)'
+        : 'Ningún bloque de conducción >4h', norm: 'mrc-n12-7' },
+  ];
+  const allOk = conds.every(c => c.ok);
+  panel.innerHTML = `
+    <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:${allOk ? 'var(--success)' : '#92400e'};">
+      ${allOk ? 'Ampliación a 9h 30min POSIBLE' : `No aplica ampliación — límite ${toHM(jornadaLimite)}`}
+      ${infoBtn('mrc-n4')}
+    </div>
+    ${conds.map(c => `
+      <div style="display:flex;align-items:center;gap:7px;padding:4px 0;font-size:12px;">
+        <span style="font-size:14px;">${c.ok ? '✓' : '✗'}</span>
+        <span style="color:${c.ok ? 'var(--success)' : 'var(--danger)'};">${c.txt}</span>
+        ${infoBtn(c.norm)}
+      </div>`).join('')}`;
+}
+
+function renderVeredicto(ultimoTren, blqActivo, condMax, condTotal, condDiariaMax,
+                         jornadaReal, jornadaLimite, inclTD) {
+  const card = document.getElementById('veredictoCard');
+  const panel = document.getElementById('veredictoPanel');
+  card.style.display = 'block';
+
+  const margenDiario = condDiariaMax - condTotal;
+  const margenBloque = Math.min(condMax - blqActivo.dur, margenDiario);
+  const margenJornada = jornadaReal !== null ? jornadaLimite - jornadaReal : null;
+  const condBlqOk = margenBloque >= 0;
+  const condDiaOk = margenDiario >= 0;
+  const jorOk = margenJornada === null || margenJornada >= 0;
+  const puede = condBlqOk && condDiaOk && jorOk;
+
+  const margenes = [
+    { label: 'Bloque continuo', val: margenBloque, limite: toHM(condMax) },
+    { label: 'Conducción total diaria', val: margenDiario, limite: toHM(condDiariaMax) },
+  ];
+  if (margenJornada !== null) {
+    margenes.push({ label: 'Jornada diaria', val: margenJornada, limite: toHM(jornadaLimite) });
+  }
+  const margenConductorMin = Math.min(...margenes.map(m => m.val));
+  const factorLimitante = margenes.find(m => m.val === margenConductorMin);
+  const horaMaxCond = ultimoTren.llegRealMin + margenConductorMin;
+  const llegDestino = ultimoTren.llegRealMin;
+  const difHoraVsDestino = llegDestino - horaMaxCond;
+
+  // Sticky bar
+  const sticky = document.getElementById('stickyVerdict');
+  sticky.classList.add('show');
+  sticky.classList.remove('ok','err','warn');
+  sticky.classList.add(puede ? 'ok' : 'err');
+  document.getElementById('svMain').textContent = puede
+    ? `Puede finalizar · máx. conducción ${toHHMM(horaMaxCond)}`
+    : `No puede finalizar · cortar a las ${toHHMM(horaMaxCond)}`;
+  document.getElementById('svSub').textContent = puede
+    ? `Llegada est. ${toHHMM(llegDestino)} · margen ${toHM(margenConductorMin)} · limitante: ${factorLimitante.label}`
+    : `Llegada est. ${toHHMM(llegDestino)} · faltan ${toHM(difHoraVsDestino)} · limitante: ${factorLimitante.label}`;
+
+  const cls = puede ? 'veredicto v-ok' : 'veredicto v-err';
+  const hmcColor = puede ? 'var(--success)' : 'var(--danger)';
+  const hmcBg = puede ? 'var(--success-bg)' : 'var(--danger-bg)';
+  const hmcBorder = puede ? 'var(--success-b)' : 'var(--danger-b)';
+
+  let html = `<div class="${cls}" id="veredictoAnchor">
+    <div class="v-title">${puede ? 'PUEDE FINALIZAR el servicio dentro de normativa' : 'NO PUEDE FINALIZAR el servicio dentro de normativa'}</div>
+    <div style="background:${hmcBg};border:2px solid ${hmcBorder};border-radius:9px;padding:13px 16px;margin:12px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:${hmcColor};margin-bottom:4px;">Hora máxima de conducción</div>
+        <div style="font-size:28px;font-weight:900;color:${hmcColor};line-height:1;">${toHHMM(horaMaxCond)}</div>
+        <div style="font-size:11px;color:${hmcColor};margin-top:3px;opacity:.8;">Factor limitante: <strong>${factorLimitante.label}</strong></div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:4px;">Llegada estimada destino</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text);line-height:1;">${toHHMM(llegDestino)}</div>
+        <div style="font-size:12px;font-weight:800;margin-top:4px;color:${puede ? 'var(--success)' : 'var(--danger)'};">
+          ${puede ? `Margen: +${toHM(margenConductorMin)}` : `Faltan: ${toHM(difHoraVsDestino)} para llegar`}
+        </div>
+      </div>
+    </div>
+    <div class="v-sep"></div>
+    <ul class="v-list">`;
+
+  const limitadoPorDiario = margenDiario < (condMax - blqActivo.dur);
+  if (!condBlqOk) {
+    html += `<li><strong>Bloque actual</strong>: ${toHM(blqActivo.dur)} — excede el límite (${toHM(condMax)}) en <strong>${toHM(-margenBloque)}</strong></li>`;
+  } else {
+    html += `<li><strong>Bloque actual</strong>: ${toHM(blqActivo.dur)} — margen <strong>${toHM(margenBloque)}</strong> (límite ${toHM(condMax)}${limitadoPorDiario ? ', restringido por máx. diario' : ''})</li>`;
+  }
+  if (!condDiaOk) {
+    html += `<li><strong>Conducción diaria</strong>: ${toHM(condTotal)} — excede ${toHM(condDiariaMax)} en <strong>${toHM(-margenDiario)}</strong></li>`;
+  } else {
+    html += `<li><strong>Conducción diaria</strong>: ${toHM(condTotal)} — margen <strong>${toHM(margenDiario)}</strong></li>`;
+  }
+  if (margenJornada !== null) {
+    if (!jorOk) html += `<li><strong>Jornada</strong>: ${toHM(jornadaReal)} — excede ${toHM(jornadaLimite)} en <strong>${toHM(-margenJornada)}</strong></li>`;
+    else html += `<li><strong>Jornada</strong>: ${toHM(jornadaReal)} — margen <strong>${toHM(margenJornada)}</strong></li>`;
+  } else {
+    html += `<li>Introduce la hora de presentación para verificar la jornada.</li>`;
+  }
+  const trainName = ultimoTren.label || 'Último tren';
+  html += `<li><strong>${esc(trainName)}</strong> — llegada estimada <strong>${toHHMM(ultimoTren.llegRealMin)}</strong>`;
+  if (ultimoTren.retrasoAct > 0) html += ` (retraso actual +${ultimoTren.retrasoAct} min)`;
+  html += `</li></ul>`;
+
+  const boxBg = puede ? 'var(--success-bg)' : 'var(--danger-bg)';
+  const boxBorder = puede ? 'var(--success-b)' : 'var(--danger-b)';
+  const boxTitle = puede ? 'var(--success)' : 'var(--danger)';
+  html += `<div class="margen-box" style="background:${boxBg};border-color:${boxBorder};">
+    <div class="mb-title" style="color:${boxTitle};">Margen por cada límite</div><table>`;
+  margenes.forEach(m => {
+    const isMin = m.val === margenConductorMin;
+    const excede = m.val < 0;
+    const color = excede ? 'var(--danger)' : m.val < 30 ? '#d97706' : 'var(--success)';
+    html += `<tr${isMin ? ' class="limiting"' : ''}><td>${isMin ? '🔒 ' : ''}<strong>${m.label}</strong>${isMin ? ' <em>(limitante)</em>' : ''}</td>
+      <td style="color:${color};">${excede ? toHM(-m.val) + ' excedido' : toHM(m.val)}</td></tr>`;
+  });
+  html += `</table></div></div>`;
+  panel.innerHTML = html;
+}
+
+function resetAll() {
+  if (!confirm('¿Limpiar todos los datos?')) return;
+  segs = []; sid = 0;
+  document.getElementById('jStart').value = '';
+  document.getElementById('startRes').checked = true;
+  document.getElementById('endRes').checked = true;
+  document.getElementById('isNoc').checked = false;
+  document.getElementById('isAV').checked = false;
+  document.getElementById('tomaDeje').checked = true;
+  try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+  renderTable();
+  calc(false);
+}
+
+window.onload = () => {
+  loadPersisted();
+  renderTable();
+  calc(false);
+};
+</script>
+</body>
+</html>
